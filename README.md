@@ -25,13 +25,18 @@ with a mouse and keyboard.
 | Input | Action |
 | --- | --- |
 | Left click | Select a unit or building, press buttons |
-| Left click on the ground | Move the selected units there |
 | Left drag | Select several units with a box |
-| Right click | Open a unit's or building's menu (the phone version's "tap and hold"; holding the left button for half a second also works) |
+| Left click on empty ground | Deselect everything |
+| Right click on the ground | Move the selected units there |
+| Right click on an enemy | Attack it with the selected units |
+| Right click on your own unit or building | Open its menu (the phone version's "tap and hold"; holding the left button for half a second also works) |
 | Arrow keys | Scroll the map |
 | Click the minimap | Jump to that part of the map |
 | M | In-game menu (save, load, options) |
 | F11 or Alt+Enter | Toggle fullscreen |
+
+These are modern-RTS style controls. The in-game tutorial was written for
+phones, so when it says "tap on grass to move", right click instead.
 
 The window can be resized or maximized; the 800×600 picture scales to fit and
 keeps its shape.

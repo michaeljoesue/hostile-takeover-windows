@@ -116,10 +116,29 @@ unchanged.
 
 - **Mouse input on Windows**: SDL mouse events were only enabled for
   macOS, Android and Linux.
-- **Right click = "tap and hold"** (`game/sdl/host.cpp`): a right-button
-  press is turned into a pen-down immediately followed by a pen-hold, which
-  pops up the unit or building menu. `game/event.cpp` was taught not to
-  generate a second hold from its timer afterwards.
+- **Modern RTS mouse controls** (`game/sdl/host.cpp`,
+  `game/stylushandler.cpp`, `game/event.cpp`). The original desktop
+  ("stylus") controls come from PDAs, where a tap on the ground moves the
+  selected units. On Windows they now work like a modern RTS:
+  - Left click selects; left drag box-selects; a left click on empty
+    ground clears the selection instead of moving.
+  - Right click on the ground moves, right click on an enemy attacks, and
+    right click on your own unit or building opens its menu (the touch
+    version's tap-and-hold). Right-clicking a Replicator while units are
+    selected sends them into it, as tapping it did before.
+
+  The host tags pen events from the right button with a new
+  `kfEvtRightButton` flag (`game/ht.h`). The battlefield's stylus handler
+  ignores right-button presses for selection and acts when the button is
+  released. The pen-hold timer in `game/event.cpp` skips right-button
+  presses, so holding the right button never opens a menu by accident.
+
+  An early version turned a right click into a synthesized "hold". It was
+  replaced by this scheme at the player's request.
+
+  One thing that looked like a bug while testing: in mission M1 the first
+  move order seemed to be ignored. It was actually the tutorial: issuing the
+  order triggers a tutorial message that pauses the game until you press OK.
 - **Resizable window and fullscreen** (`game/sdl/display.cpp`): the window
   starts at the largest whole multiple of 800×600 that fits the screen and
   can be resized freely. `SDL_RenderSetLogicalSize` scales the picture,
@@ -145,6 +164,9 @@ screenshots. The following were verified:
 - The story intro (M0) and mission M1, including the tutorial prompts
 - Selecting and moving units, the right-click menu, transforming the
   Dominion into an HQ, and building a Power Generator (credits deducted)
+- The RTS controls: left click on the ground deselects without moving, right
+  click moves single units and box-selected groups, and right click on your
+  own unit opens its menu
 - Saving and loading a game, and progress persisting across restarts
 - Window resizing with correct click positions, fullscreen, and arrow-key
   scrolling
@@ -177,7 +199,8 @@ standard Windows audio) and a run on a physical Windows 11 PC.
 | `game/sdl/win/BUILDING.md` | Build reference |
 | `base/wincompat.h` | Winsock compatibility helpers |
 | `base/eventer.cpp` | Loopback-socket wakeup on Windows |
-| `game/sdl/host.cpp` | Mouse on Windows, right-click hold, fullscreen keys, letterbox clamping |
+| `game/sdl/host.cpp` | Mouse on Windows, right-button tagging, fullscreen keys, letterbox clamping |
+| `game/stylushandler.cpp` | Modern RTS left/right click behaviour on the battlefield |
 | `game/sdl/display.cpp` | Resizable scaled window, fullscreen toggle |
 | `game/InputUI.cpp` | Arrow-key map scrolling |
 | `inc/basictypes.h` | `pword` is now `uintptr_t` |

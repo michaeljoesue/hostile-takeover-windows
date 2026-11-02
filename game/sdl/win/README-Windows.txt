@@ -22,15 +22,21 @@ HOW TO PLAY
 CONTROLS
 --------
   Left click            Select a unit / building, press buttons
-  Left click on ground  Move the selected units there
   Left drag             Draw a box to select several units
-  Right click           Open a unit's or building's menu
-                        (same as "tap and hold" on the phone version;
-                        holding the left button for half a second also works)
+  Left click on ground  Deselect everything
+  Right click on ground Move the selected units there
+  Right click on enemy  Attack it with the selected units
+  Right click on your own unit / building
+                        Open its menu (same as "tap and hold" on the
+                        phone version; holding the left button for half
+                        a second also works)
   Arrow keys            Scroll the map
   Click the minimap     Jump to that part of the map (bottom right)
   M                     Open the in-game menu (save / load / options)
   F11  or  Alt+Enter    Toggle fullscreen
+
+The in-game tutorial was written for phones: when it says "tap on grass
+to move", right click instead.
 
 The window can be resized or maximized; the picture scales to fit and
 keeps its shape.

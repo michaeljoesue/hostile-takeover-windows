@@ -55,6 +55,15 @@ bool SimUIForm::StylusHandler::OnPenEvent(Event *pevt, bool fScrollOnly)
 
 void SimUIForm::StylusHandler::OnPenDown(Event *pevt)
 {
+#ifdef _WIN32
+    // Desktop RTS controls: the right button acts on release (see OnPenUp)
+    // and never starts a drag selection.
+
+    if (pevt->ff & kfEvtRightButton) {
+        return;
+    }
+#endif
+
     // Enter dragging mode; this'll cause OnPenDrag to be called until
     // that mode exits.
     
@@ -93,6 +102,38 @@ void SimUIForm::StylusHandler::OnPenDown(Event *pevt)
 void SimUIForm::StylusHandler::OnPenUp(Event *pevt)
 {
     CancelModes();
+
+#ifdef _WIN32
+    // Desktop RTS controls, right button:
+    // - on one of your units/buildings: open its menu (the touch version's
+    //   tap-and-hold), unless it's a Replicator and units are selected, in
+    //   which case they're sent into it
+    // - on an enemy: attack it with the selected units
+    // - on the ground: move the selected units there
+
+    if ((pevt->ff & kfEvtRightButton) && pevt->dw != 1) {
+        WCoord wxTarget, wyTarget;
+        gsim.GetViewPos(&wxTarget, &wyTarget);
+        wxTarget += WcFromPc(pevt->x);
+        wyTarget += WcFromPc(pevt->y);
+
+        Gob *pgobHit = NULL;
+        Enum enm;
+        if (gsim.HitTest(&enm, wxTarget, wyTarget, kfGobActive | kfGobUnit,
+                &pgobHit) && pgobHit != NULL) {
+            bool fOwn = pgobHit->GetSide() == gpplrLocal->GetSide() ||
+                    (gfGodMode && !ggame.IsMultiplayer());
+            bool fIntoReplicator = pgobHit->GetType() == kgtReplicator &&
+                    m_psui->HasSelectedUnits();
+            if (fOwn && !fIntoReplicator) {
+                pgobHit->PopupMenu();
+                return;
+            }
+        }
+        m_psui->MoveOrAttackOrSelect(pevt->x, pevt->y,
+                kfMasMove | kfMasAttack);
+    }
+#endif
 }
 
 // TUNE:
@@ -182,7 +223,25 @@ void SimUIForm::StylusHandler::OnPenDrag(Event *pevt)
 				s_cwptSelection = 0;
 			}
 		} else {
+#ifdef _WIN32
+			// Desktop RTS controls, left button: clicking a unit selects it
+			// (done on pen down) and clicking a building also shows its
+			// buttons. Clicking empty ground clears the selection; moving
+			// and attacking are done with the right button.
+
+			WCoord wxHit, wyHit;
+			bool fHitSurrounding;
+			Gob *pgobHit = m_psui->HitTestGob(pevt->x, pevt->y, false,
+					&wxHit, &wyHit, &fHitSurrounding);
+			if (pgobHit == NULL) {
+				m_psui->ClearSelection();
+			} else {
+				m_psui->MoveOrAttackOrSelect(pgobHit, wxHit, wyHit,
+						kfMasShowMenu);
+			}
+#else
 			m_psui->MoveOrAttackOrSelect(pevt->x, pevt->y, kfMasMove | kfMasAttack | kfMasShowMenu);
+#endif
 		}
 		break;
             

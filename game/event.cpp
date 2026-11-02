@@ -171,7 +171,10 @@ bool EventMgr::GetEvent(Event *pevt, long ctWait, bool fCheckPaints)
 				// Hold events are generated when the pen is pressed down and
                 // held for a specified amount of time before being released.
 
-				m_fTimingPenHold = true;
+				// (Desktop right-button presses are handled as clicks,
+				// never as holds.)
+
+				m_fTimingPenHold = (pevt->ff & kfEvtRightButton) == 0;
 				m_tPenDown = gtimm.GetTickCount();
 				m_xHold = pevt->x;
 				m_yHold = pevt->y;
@@ -198,8 +201,8 @@ bool EventMgr::GetEvent(Event *pevt, long ctWait, bool fCheckPaints)
 				break;
 
 			case penHoldEvent:
-				// A hold was synthesized by the host (e.g. right mouse
-				// button); don't produce a second one from the timer.
+				// A hold was delivered by the host; don't produce a second
+				// one from the timer.
 
 				m_fTimingPenHold = false;
 				break;

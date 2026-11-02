@@ -1770,6 +1770,7 @@ struct Event { // evt
 };
 #define kfEvtFinger 0x00000001
 #define kfEvtCoalesce 0x00000002
+#define kfEvtRightButton 0x00000004 // desktop: pen event came from the right mouse button
 
 // Custom events
 

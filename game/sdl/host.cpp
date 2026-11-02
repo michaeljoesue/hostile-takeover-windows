@@ -200,33 +200,12 @@ static void ClampToGameSurface(Event *pevt) {
     if (pevt->y >= props.cyHeight) pevt->y = props.cyHeight - 1;
 }
 
-// Right mouse button acts as "tap and hold" (pops up the unit/structure menu)
-// so desktop players don't have to press and wait. A right-button press is
-// turned into penDown followed immediately by penHold.
-static bool gfPendingHold = false;
-static Event gevtPendingHold;
-static Uint32 guserevtWake = (Uint32)-1;
 #endif
 
 bool ProcessSdlEvent(base::Message *pmsg, Event *pevt)
 {
     memset(pevt, 0, sizeof(*pevt));
 
-#ifdef _WIN32
-    if (gfPendingHold) {
-        gfPendingHold = false;
-        *pevt = gevtPendingHold;
-        // If the wake-up event is next in the queue, eat it.
-        SDL_Event eventT;
-        if (guserevtWake != (Uint32)-1 &&
-                SDL_PeepEvents(&eventT, 1, SDL_PEEKEVENT, SDL_FIRSTEVENT,
-                SDL_LASTEVENT) == 1 && eventT.type == guserevtWake) {
-            SDL_PeepEvents(&eventT, 1, SDL_GETEVENT, SDL_FIRSTEVENT,
-                    SDL_LASTEVENT);
-        }
-        return true;
-    }
-#endif
 
     SDL_Event event;
     switch (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_FIRSTEVENT,
@@ -338,19 +317,9 @@ bool ProcessSdlEvent(base::Message *pmsg, Event *pevt)
 #ifdef _WIN32
         ClampToGameSurface(pevt);
         if (event.button.button == SDL_BUTTON_RIGHT) {
-            gevtPendingHold = *pevt;
-            gevtPendingHold.eType = penHoldEvent;
-            gfPendingHold = true;
-            // Make sure the event pump comes back around promptly
-            if (guserevtWake == (Uint32)-1) {
-                guserevtWake = SDL_RegisterEvents(1);
-            }
-            if (guserevtWake != (Uint32)-1) {
-                SDL_Event eventWake;
-                memset(&eventWake, 0, sizeof(eventWake));
-                eventWake.type = guserevtWake;
-                SDL_PushEvent(&eventWake);
-            }
+            pevt->ff |= kfEvtRightButton;
+        } else if (event.button.button != SDL_BUTTON_LEFT) {
+            return false;
         }
 #endif
 		break;
@@ -361,6 +330,11 @@ bool ProcessSdlEvent(base::Message *pmsg, Event *pevt)
 		pevt->y = event.button.y;
 #ifdef _WIN32
         ClampToGameSurface(pevt);
+        if (event.button.button == SDL_BUTTON_RIGHT) {
+            pevt->ff |= kfEvtRightButton;
+        } else if (event.button.button != SDL_BUTTON_LEFT) {
+            return false;
+        }
 #endif
 		break;
 		

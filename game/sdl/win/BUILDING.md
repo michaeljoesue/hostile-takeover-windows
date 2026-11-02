@@ -41,7 +41,8 @@ static libcurl 8.10.1 with Schannel the first time, into `game/sdl/win/deps/`.
   `portable.txt` file is present). Message boxes use SDL.
 * **Desktop input/display** (`game/sdl/host.cpp`, `display.cpp`,
   `game/event.cpp`, `game/InputUI.cpp`). Mouse input is enabled for
-  Windows; right click synthesizes pen-hold (unit menu); the window is
+  Windows with modern RTS controls (left click selects or deselects, right
+  click moves, attacks or opens the unit menu; see `game/stylushandler.cpp`); the window is
   resizable with aspect-correct scaling (`SDL_RenderSetLogicalSize`);
   F11 / Alt+Enter toggles fullscreen; arrow keys scroll the map.
 * **Manifest** (`app.manifest`). UTF-8 active code page so `fopen()` works
