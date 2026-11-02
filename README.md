@@ -1,96 +1,80 @@
-## About
+# Hostile Takeover for Windows 11
 
-*Hostile Takeover* is the open source release of the wildly popular mobile Real Time Strategy game [*Warfare Incorporated*](http://www.warfareincorporated.com/). Warfare Incorporated's developers, grateful for all the contributions of the open source community, are delighted to give something back.
+A native Windows port of **Hostile Takeover**, the open source release of the
+mobile real-time strategy game *Warfare Incorporated* by Spiffcode, Inc.
 
-#### Legal Stuff
-*Hostile Takeover* and *Warfare Incorporated* are registered trademarks of *Spiffcode, Inc* the developers of Warfare Incorporated. *Hostile Takeover* is copyrighted 2004-2014 by Spiffcode, Inc. The Hostile Takeover source code is made available under the [BSD open source license](LICENSE.txt).
+The original source ([spiffcode/hostile-takeover](https://github.com/spiffcode/hostile-takeover))
+builds for iOS, Android, macOS and (partly) Linux. This fork adds a Windows
+10/11 version built from the game's SDL2 port, aimed at single-player play
+with a mouse and keyboard.
+
+> This is an unofficial fan port, not a Spiffcode release.
+
+## Playing
+
+1. Download `HostileTakeover-Windows.zip` (from the Releases page, or build it
+   yourself as described below) and unzip it anywhere.
+2. Double-click `HostileTakeover.exe`. Nothing is installed and no extra DLLs
+   are needed.
+3. If Windows shows **"Windows protected your PC"**, click **More info → Run
+   anyway**. This happens for any program that isn't code-signed.
+4. Choose **Play → Single Player → M0: Introduction** to start the story.
+
+### Controls
+
+| Input | Action |
+| --- | --- |
+| Left click | Select a unit or building, press buttons |
+| Left click on the ground | Move the selected units there |
+| Left drag | Select several units with a box |
+| Right click | Open a unit's or building's menu (the phone version's "tap and hold"; holding the left button for half a second also works) |
+| Arrow keys | Scroll the map |
+| Click the minimap | Jump to that part of the map |
+| M | In-game menu (save, load, options) |
+| F11 or Alt+Enter | Toggle fullscreen |
+
+The window can be resized or maximized; the 800×600 picture scales to fit and
+keeps its shape.
+
+### Saves
+
+Saved games, progress, settings and a `log.txt` are stored in
+`%APPDATA%\HostileTakeover`. To keep everything next to the game instead
+(for example on a USB stick), create an empty file called `portable.txt`
+beside `HostileTakeover.exe`.
+
+### Known limitations
+
+- Single player is the focus. Multiplayer, the leaderboard and add-on mission
+  downloads depend on the original online servers and may not work.
+- Arrow keys are the only keyboard scrolling; there is no edge-of-screen
+  mouse scrolling.
 
 ## Building
 
-### Prerequisites
-**macOS and iOS Ports:**
-- Mac OS X
-- [Xcode 5 (or later)](https://itunes.apple.com/us/app/xcode/id497799835?mt=12) with *Command Line Tools* installed
-	- Install *Command Line Tools* from Xcode *Preferences... Downloads*.
+The Windows version is cross-compiled with MinGW-w64. On Ubuntu/Debian, or in
+WSL on Windows 11:
 
-**Android Port:**
-- [Eclipse](https://eclipse.org)
-- [Eclipse ADT Plugin](https://dl-ssl.google.com/android/eclipse/)
-- [Android NDK](https://developer.android.com/ndk/)
-- [Android SDK](https://developer.android.com/studio/) Command Line Tools
+```sh
+sudo apt install mingw-w64 cmake make curl python3 zip
+cd game/sdl/win
+./build.sh
+```
 
-### Building the Hostile Takeover Executable
+The script downloads SDL2 and builds a static libcurl the first time, compiles
+the game, and writes `game/sdl/win/dist/HostileTakeover-Windows.zip`.
 
-**iPhone Port:**
-1. Within Xcode, open `game/wi.xcodeproj`.
-- Select a Build Configuration via *Edit Scheme...Info*
-	- **Debug (default)**. Has extra runtime checks and is typically used during development. Displays "DEV BUILD" and date on Hostile Takeover startup screen. The Debug version requires a local server to be running for multiplayer testing.
-	- **Release**. W/o extra runtime checks. Displays date on Hostile Takeover startup screen.
-	- **Distribution**. Same as Release but displays game database version number on Hostile Takeover startup screen.
-	- **Distribution-Store**. Same as Distribution but is signed with a necessary key for redistribution in the iTunes App Store. NOTE: You'll have to get your own key if you want to distribute through the App Store.
-	- **Adhoc**. ???
-- Build and run!
-	- On your device or in the iOS Simulator.
+See [`game/sdl/win/BUILDING.md`](game/sdl/win/BUILDING.md) for build options
+and [`PORTING_NOTES.md`](PORTING_NOTES.md) for how the port was done.
 
-**SDL macOS and iOS Ports:**
-- Within Xcode, open `game/sdl/htsdl.xcodeproj`.
-- Select a Build Configuration via *Edit Scheme...Info*
-	- **Debug (default)** for development, has extra runtime cheacks and displays "DEV BUILD" and date on the game startup screen.
-	- **Release** W/o extra runtime checks and displays game database version number on the game startup screen.
-- Select a Build Target:
-	- **HT - Desktop** for building for macOS.
-	- **HT  Mobile** for building for iOS device or iOS simulator.
-- Build, and run on your target device!
+## Other platforms
 
-**Android Port:**
-- Set desired app ABI in `game/sdl/android/jni/Application.mk` (default ABI is: all).
-- Add your NDK path to your environment variables `export PATH=$PATH:[YOUR NDK PATH]`.
-- `cd game/sdl/android`.
-- For debug build: `ndk-build`. For release build: `ndk-build REL=1`.
-- Import the project into Eclipse if you have not already done so.
-    - File > New > Other... > Android Project from Existing Code
-    - Browse to the HT project at `game/sdl/android` and click finish.
-- Build and run!
-	- To run on connected device in Eclipse: Hostile Takeover > Run As > Android Application
-	- To build an .apk in Eclipse: File > Export... > Export Android Application > Hostile Takeover > [Developer Keystore](https://developer.android.com/training/articles/keystore.html) > Finish
+The original build instructions for iOS, Android, macOS, Linux, the data file
+and the multiplayer server are in [`README-upstream.md`](README-upstream.md).
 
-**Linux Port (WIP)**
+## License
 
-- Run `game/sdl/linux/install.sh` to create the necessary directories and install the necessary packages.
-- `cd game/sdl/linux/` and `make` or `make REL=1`.
-
-### Building the Hostile Takeover Data File
-The Hostile Takeover iOS executable incorporates a data file, **htdata832.pdb**, which includes all the art, audio, and levels for the game. A prebuilt version of this data file is already in the source tree so you don't need to build it unless you are modifying assets it contains.
-
-Originally all of Hostile Takeover was developed on Windows using Windows tools like Visual Studio and C#. To build the data file on the Mac, the cross platform Mono framework is used.
-
-1. Install the Mono runtime environment.
-	- Available from http://www.go-mono.com/mono-downloads/download.html. Version 3.4 (Mono MRE installer) is known to work.
-- `cd data`
-- `make IPHONE=1 MULTIPLAYER=1 clean all`
-	- some harmless warnings will be displayed
-- Mark the data file with a version number.
-	- `cd ../game`
-    - `../bin/markversion.exe 1 htdata832.pdb "+++VERSION+++" 1.6`
-
-### Building and running the Hostile Takeover Multiplayer Server
-Hostile Takeover supports single player and multiplayer play. Multiplayer is supported by two server components: a TCP based game server located in the **server** directory, and an HTTP based server located in the **stats** directory used for accounts, leaderboard, game history and game stats.
-
-1. The game server is a command line server which builds can be built and run on OSX or Linux. The game server is does not (currently) build and run on Windows. The production server environment is expected to be Linux based.
-- `cd server`
-- make REL=1 clean all (for a release build)
-- make clean all (for a debug build)
-
-Please refer to the README.txt in the **server** directory for more detailed information on how to run the server environment in development and production.
-
-## Tools
-The `bin` directory contains many command line tools used to build the htdata file. There are also GUI tools for editing maps (M) and animations (AniMax).
-
-The GUI tools have primarily been used on Windows and are best described as 'flaky' on the Mac. If you want to give level editing a try on a Mac:
-
-1. `mono bin/m.exe`
-- File > Open
-- Select a .ld (level description) file from the `data` directory.
-- There is an m.chm file for M help. m.chm is a Windows specific file format. There is also an overview on the web found here: http://sites.warfareincorporated.com/mission-authoring/
-
-See [Building the Hostile Takeover Data File](#building-the-hostile-takeover-data-file) for instructions on how to rebuild the data file after making changes to any level, image, sound files or other game assets.
+Hostile Takeover is copyright © 2003–2014 Spiffcode, Inc. and is released under
+the BSD license; see [`LICENSE.txt`](LICENSE.txt). The Windows port changes are
+offered under the same license. *Hostile Takeover* and *Warfare Incorporated*
+are trademarks of Spiffcode, Inc.
