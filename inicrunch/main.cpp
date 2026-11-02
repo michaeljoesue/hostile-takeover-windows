@@ -385,6 +385,7 @@ dword GetCurrentTimePalmUnits()
 	// Divide by 1e9 / (1024*1024)
 
 	return (dword)((double)dw / (10000000.0 / (double)(1024 * 1024)));
+}
 
 #else // TODO(darrinm): maybe this is fine on Windows too?
 #include <ctime>

@@ -52,6 +52,7 @@
     <Compile Include="EditTerrainForm.cs" />
     <Compile Include="FindLevelTextForm.cs" />
     <Compile Include="FlowPanel.cs" />
+    <Compile Include="GameMenu.cs" />
     <Compile Include="Form1.cs" />
     <Compile Include="Galaxite.cs" />
     <Compile Include="Globals.cs" />

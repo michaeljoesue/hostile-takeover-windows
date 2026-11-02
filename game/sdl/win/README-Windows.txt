@@ -30,6 +30,9 @@ CONTROLS
                         Open its menu (same as "tap and hold" on the
                         phone version; holding the left button for half
                         a second also works)
+  Right click in a build menu
+                        Cancel one queued unit (click the unit's icon
+                        or the Order button). It never orders a new one.
   Arrow keys            Scroll the map
   Click the minimap     Jump to that part of the map (bottom right)
   M                     Open the in-game menu (save / load / options)
@@ -40,6 +43,15 @@ to move", right click instead.
 
 The window can be resized or maximized; the picture scales to fit and
 keeps its shape.
+
+
+MAKING YOUR OWN MISSIONS
+------------------------
+The Editor folder contains M, the map & mission editor the game's missions
+were made with. Start Editor\M.exe. Its Game menu can start the game
+straight into the level you're editing (F5), install your levels as an
+add-on mission pack, and rebuild the game's built-in missions after you
+change them. See Editor\README.txt.
 
 
 WHERE YOUR SAVES ARE
@@ -64,7 +76,7 @@ NOTES
   on Windows 11 (including ARM PCs).
 - No installation, no extra DLLs, nothing written to the registry.
   To uninstall, delete the folder (and %APPDATA%\HostileTakeover if you
-  also want to remove your saves).
+  also want to remove your saves and installed mission packs).
 - Online features (multiplayer, leaderboard, downloading add-on mission
   packs) depend on the original game servers and may not work.
 

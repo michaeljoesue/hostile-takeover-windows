@@ -6,7 +6,8 @@ mobile real-time strategy game *Warfare Incorporated* by Spiffcode, Inc.
 The original source ([spiffcode/hostile-takeover](https://github.com/spiffcode/hostile-takeover))
 builds for iOS, Android, macOS and (partly) Linux. This fork adds a Windows
 10/11 version built from the game's SDL2 port, aimed at single-player play
-with a mouse and keyboard.
+with a mouse and keyboard, and brings the game's map & mission editor, **M**,
+along with it.
 
 > This is an unofficial fan port, not a Spiffcode release.
 
@@ -30,6 +31,7 @@ with a mouse and keyboard.
 | Right click on the ground | Move the selected units there |
 | Right click on an enemy | Attack it with the selected units |
 | Right click on your own unit or building | Open its menu (the phone version's "tap and hold"; holding the left button for half a second also works) |
+| Right click in a build menu | Cancel one queued unit (on the unit's icon or the Order button); never queues a new one |
 | Arrow keys | Scroll the map |
 | Click the minimap | Jump to that part of the map |
 | M | In-game menu (save, load, options) |
@@ -55,19 +57,43 @@ beside `HostileTakeover.exe`.
 - Arrow keys are the only keyboard scrolling; there is no edge-of-screen
   mouse scrolling.
 
+## Map & mission editor
+
+The zip includes **M**, the editor Spiffcode used to make the game's missions,
+in the `Editor` folder. Start `Editor\M.exe`; it runs on the .NET Framework 4
+that Windows 10 and 11 already include. Its **Game** menu connects it to the
+game:
+
+| Command | What it does |
+| --- | --- |
+| Play Level in Game (F5) | Starts the game straight into the level you're editing |
+| Install Mission Pack in Game | Installs the open levels as a mission pack; it shows up under Play → Single Player (or Multiplayer) → Add-On |
+| Open Built-in Mission | Opens the game's own story (`S_*`), challenge (`C_*`) and multiplayer (`M_*`) missions |
+| Rebuild Built-in Missions | Rebuilds the game data from `Editor\AuthorKit` so your changes to built-in missions take effect (a few minutes the first time) |
+| Restore Original Missions | Puts the shipped missions back |
+
+You can also drag a `.ld` level file onto `M.exe` to open it.
+
+The editor checks a level before exporting it. Many of the game's own missions
+have "placement" warnings (a building on terrain the editor considers blocked)
+and a few have small errors, yet play fine; the editor lists them and lets you
+continue. See `Editor\README.txt` for more.
+
 ## Building
 
 The Windows version is cross-compiled with MinGW-w64. On Ubuntu/Debian, or in
 WSL on Windows 11:
 
 ```sh
-sudo apt install mingw-w64 cmake make curl python3 zip
+sudo apt install mingw-w64 cmake make curl python3 zip mono-devel p7zip-full
 cd game/sdl/win
 ./build.sh
 ```
 
-The script downloads SDL2 and builds a static libcurl the first time, compiles
-the game, and writes `game/sdl/win/dist/HostileTakeover-Windows.zip`.
+The script downloads SDL2, builds a static libcurl and fetches `make`/`sh` from
+w64devkit the first time, compiles the game, the editor and the data tools,
+assembles the Author Kit, and writes `game/sdl/win/dist/HostileTakeover-Windows.zip`.
+Set `NO_EDITOR=1` to build only the game.
 
 See [`game/sdl/win/BUILDING.md`](game/sdl/win/BUILDING.md) for build options
 and [`PORTING_NOTES.md`](PORTING_NOTES.md) for how the port was done.

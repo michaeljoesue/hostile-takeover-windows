@@ -403,7 +403,15 @@ void SelectMissionForm::UpdateDescription() {
     }
     const char *szAuthor = GetString(map, "a");
     const char *szTitle = GetString(map, "t");
-    const char *s = base::Format::ToString("%s by %s", szTitle, szAuthor);
+    // Packs installed by the map editor may have no author
+    const char *s;
+    if (szTitle == NULL) {
+        s = "";
+    } else if (szAuthor == NULL || *szAuthor == 0) {
+        s = szTitle;
+    } else {
+        s = base::Format::ToString("%s by %s", szTitle, szAuthor);
+    }
     plbl->SetText(s);
     delete map;
 }

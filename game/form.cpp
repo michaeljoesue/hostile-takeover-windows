@@ -380,8 +380,21 @@ void Form::OnScroll(int dx, int dy)
 {
 }
 
+dword gffPenEventCurrent;
+
 bool Form::EventProc(Event *pevt)
 {
+	switch (pevt->eType) {
+	case penHoverEvent:
+	case penDownEvent:
+	case penMoveEvent:
+	case penUpEvent:
+	case penHoldEvent:
+		// Lets controls ask which mouse button produced the event
+		gffPenEventCurrent = pevt->ff;
+		break;
+	}
+
 	switch (pevt->eType) {
 	case penHoverEvent:
 	case penDownEvent:

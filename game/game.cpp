@@ -4,6 +4,7 @@
 #include "game/httppackmanager.h"
 #include "game/completemanager.h"
 #include "game/chatter.h"
+#include "base/format.h"
 
 #if 0
 //temp
@@ -94,6 +95,26 @@ void FreeComputerPlayers() secGame;
 //
 //
 
+static bool gfPlayPack;
+static dword gdwPlayPack;
+
+// Finds the first mission of the installed pack gdwPlayPack.
+static bool FindPlayPackMission(MissionIdentifier *pmiid) {
+	Enum enm;
+	PackId packid;
+	while (gppackm->EnumPacks(&enm, &packid)) {
+		if (packid.id != gdwPlayPack)
+			continue;
+		MissionList *pml = CreateMissionList(&packid, kmltAll);
+		if (pml == NULL)
+			return false;
+		bool fFound = pml->GetCount() > 0 && pml->GetMissionIdentifier(0, pmiid);
+		delete pml;
+		return fFound;
+	}
+	return false;
+}
+
 void GameMain(char *pszCmds)
 {
 #if defined(DEBUG) && !defined(CE) && !defined(PIL) && !defined(IPHONE) && !defined(SDL)
@@ -141,6 +162,17 @@ void GameMain(char *pszCmds)
 #endif
 		} else if (strcmp(szT, "-nofog") == 0) {
 			gfClearFog = true;
+
+		// -pack %x (play the first mission of an installed mission pack;
+		// used by the editor's "Play Level in Game")
+
+		} else if (strcmp(szT, "-pack") == 0) {
+			char szId[16];
+			c = IniScanf(&pszCmds[nchAbs], "%s%+", szId, &nchRel);
+			nchAbs += nchRel;
+			if (c == 0)
+				return;
+			gfPlayPack = base::Format::ToDword(szId, 16, &gdwPlayPack);
 
 #if defined(MP_STRESS) && !defined(PIL) && !defined(CE) && !defined(IPHONE)
 		// -mp-spawn <count>
@@ -203,7 +235,16 @@ void GameMain(char *pszCmds)
         return;
 #endif
 
-		if (gfLoadReinitializeSave) {
+		MissionIdentifier miidPlay;
+		if (gfPlayPack) {
+			gfPlayPack = false;
+			if (FindPlayPackMission(&miidPlay)) {
+				gshl.Launch(false, &miidPlay);
+			} else {
+				HtMessageBox(kfMbWhiteBorder, "Play Level", "The level to play wasn't found.");
+				gshl.Launch(false);
+			}
+		} else if (gfLoadReinitializeSave) {
 			gfLoadReinitializeSave = false;
 			gshl.Launch(true);
 		} else {

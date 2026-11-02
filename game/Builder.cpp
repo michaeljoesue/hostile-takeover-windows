@@ -691,6 +691,17 @@ int MobileUnitBuildForm::s_iliCurrent = -1;
 
 void MobileUnitBuildForm::OnControlSelected(word idc)
 {
+#ifdef _WIN32
+	// Desktop: right-clicking the Order button cancels instead of ordering.
+	if (idc == kidcOrder && (gffPenEventCurrent & kfEvtRightButton)) {
+		ListControl *plstc = (ListControl *)GetControlPtr(kidcList);
+		if (plstc->GetSelectedItem() != NULL &&
+				m_bqPrivate.GetUnitCount(UnitTypeFromPVoid(plstc->GetSelectedItemData())) > 0)
+			OnControlSelected(kidcCancelOrder);
+		return;
+	}
+#endif
+
 	switch (idc) {
     case kidcLimitReached:
         break;
@@ -818,6 +829,19 @@ void MobileUnitBuildForm::OnControlNotify(word idc, int nNotify)
 
     m_fOrderValid = !m_bqPrivate.IsFull() && !pli->fDisabled;
     UpdateOrderButton(false);
+
+#ifdef _WIN32
+    // Desktop: right-clicking a unit in the list cancels one of its queued
+    // orders (if any) and never queues a new one.
+
+    if (gffPenEventCurrent & kfEvtRightButton) {
+        s_iliCurrent = plstc->GetSelectedItemIndex();
+        if (m_bqPrivate.GetUnitCount(UnitTypeFromPVoid(plstc->GetSelectedItemData())) > 0) {
+            OnControlSelected(kidcCancelOrder);
+        }
+        return;
+    }
+#endif
 
     if (m_fOrderValid && !m_fLimitReached) {
         // Tap on a selected item orders it

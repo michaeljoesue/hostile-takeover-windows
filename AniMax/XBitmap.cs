@@ -154,22 +154,37 @@ namespace SpiffCode
 			// transparent color
 
 			Color clrTransparent = Color.FromArgb(0xff, 0, 0xff);
-			SolidBrush brTransparent = new SolidBrush(clrTransparent);
+			Color clrKey = fUseFirstPaletteEntryAsTransparentColor ? m_bm.Palette.Entries[0] : m_bm.GetPixel(0, 0);
 
-			m_bm.MakeTransparent(fUseFirstPaletteEntryAsTransparentColor ? m_bm.Palette.Entries[0] : m_bm.GetPixel(0, 0));
+			// Convert the Bitmap to 24-bpp, turning key-colored pixels into the
+			// transparent color and compositing any partially transparent pixels
+			// over it.
+			//
+			// This used to be done with Bitmap.MakeTransparent() plus
+			// Graphics.DrawImageUnscaled() onto a transparent-filled bitmap. That
+			// works with Microsoft's GDI+, but Mono's libgdiplus turns the
+			// "transparent" pixels white, which produced white boxes around every
+			// unit when the game data was built on Linux. Copying the pixels
+			// directly gives the same result everywhere.
 
 			Bitmap bmT = new Bitmap(m_bm.Width, m_bm.Height, PixelFormat.Format24bppRgb);
-			using (Graphics g = Graphics.FromImage(bmT)) {
-
-				// Prep the new image by filling with the transparent color
-
-				g.FillRectangle(brTransparent, 0, 0, m_bm.Width, m_bm.Height);
-
-				// Convert the Bitmap to 24-bpp while leaving transparent pixels behind
-
-				g.DrawImageUnscaled(m_bm, 0, 0);
-				m_bm.Dispose();
+			for (int y = 0; y < m_bm.Height; y++) {
+				for (int x = 0; x < m_bm.Width; x++) {
+					Color clr = m_bm.GetPixel(x, y);
+					if (clr.R == clrKey.R && clr.G == clrKey.G && clr.B == clrKey.B) {
+						clr = clrTransparent;
+					} else if (clr.A != 255) {
+						int a = clr.A;
+						clr = Color.FromArgb((clr.R * a + clrTransparent.R * (255 - a)) / 255,
+								(clr.G * a + clrTransparent.G * (255 - a)) / 255,
+								(clr.B * a + clrTransparent.B * (255 - a)) / 255);
+					} else {
+						clr = Color.FromArgb(clr.R, clr.G, clr.B);
+					}
+					bmT.SetPixel(x, y, clr);
+				}
 			}
+			m_bm.Dispose();
 
 			m_bm = bmT;
 //			m_bm.MakeTransparent(clrTransparent);

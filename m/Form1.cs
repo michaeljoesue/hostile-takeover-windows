@@ -119,6 +119,11 @@ namespace m
 
 			LoadSettings();
 
+			// Game menu: play/install levels in the Windows version of the game,
+			// and rebuild its built-in missions.
+
+			GameMenu.Install(this, mainMenu1, new LevelDoc.ValidateErrorDelegate(ValidateCallback));
+
 			if (Globals.IsKit()) {
 				// Remove stuff we don't want in the kit.
 

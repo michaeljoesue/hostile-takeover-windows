@@ -9,6 +9,14 @@ ifeq ($(UNAME), Linux)
 INICRUNCH=inicrunch_linux
 CPP=cpp -P -Wno-trigraphs
 endif
+ifeq ($(OS),Windows_NT)
+# Windows: the tools are .NET programs that run directly, ppini stands in for
+# the C preprocessor, and make/sh come from the bundled busybox toolset (see
+# build-data.bat).
+MONO:=
+INICRUNCH=inicrunch.exe
+CPP=$(TOOLDIR)/ppini.exe -P
+endif
 
 HELPFILE=help.txt
 
@@ -349,7 +357,7 @@ trg/font_bmps_$(DT).trg : $(FIXED_PAL) $(FONT_BMPS)
 #
 
 trg/cutscene_raw_bmps_$(DT).trg : $(patsubst %.bmp,%.act,$(CUTSCENE_RAW_BMPS)) $(CUTSCENE_RAW_BMPS) $(TOOLDIR)/palbin.exe $(TOOLDIR)/paltool.exe
-	for i in $(CUTSCENE_RAW_BMPS); do echo Crunching cutscene $$i && $(MONO) ../bin/paltool.exe -6 -c $(PAL_SIZE) -p $(PAL_SIZE) -s -t -o _tmp.pal $(COMMON_PAL) $$i && $(MONO) ../bin/bcr2.exe -raw $(RAWBMP_SCALEARG) _tmp.pal $(OUTDIR) $$i && $(MONO) ../bin/palbin.exe _tmp.pal $(OUTDIR)/`basename $$i .bmp`.palbin && rm _tmp.pal; done
+	for i in $(CUTSCENE_RAW_BMPS); do echo Crunching cutscene $$i && $(MONO) $(TOOLDIR)/paltool.exe -6 -c $(PAL_SIZE) -p $(PAL_SIZE) -s -t -o _tmp.pal $(COMMON_PAL) $$i && $(MONO) $(TOOLDIR)/bcr2.exe -raw $(RAWBMP_SCALEARG) _tmp.pal $(OUTDIR) $$i && $(MONO) $(TOOLDIR)/palbin.exe _tmp.pal $(OUTDIR)/`basename $$i .bmp`.palbin && rm _tmp.pal; done
 	@echo x > trg/cutscene_raw_bmps_$(DT).trg
 
 #
@@ -370,13 +378,13 @@ trg/cutscene_raw_bmps_$(DT).trg : $(patsubst %.bmp,%.act,$(CUTSCENE_RAW_BMPS)) $
 trg/desert_levels_$(DT).trg : $(DESERT_LEVELS) $(DESERT_PAL) $(TOOLDIR)/mcl.exe
 	$(MONO) $(TOOLDIR)/mcl.exe -levels $(TILESIZE) $(DEPTH) -1.0 1.0 1.0 1.0 1.0 $(PALDIR) $(OUTDIR) $(DESERT_LEVELS)
 	@if [ -d "prepre" ]; then for i in $(subst .ld,.lvl,$(DESERT_LEVELS)); do cp $(OUTDIR)/$$i prepre; done; fi
-	@for i in $(subst .ld,.lvl,$(DESERT_LEVELS)); do echo $$i; $(CPP) -imacros ../game/res.h $(OUTDIR)/$$i > ini.tmp; ../bin/$(INICRUNCH) ini.tmp $(OUTDIR)/$$i; done
+	@for i in $(subst .ld,.lvl,$(DESERT_LEVELS)); do echo $$i; $(CPP) -imacros ../game/res.h $(OUTDIR)/$$i > ini.tmp; $(TOOLDIR)/$(INICRUNCH) ini.tmp $(OUTDIR)/$$i; done
 	@echo x > trg/desert_levels_$(DT).trg
 
 trg/grassy_levels_$(DT).trg : $(GRASSY_LEVELS) $(GRASSY_PAL) $(TOOLDIR)/mcl.exe
 	$(MONO) $(TOOLDIR)/mcl.exe -levels $(TILESIZE) $(DEPTH) 0.8 0.9 0.9 1.1 1.3 $(PALDIR) $(OUTDIR) $(GRASSY_LEVELS)
 	@if [ -d "prepre" ]; then for i in $(subst .ld,.lvl,$(GRASSY_LEVELS)); do cp $(OUTDIR)/$$i prepre; done; fi
-	@for i in $(subst .ld,.lvl,$(GRASSY_LEVELS)); do echo $$i; $(CPP) -imacros ../game/res.h $(OUTDIR)/$$i > ini.tmp;  ../bin/$(INICRUNCH) ini.tmp $(OUTDIR)/$$i; done
+	@for i in $(subst .ld,.lvl,$(GRASSY_LEVELS)); do echo $$i; $(CPP) -imacros ../game/res.h $(OUTDIR)/$$i > ini.tmp;  $(TOOLDIR)/$(INICRUNCH) ini.tmp $(OUTDIR)/$$i; done
 	@echo x > trg/grassy_levels_$(DT).trg
 
 #

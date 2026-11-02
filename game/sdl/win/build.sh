@@ -4,7 +4,7 @@
 #
 # Run on Ubuntu / Debian or inside WSL on Windows 11:
 #
-#   sudo apt install mingw-w64 cmake make curl python3 zip
+#   sudo apt install mingw-w64 cmake make curl python3 zip mono-devel p7zip-full
 #   ./build.sh
 #
 # Downloads SDL2 (MinGW dev package) and builds a static libcurl the first
@@ -85,6 +85,11 @@ open(dst, 'wb').write(d)
 EOF
 cp "$HERE/README-Windows.txt" "$DIST/README.txt"
 cp "$HTROOT/LICENSE.txt" "$DIST/LICENSE.txt"
+
+# --- Map & mission editor + Author Kit ----------------------------------------
+if [ "${NO_EDITOR:-0}" != "1" ]; then
+    bash "$HERE/package-editor.sh" "$DIST" "$DEPS"
+fi
 
 (cd "$HERE/dist" && rm -f HostileTakeover-Windows.zip && zip -qr HostileTakeover-Windows.zip HostileTakeover)
 echo "==> Done: $HERE/dist/HostileTakeover-Windows.zip"

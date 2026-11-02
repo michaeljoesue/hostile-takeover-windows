@@ -9,6 +9,7 @@
 #include "game/ht.h"
 #include "game/sdl/sdleventserver.h"
 #include "base/thread.h"
+#include <string.h>
 
 #if 0
 /* Call this instead of exit(), so we can clean up SDL: atexit() is evil. */
@@ -38,7 +39,18 @@ int SDL_main(int argc, char *argv[])
     // Let the host have a pointer to the thread
     wi::HostSetGameThread(main_thread);
 
-    // TODO(darrinm): pass args through
-    wi::GameMain((char *)"");
+    // Pass the command line through (e.g. "-pack <id>" from the editor)
+    static char szCmds[1024];
+    szCmds[0] = 0;
+    for (int i = 1; i < argc; i++) {
+        if (strlen(szCmds) + strlen(argv[i]) + 2 >= sizeof(szCmds)) {
+            break;
+        }
+        if (i > 1) {
+            strcat(szCmds, " ");
+        }
+        strcat(szCmds, argv[i]);
+    }
+    wi::GameMain(szCmds);
     return 0;
 }

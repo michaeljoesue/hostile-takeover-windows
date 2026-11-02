@@ -9,14 +9,34 @@ compiled in but untested.
 On Ubuntu/Debian, or in WSL on Windows 11:
 
 ```sh
-sudo apt install mingw-w64 cmake make curl python3 zip
+sudo apt install mingw-w64 cmake make curl python3 zip mono-devel p7zip-full
 cd game/sdl/win
 ./build.sh
 ```
 
-Output: `game/sdl/win/dist/HostileTakeover-Windows.zip` (exe + data files +
-README). The script downloads SDL2 2.30.9 (MinGW dev package) and builds a
-static libcurl 8.10.1 with Schannel the first time, into `game/sdl/win/deps/`.
+Output: `game/sdl/win/dist/HostileTakeover-Windows.zip` (exe, data files,
+README, and the `Editor` folder with the map editor and Author Kit). The
+script downloads SDL2 2.30.9 (MinGW dev package), builds a static libcurl
+8.10.1 with Schannel and fetches w64devkit 2.10.0 (for `make`/`sh`) the first
+time, into `game/sdl/win/deps/`.
+
+`NO_EDITOR=1 ./build.sh` builds only the game. `package-editor.sh <game
+folder> deps` re-packages just the editor and Author Kit.
+
+On Windows, `Editor\AuthorKit\data\build-data.bat` rebuilds the game data
+with the packaged tools. On Linux, build the tools first and point the
+original makefile at them (the prebuilt tools in `bin/` lack the
+transparency fix described in `PORTING_NOTES.md`):
+
+```sh
+python3 tools/build_dotnet_tools.py /tmp/httools
+cp bin/inicrunch_linux /tmp/httools/
+cd data && make IPHONE=1 MULTIPLAYER=1 TOOLDIR=/tmp/httools
+mono /tmp/httools/markversion.exe 1 ../game/htdata832.pdb "+++VERSION+++" 1.6
+```
+
+The last step stamps the version that release builds of the game check.
+Note that this overwrites the checked-in `game/htdata832.pdb`.
 
 `make REL=1` alone rebuilds just the exe once the deps exist. Leave out
 `REL=1` for a debug build (console window, `DEV_BUILD`, symbols).

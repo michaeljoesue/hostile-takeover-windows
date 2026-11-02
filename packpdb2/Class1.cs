@@ -171,7 +171,7 @@ namespace packpdb2 {
 
 			// Save out
 
-			pdbp.Save(strFullPathPdb, strCreatorId);
+			pdbp.Save(strFullPathPdb, strCreatorId, "DATA");
 			return true;
 		}
 
