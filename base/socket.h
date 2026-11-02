@@ -2,9 +2,13 @@
 #define __SOCKET_H__
 
 #include <sys/types.h>
+#ifdef _WIN32
+#include "base/wincompat.h"
+#else
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#endif
 #include <errno.h>
 #include "base/dispatcher.h"
 #include "inc/basictypes.h"

@@ -126,8 +126,13 @@ bool SelectServer::Wait(long64 ctWaitBig, bool fProcessIO) {
         // If error, return error
 
         if (n < 0) {
-            LOG() << "select returns < 0, errno: " << errno << ", "
-                    << Socket::GetErrorString(errno);
+#ifdef _WIN32
+            int err = SocketErrno();
+#else
+            int err = errno;
+#endif
+            LOG() << "select returns < 0, errno: " << err << ", "
+                    << Socket::GetErrorString(err);
             return false;
         }
 

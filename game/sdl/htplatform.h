@@ -126,6 +126,7 @@ public:
     void RenderGameSurface();
     float Density();
     void SetShouldRender(bool fsr);
+    void ToggleFullscreen();
 
 private:
     int m_imode;

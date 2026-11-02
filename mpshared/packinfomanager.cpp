@@ -64,7 +64,7 @@ json::JsonMap *PackInfoManager::LoadInfoMap(FILE *file) {
     json::JsonObject *obj = builder.End();
     if (obj == NULL || obj->type() != json::JSONTYPE_MAP) {
         delete obj;
-        return false;
+        return NULL;
     }
     return (json::JsonMap *)obj;
 }

@@ -4,7 +4,9 @@
 #include "base/misc.h"
 #include <unistd.h>
 #include <fcntl.h>
+#ifndef _WIN32
 #include <netinet/tcp.h>
+#endif
 #include <stdio.h>
 
 namespace base {
@@ -30,13 +32,16 @@ bool Socket::Attach(int s, SocketNotify *notify) {
 
 bool Socket::Create(int type, SocketNotify *notify) {
     Close();
-    s_ = ::socket(AF_INET, type, 0);
+#ifdef _WIN32
+    WinsockInit();
+#endif
+    s_ = (int)::socket(AF_INET, type, 0);
     UpdateLastError();
     SetNotify(notify);
 
     // Turn off nagle
     int value = 1;
-    setsockopt(s_, IPPROTO_TCP, TCP_NODELAY, &value, sizeof(value));
+    setsockopt(s_, IPPROTO_TCP, TCP_NODELAY, (const char *)&value, sizeof(value));
     type_ = type;
 
     // Return EPIPE instead of raising SIGPIPE
@@ -73,7 +78,7 @@ SocketAddress Socket::GetRemoteAddress() const {
 int Socket::Bind(const SocketAddress& addr, bool reuse) {
     if (reuse) {
         int n = 1;
-        int err = setsockopt(s_, SOL_SOCKET, SO_REUSEADDR, (void *)&n,
+        int err = setsockopt(s_, SOL_SOCKET, SO_REUSEADDR, (const char *)&n,
                 sizeof(n));
         if (err < 0) {
             UpdateLastError();
@@ -185,7 +190,7 @@ int Socket::Listen(int backlog) {
 Socket *Socket::Accept(SocketAddress *paddr, SocketNotify *notify) {
     sockaddr_in saddr;
     socklen_t cbAddr = sizeof(saddr);
-    int s = ::accept(s_, (sockaddr*)&saddr, &cbAddr);
+    int s = (int)::accept(s_, (sockaddr*)&saddr, &cbAddr);
     UpdateLastError();
     if (s == -1) {
         return NULL;
@@ -201,7 +206,11 @@ int Socket::Close() {
     if (s_ == -1) {
         return 0;
     }
+#ifdef _WIN32
+    int err = SocketCloseHandle(s_);
+#else
     int err = close(s_);
+#endif
     UpdateLastError();
     s_ = -1;
     state_ = CS_CLOSED;
@@ -210,7 +219,11 @@ int Socket::Close() {
 }
 
 void Socket::UpdateLastError() {
+#ifdef _WIN32
+    error_ = SocketErrno();
+#else
     error_ = errno;
+#endif
 }
     
 bool Socket::IsBlocking() const {
@@ -268,11 +281,19 @@ void Socket::SetNotify(SocketNotify *notify) {
     if (notify_ != NULL) {
         dispatcher_->SetDispatchee(NULL);
         dispatcher_->ClearEvents();
+#ifdef _WIN32
+        SocketSetNonBlocking(s_, false);
+#else
         fcntl(s_, F_SETFL, fcntl(s_, F_GETFL, 0) & ~O_NONBLOCK);
+#endif
     }
     notify_ = notify;
     if (notify_ != NULL) {
+#ifdef _WIN32
+        SocketSetNonBlocking(s_, true);
+#else
         fcntl(s_, F_SETFL, fcntl(s_, F_GETFL, 0) | O_NONBLOCK);
+#endif
         dispatcher_->SetDispatchee(this, s_);
         if (state_ == CS_CONNECTED || type_ != SOCK_STREAM) {
             dispatcher_->SetEvents(Dispatcher::kfRead | Dispatcher::kfWrite);

@@ -2,7 +2,11 @@
 #define __BYTEBUFFER_H__
 
 #include "inc/basictypes.h"
+#ifdef _WIN32
+#include "base/wincompat.h"
+#else
 #include <arpa/inet.h>
+#endif
 
 namespace base {
 

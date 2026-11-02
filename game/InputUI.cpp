@@ -168,6 +168,34 @@ void InputUIForm::OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd)
 bool InputUIForm::EventProc(Event *pevt)
 {
 	if (pevt->eType == keyDownEvent) {
+#if defined(SDL)
+		// Desktop: arrow keys scroll the map. (The SDL host maps the up/down
+		// arrows to chrPageUp/chrPageDown.)
+		{
+			WCoord dwx = 0, dwy = 0;
+			const WCoord kwcKeyScroll = kwcTile * 2;
+			switch (pevt->chr) {
+			case chrLeft:
+				dwx = -kwcKeyScroll;
+				break;
+			case chrRight:
+				dwx = kwcKeyScroll;
+				break;
+			case chrPageUp:
+				dwy = -kwcKeyScroll;
+				break;
+			case chrPageDown:
+				dwy = kwcKeyScroll;
+				break;
+			}
+			if (dwx != 0 || dwy != 0) {
+				WCoord wxView, wyView;
+				gsim.GetViewPos(&wxView, &wyView);
+				gsim.SetViewPos(wxView + dwx, wyView + dwy);
+				return true;
+			}
+		}
+#endif
 		switch (pevt->chr) {
 		case vchrMenu:
         case vchrBack:

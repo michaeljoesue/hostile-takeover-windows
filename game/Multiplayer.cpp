@@ -1,5 +1,5 @@
 #include "game/ht.h"
-#include "game/Multiplayer.h"
+#include "game/multiplayer.h"
 
 namespace wi {
     

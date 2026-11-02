@@ -16,7 +16,7 @@ CXX = g++-5
 LD = g++-5
 
 LDFLAGS=
-CPPFLAGS += -w -Wno-write-strings -fsigned-char \
+CPPFLAGS += -w -Wno-write-strings -fsigned-char -fno-delete-null-pointer-checks -fno-strict-aliasing \
 -I../../../base -I../../../mpshared -I../../../inc \
 -I../SDL2/include -I../curl/include -I../../../ -I../../ -I../ \
 -D__LINUX__ -DSDL -DMULTIPLAYER -DTRACKSTATE

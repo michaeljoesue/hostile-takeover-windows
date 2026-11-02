@@ -188,9 +188,46 @@ void CheckTouchTracking() {
     }
 }
 
+#ifdef _WIN32
+// Mouse clicks in the letterbox bars around the scaled game image come in
+// outside of 800x600 game space; pin them to the edge.
+static void ClampToGameSurface(Event *pevt) {
+    SurfaceProperties props;
+    HostHelpers::GetSurfaceProperties(&props);
+    if (pevt->x < 0) pevt->x = 0;
+    if (pevt->y < 0) pevt->y = 0;
+    if (pevt->x >= props.cxWidth) pevt->x = props.cxWidth - 1;
+    if (pevt->y >= props.cyHeight) pevt->y = props.cyHeight - 1;
+}
+
+// Right mouse button acts as "tap and hold" (pops up the unit/structure menu)
+// so desktop players don't have to press and wait. A right-button press is
+// turned into penDown followed immediately by penHold.
+static bool gfPendingHold = false;
+static Event gevtPendingHold;
+static Uint32 guserevtWake = (Uint32)-1;
+#endif
+
 bool ProcessSdlEvent(base::Message *pmsg, Event *pevt)
 {
     memset(pevt, 0, sizeof(*pevt));
+
+#ifdef _WIN32
+    if (gfPendingHold) {
+        gfPendingHold = false;
+        *pevt = gevtPendingHold;
+        // If the wake-up event is next in the queue, eat it.
+        SDL_Event eventT;
+        if (guserevtWake != (Uint32)-1 &&
+                SDL_PeepEvents(&eventT, 1, SDL_PEEKEVENT, SDL_FIRSTEVENT,
+                SDL_LASTEVENT) == 1 && eventT.type == guserevtWake) {
+            SDL_PeepEvents(&eventT, 1, SDL_GETEVENT, SDL_FIRSTEVENT,
+                    SDL_LASTEVENT);
+        }
+        return true;
+    }
+#endif
+
     SDL_Event event;
     switch (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_FIRSTEVENT,
             SDL_LASTEVENT)) {
@@ -293,27 +330,63 @@ bool ProcessSdlEvent(base::Message *pmsg, Event *pevt)
         break;
 #endif
 
-#if defined(__MACOSX__) || defined(__ANDROID__) || defined(__LINUX__)
+#if defined(__MACOSX__) || defined(__ANDROID__) || defined(__LINUX__) || defined(_WIN32)
 	case SDL_MOUSEBUTTONDOWN:
         pevt->eType = penDownEvent;
         pevt->x = event.button.x;
         pevt->y = event.button.y;
+#ifdef _WIN32
+        ClampToGameSurface(pevt);
+        if (event.button.button == SDL_BUTTON_RIGHT) {
+            gevtPendingHold = *pevt;
+            gevtPendingHold.eType = penHoldEvent;
+            gfPendingHold = true;
+            // Make sure the event pump comes back around promptly
+            if (guserevtWake == (Uint32)-1) {
+                guserevtWake = SDL_RegisterEvents(1);
+            }
+            if (guserevtWake != (Uint32)-1) {
+                SDL_Event eventWake;
+                memset(&eventWake, 0, sizeof(eventWake));
+                eventWake.type = guserevtWake;
+                SDL_PushEvent(&eventWake);
+            }
+        }
+#endif
 		break;
 		
 	case SDL_MOUSEBUTTONUP:
         pevt->eType = penUpEvent;
 		pevt->x = event.button.x;
 		pevt->y = event.button.y;
+#ifdef _WIN32
+        ClampToGameSurface(pevt);
+#endif
 		break;
 		
 	case SDL_MOUSEMOTION:
         pevt->eType = penMoveEvent;
 		pevt->x = event.motion.x;
 		pevt->y = event.motion.y;
+#ifdef _WIN32
+        ClampToGameSurface(pevt);
+#endif
 		break;
 #endif
 		
 	case SDL_KEYDOWN:
+#ifdef _WIN32
+        // F11 or Alt+Enter: toggle fullscreen
+        if (event.key.keysym.sym == SDLK_F11 ||
+                ((event.key.keysym.sym == SDLK_RETURN ||
+                  event.key.keysym.sym == SDLK_KP_ENTER) &&
+                 (event.key.keysym.mod & KMOD_ALT))) {
+            if (event.key.repeat == 0 && gpdisp != NULL) {
+                gpdisp->ToggleFullscreen();
+            }
+            return false;
+        }
+#endif
         pevt->eType = keyDownEvent;
         switch (event.key.keysym.sym) {
 		case SDLK_UP:

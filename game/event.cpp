@@ -196,6 +196,13 @@ bool EventMgr::GetEvent(Event *pevt, long ctWait, bool fCheckPaints)
 
 				m_fTimingPenHold = false;
 				break;
+
+			case penHoldEvent:
+				// A hold was synthesized by the host (e.g. right mouse
+				// button); don't produce a second one from the timer.
+
+				m_fTimingPenHold = false;
+				break;
 			}
 		} else {
 			// penHoldEvents are only produced when no other events are queued.

@@ -23,12 +23,12 @@ PdbReader *SdlPackFileReader::OpenPdb(const char *pszDir,
 	MemPdbReader *ppdbReader = new MemPdbReader;
 	if (ppdbReader == NULL) {
         Trace("MemPdbReader null");
-		return false;
+		return NULL;
     }
 	if (!ppdbReader->Open(szT)) {
 		delete ppdbReader;
         Trace("MemPdbReader::Open(%s) failed", pszFn);
-		return false;
+		return NULL;
 	}
 
     return ppdbReader;

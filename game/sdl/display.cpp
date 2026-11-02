@@ -87,6 +87,14 @@ bool Display::Init()
     SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeRight LandscapeLeft");
     #endif
 
+    // Desktop Windows: resizable window, the 800x600 game image is scaled to
+    // fit (keeping its aspect ratio). F11 / Alt+Enter toggles fullscreen.
+    #if defined(_WIN32)
+    videoflags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE;
+    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
+    SDL_SetHint(SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0");
+    #endif
+
     // Android wants to process mouse and touch events separately
     #if defined(__ANDROID__)
     SDL_SetHint(SDL_HINT_ANDROID_SEPARATE_MOUSE_AND_TOUCH, "1");
@@ -100,13 +108,39 @@ bool Display::Init()
     m_density = props.density;
     
     // Create window
-    if ((m_window = SDL_CreateWindow("Hostile Takeover", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, m_cx, m_cy, videoflags)) == NULL) {
+    int cxWindow = m_cx;
+    int cyWindow = m_cy;
+#if defined(_WIN32)
+    // Start at the largest whole multiple of 800x600 that comfortably fits
+    // the desktop work area.
+    SDL_Rect rcUsable;
+    if (SDL_GetDisplayUsableBounds(0, &rcUsable) == 0) {
+        int nScale = 1;
+        while (m_cx * (nScale + 1) <= rcUsable.w - 40 &&
+                m_cy * (nScale + 1) <= rcUsable.h - 60) {
+            nScale++;
+        }
+        cxWindow = m_cx * nScale;
+        cyWindow = m_cy * nScale;
+    }
+#endif
+    if ((m_window = SDL_CreateWindow("Hostile Takeover", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, cxWindow, cyWindow, videoflags)) == NULL) {
         LOG() << "Couldn't create window: " << m_cx << "x" << m_cy << " \nError: " << SDL_GetError();
         return false;
     }
 
     // Create renderer
     m_renderer = SDL_CreateRenderer(m_window, 0, SDL_RENDERER_TARGETTEXTURE);
+#if defined(_WIN32)
+    if (m_renderer == NULL) {
+        // Fall back to whatever renderer is available
+        m_renderer = SDL_CreateRenderer(m_window, -1, SDL_RENDERER_TARGETTEXTURE);
+    }
+    // Scale the game image to the window, letterboxing as needed. SDL also
+    // maps mouse coordinates back into 800x600 game space.
+    SDL_RenderSetLogicalSize(m_renderer, m_cx, m_cy);
+    SDL_SetWindowMinimumSize(m_window, m_cx / 2, m_cy / 2);
+#endif
     this->SetShouldRender(true);
 
     // Keep the screen size around
@@ -314,6 +348,19 @@ void Display::RenderGameSurface() {
     SDL_RenderClear(m_renderer);
     SDL_RenderCopy(m_renderer, m_texture, NULL, NULL);
     SDL_RenderPresent(m_renderer);
+}
+
+void Display::ToggleFullscreen()
+{
+    if (m_window == NULL)
+        return;
+    Uint32 ff = SDL_GetWindowFlags(m_window);
+    if (ff & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_FULLSCREEN_DESKTOP)) {
+        SDL_SetWindowFullscreen(m_window, 0);
+    } else {
+        SDL_SetWindowFullscreen(m_window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+    }
+    RenderGameSurface();
 }
 
 void Display::ResetScrollOffset()

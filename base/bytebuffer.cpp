@@ -1,6 +1,8 @@
 #include "bytebuffer.h"
 #include <string.h>
+#ifndef _WIN32
 #include <sys/param.h>
+#endif
 #include <stdlib.h>
 
 #ifndef MIN

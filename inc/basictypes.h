@@ -7,7 +7,8 @@ typedef unsigned int dword;
 typedef unsigned long long ddword;
 typedef unsigned long long dword64;
 typedef long long long64;
-typedef unsigned long pword;
+#include <stdint.h>
+typedef uintptr_t pword;   // pointer-sized integer (unsigned long is 32-bit on Win64)
 #undef NULL
 #define NULL 0
 

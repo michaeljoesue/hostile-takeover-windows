@@ -1,4 +1,7 @@
 #include <sys/types.h>
+#ifdef _WIN32
+#include "base/wincompat.h"
+#else
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <sys/utsname.h>
@@ -6,6 +9,7 @@
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#endif
 #include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
@@ -254,7 +258,12 @@ void SocketAddress::IPToString(dword ip, char *psz, int cb) const {
 
 dword SocketAddress::StringToIP(const char *hostname, bool use_dns) {
     in_addr addr;
+#ifdef _WIN32
+    WinsockInit();
+    if (inet_pton(AF_INET, hostname, &addr) == 1) {
+#else
     if (inet_aton(hostname, &addr) != 0) {
+#endif
         return ntohl(addr.s_addr);
     } else if (use_dns) {
         hostent *phost = gethostbyname(hostname);
@@ -268,6 +277,9 @@ dword SocketAddress::StringToIP(const char *hostname, bool use_dns) {
 
 void SocketAddress::GetHostname(char *psz, int cb) {
     char hostname[256];
+#ifdef _WIN32
+    WinsockInit();
+#endif
     if (gethostname(hostname, sizeof(hostname)) == 0) {
         wi::strncpyz(psz, hostname, cb);
     } else {
@@ -278,6 +290,10 @@ void SocketAddress::GetHostname(char *psz, int cb) {
 }
 
 bool SocketAddress::GetNetworkInfo(int n, char *pszName, int cb, dword *pip) {
+#ifdef _WIN32
+    // Only used for LAN multiplayer; not supported in the Windows port.
+    return false;
+#else
     int fd;
     if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
         return false;
@@ -321,6 +337,7 @@ bool SocketAddress::GetNetworkInfo(int n, char *pszName, int cb, dword *pip) {
     close(fd);
     
     return false;
+#endif
 }
 
 } // namespace base

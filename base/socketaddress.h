@@ -1,7 +1,11 @@
 #ifndef __SOCKETADDRESS_H__
 #define __SOCKETADDRESS_H__
 
+#ifdef _WIN32
+#include "base/wincompat.h"
+#else
 #include <netinet/in.h>
+#endif
 #include "inc/basictypes.h"
 
 #undef SetPort
