@@ -339,9 +339,6 @@ void InputUIForm::InGameMenu()
 
 	ShellForm *pfrm = (ShellForm *)gpmfrmm->LoadForm(gpiniForms, kidfInGameMenu, new ShellForm());
 
-#if defined(IPHONE) || defined(__IPHONEOS__) || defined(__ANDROID__)
-    pfrm->GetControlPtr(kidcExitGame)->Show(false);
-#endif
 
 	gsim.Pause(true);
 	int idc;

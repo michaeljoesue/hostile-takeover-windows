@@ -71,7 +71,7 @@ long gtStressTimeout;
 #endif
 
 #ifndef PIL
-#if (defined(IPHONE) || defined(SDL)) && (!defined(DEV_BUILD) && !defined(BETA_TIMEOUT))
+#if defined(SDL) && (!defined(DEV_BUILD) && !defined(BETA_TIMEOUT))
 char *gszVersion = "1.6";
 #else
 char *gszVersion = "+++VERSION+++";
@@ -109,7 +109,7 @@ static bool FindPlayPackMission(MissionIdentifier *pmiid) {
 
 void GameMain(char *pszCmds)
 {
-#if defined(DEBUG) && !defined(CE) && !defined(PIL) && !defined(IPHONE) && !defined(SDL)
+#if defined(DEBUG) && !defined(CE) && !defined(PIL) && !defined(SDL)
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
 	char *pszLevel = NULL;
@@ -2461,11 +2461,7 @@ bool Game::GetVar(const char *pszName, char *pszBuff, int cbBuff)
 			strncpyz(pszBuff, gfGrayscale ? "1" : "0", cbBuff);
 
         } else if (stricmp(pszName, "$iphone") == 0) {
-#if defined(IPHONE) || defined(__IPHONEOS__)
-			strncpyz(pszBuff, "1", cbBuff);
-#else
 			strncpyz(pszBuff, "0", cbBuff);
-#endif        
 
 		} else if (stricmp(pszName, "$difficulty") == 0) {
 			char *pszT = "0";

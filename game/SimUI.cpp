@@ -60,11 +60,7 @@ SimUIForm::SimUIForm()
 	m_nStateMoveTarget = 0;
 
     m_ppenh = NULL;
-#if defined(IPHONE) || defined(__IPHONEOS__) || defined(__ANDROID__)
-    SetUIType(kuitFinger);
-#else
     SetUIType(kuitStylus);
-#endif
 }
 
 SimUIForm::~SimUIForm()
@@ -1609,26 +1605,6 @@ void MiniMapControl::OnPenEvent(Event *pevt)
 		return;
     }
 
-#if defined(IPHONE) || defined(__IPHONEOS__) || defined(__ANDROID__)
-    // If already waiting for pen down timeout, then just update the x,y
-
-    if (m_wfMm & kfMmPenDownTimeout) {
-        m_evtPenDown.x = pevt->x;
-        m_evtPenDown.y = pevt->y;
-        return;
-    }
-
-    // If pen down event, remember it and don't process it for a little bit.
-    // This gives enough time to forget about the pen down if the second
-    // finger goes down and the control is forced to give up capture.
-
-    if (pevt->eType == penDownEvent) {
-        m_tPenDown = gtimm.GetTickCount();
-        m_evtPenDown = *pevt;
-        m_wfMm |= kfMmPenDownTimeout;
-        return;
-    }
-#endif
 
     OnPenEvent2(pevt);
 }

@@ -648,12 +648,7 @@ const WCoord kwcTile = 0x0100;
 const WCoord kwcTileHalf = kwcTile / 2;
 const WCoord kwcTile16th = kwcTile / 16;
 
-#ifdef IPHONE
-// IPhone titlebar area eats input; this is compensation
-#define kwcScrollLeftExtra WcFromTile16ths(5) 
-#else
 #define kwcScrollLeftExtra 0
-#endif
 
 #define kwcScrollBorderSize WcFromTile16ths(5)
 #define kwcScrollStepSize	kwcTileHalf

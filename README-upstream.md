@@ -1,3 +1,8 @@
+> **Note:** this is the original upstream README, kept for reference. This
+> repository now only builds for Windows: the iOS, Android, macOS, Linux and
+> Native Client builds and the multiplayer server have been removed (branch
+> `feature/crimson-side`). See [`README.md`](README.md).
+
 ## About
 
 *Hostile Takeover* is the open source release of the wildly popular mobile Real Time Strategy game [*Warfare Incorporated*](http://www.warfareincorporated.com/). Warfare Incorporated's developers, grateful for all the contributions of the open source community, are delighted to give something back.

@@ -11,15 +11,6 @@
 #include "game/sdl/sdlpackfile.h"
 #include "game/sdl/sysmessages.h"
 
-// To determine if running on simulator, the sdk sets TARGET_IPHONE_SIMULATOR
-// to 0 or 1.
-#if defined(IPHONE) || defined(__IPHONEOS__)
-#include <TargetConditionals.h>
-#if TARGET_IPHONE_SIMULATOR == 1
-#define SIMULATOR
-#endif
-#endif
-
 namespace wi {
 
 #define MakeDword(a, b, c, d) ((a) | ((b) << 8) | ((c) << 16) | ((d) << 24))

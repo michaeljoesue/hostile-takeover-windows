@@ -437,8 +437,9 @@ at full volume, so they are never missed.
 ## 19. Testing the sound without a sound card
 
 The test machine has no audio device, so the sound was checked by
-measuring, not listening. `tools/audio_tests/run.sh` runs two test programs
-against the Linux build:
+measuring, not listening. Two test programs were run against the Linux
+build (they were in `tools/audio_tests/` and were removed with the Linux
+port, see section 34):
 
 - **Mixer** (`mixer_test.cpp`): the new decoder reproduces the original
   mixer's samples exactly (8,000 of 8,000); a sound panned fully left comes
@@ -815,6 +816,31 @@ byte for byte the same (so the side colours set earlier are untouched):
   reported as out of date, as they already were on this branch; this change
   doesn't alter the save format.
 
+## 34. Windows only
+
+After the online code went, the other platforms were removed too, so that
+the repository only contains what the Windows build uses:
+
+- Deleted: `game/iphone/`, `game/wi.xcodeproj/`, `game/dist.plist`,
+  `game/Makefile.iphone` (iOS); `game/sdl/ios/`, `game/sdl/mac/`,
+  `game/sdl/htsdl.xcodeproj/` (SDL on iOS/macOS); `game/sdl/android/`;
+  `game/sdl/linux/` and `game/makefile.sdl`; `game/sdl/nacl/` and
+  `game/makefile.nacl` (Chrome Native Client); the prebuilt SDL2 and libcurl
+  copies for those platforms (`game/sdl/SDL2/`, `game/sdl/curl/`);
+  `base/epollserver.*` (Linux, only used by the server); `bin/inicrunch_osx`;
+  and `tools/audio_tests/`, which were built against the Linux port.
+- The `IPHONE`, `__IPHONEOS__`, `__ANDROID__`, `__MACOSX__` and `__LINUX__`
+  branches were removed from the shared code (with `unifdef`), keeping what
+  the Windows build compiles.
+- Kept: the shared SDL2 layer in `game/sdl/` and the Windows host in
+  `game/sdl/win/`; `game/win/` (the original Win32/Windows Mobile code; its
+  icon is the Windows build's icon); `bin/inicrunch_linux` and the Linux part
+  of the data makefile, because the Windows build is cross-compiled on
+  Linux or WSL. The art sources (`.psd`) are untouched, and the data build
+  still uses its `IPHONE` setting, which means 32 × 32 pixel tiles.
+- Palm OS code is still in the shared files behind `#ifdef PIL`; it was
+  never compiled for Windows.
+
 ## File map
 
 | File | Purpose |
@@ -845,7 +871,6 @@ byte for byte the same (so the side colours set earlier are untouched):
 | `game/sdl/sdlsounddev.cpp` | Stereo 44.1 kHz mixer, 16 voices, master volume |
 | `game/sounddevice.h` | `PlayAdpcmEx`: per-sound volume and pan |
 | `game/soundmgr.cpp` | `PlaySfx(sfx, wx, wy)` and `CalcSfxPosition` |
-| `tools/audio_tests/` | Mixer and positioning tests |
 | `game/ht.h`, `game/game.cpp` | Map size limit (127 in the engine), coordinate tables |
 | `game/terrainmap.cpp` | Path finding on big maps; "Map too big" check |
 | `game/SimUI.cpp` | Minimap at 1 pixel per tile on big maps |

@@ -84,7 +84,7 @@ void MemMgr::OnRebootFreeStorageDatabase()
 #endif
 }
 
-#if defined(WIN) || defined(IPHONE) || defined(SDL)
+#if defined(WIN) || defined(SDL)
 #define kcbDynMemWindows (3 * 1024 * 1024)
 #endif
 

@@ -55,7 +55,6 @@ endif
 GAME_FILES := $(basename $(notdir $(wildcard $(HTROOT)/game/*.cpp)))
 GAME_FILES := $(filter-out SocTransport miscgraphics hashtablecode filepdbreader DebugHelpers, $(GAME_FILES))
 BASE_FILES := $(basename $(notdir $(wildcard $(HTROOT)/base/*.cpp)))
-BASE_FILES := $(filter-out epollserver stdindispatcher, $(BASE_FILES))
 MPSHARED_FILES := $(basename $(notdir $(wildcard $(HTROOT)/mpshared/*.cpp)))
 INC_FILES := rip
 YAJL_C_FILES := $(basename $(notdir $(wildcard $(HTROOT)/yajl/src/*.c)))

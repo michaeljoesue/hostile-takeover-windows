@@ -24,11 +24,7 @@ static void quit(int rc)
 extern "C"
 #endif
 
-#ifdef __LINUX__
-int main (int argc, char *argv[])
-#else
 int SDL_main(int argc, char *argv[])
-#endif
 {
     // Create the main thread
     base::Thread *main_thread = new base::Thread();

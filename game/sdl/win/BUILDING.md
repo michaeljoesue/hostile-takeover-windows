@@ -50,7 +50,7 @@ Note that this overwrites the checked-in `game/htdata832.pdb`.
   now `uintptr_t`, but the remaining `long` casts make Win64 unsafe.
 * **`-fno-delete-null-pointer-checks`.** Code such as
   `MiniMapControl::RedrawTRect` relies on `if (this == NULL) return;`, which
-  modern GCC removes. Also added to the Linux makefile.
+  modern GCC removes.
 * **Winsock shims** (`base/wincompat.h`, `base/socket*.cpp`,
   `base/selectserver.cpp`). The game's message loop sleeps in `select()`
   and is woken by `base::Eventer`, which used a `pipe()`. Windows `select()`

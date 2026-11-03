@@ -9,8 +9,6 @@ obj/
 gen/
 debug/
 release/
-/game/wi.xcodeproj/project.xcworkspace/
-/game/wi.xcodeproj/xcuserdata/
 /DerivedData/
 
 # Output of the game data build (data/makefile, data/build-data.bat)

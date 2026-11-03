@@ -82,10 +82,6 @@ bool Display::Init()
 	// will crash or stop at a breakpoint. If it does you will be lost in full
 	// screen mode! (ssh from another machine and kill the Xcode process)
     videoflags = SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_SHOWN;
-    #if defined(__IPHONEOS__) || defined(__ANDROID__)
-    videoflags = videoflags | SDL_WINDOW_BORDERLESS;
-    SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeRight LandscapeLeft");
-    #endif
 
     // Desktop Windows: resizable window, the 800x600 game image is scaled to
     // fit (keeping its aspect ratio). F11 / Alt+Enter toggles fullscreen.
@@ -96,9 +92,6 @@ bool Display::Init()
     #endif
 
     // Android wants to process mouse and touch events separately
-    #if defined(__ANDROID__)
-    SDL_SetHint(SDL_HINT_ANDROID_SEPARATE_MOUSE_AND_TOUCH, "1");
-    #endif
 
     // Get surface properties
     SurfaceProperties props;
@@ -207,9 +200,6 @@ bool Display::Init()
     HostOutputDebugString("Display::Init %d", pmode - m_amodeInfo);
     HostOutputDebugString("Display::Init %d modes", m_cmodes);
 
-#if defined(__IPHONEOS__)
-    HostHelpers::DisplayInitComplete();
-#endif
     return true;
 }
 

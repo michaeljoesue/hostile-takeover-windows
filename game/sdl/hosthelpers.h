@@ -4,9 +4,6 @@
 #include <stdarg.h>
 #include "game/ht.h"
 
-#ifdef __ANDROID__
-#include <jni.h>
-#endif
 
 namespace wi {
 
@@ -57,10 +54,6 @@ public:
     static const char *GetSaveGamesDir();
     static const char *GetPrefsFilename();
 
-    #ifdef __ANDROID__
-    static JavaVM *GetJavaVM();
-    static JNIEnv *GetJNIEnv();
-    #endif
 };
 
 } // namespace wi

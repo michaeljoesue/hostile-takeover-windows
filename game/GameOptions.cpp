@@ -137,7 +137,7 @@ private:
 
 bool DoModalGameOptionsForm(Palette *ppal, bool fInGame)
 {
-#if !defined(IPHONE) && !defined(SDL)
+#if !defined(SDL)
 	ShellForm *pfrm = (ShellForm *)gpmfrmm->LoadForm(gpiniForms, kidfGameOptions, new GameOptionsForm());
 	if (pfrm == NULL)
 		return false;
@@ -324,7 +324,7 @@ bool InGameOptionsForm::Init(FormMgr *pfrmm, IniReader *pini, word idf)
 	m_wfHandicap = gwfHandicap;
     m_nScrollSpeed = gnScrollSpeed;
 
-#if defined(IPHONE) || defined(SDL)
+#if defined(SDL)
     GetControlPtr(kidcLassoSelection)->Show(false);
 #endif
 
@@ -1144,7 +1144,7 @@ void GobCountForm::OnPaint(DibBitmap *pbm)
 		acGobs[gt]++;
 #if defined(PIL)
 		acbGob[gt] = MemPtrSize(pgobT);
-#elif defined(IPHONE) || defined(SDL)
+#elif defined(SDL)
 		acbGob[gt] = 0;
 #else
 		acbGob[gt] = _msize(pgobT);

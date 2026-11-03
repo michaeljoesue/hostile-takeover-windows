@@ -296,72 +296,6 @@ void DoAssertRip()
 
 #endif // CE
 
-#ifdef IPHONE
-
-#define RIP_DEFINED
-
-#include <stdarg.h>
-#include "rip.h"
-#include "iphone.h"
-
-namespace wi {
-
-void Break()
-{
-    IPhone::Log("Break:");
-    IPhone::Log("File: %s, Line: %d", gpszRipFile, giRipLine);
-    IPhone::Break();
-}
-
-void DoRip(char *psz, va_list va)
-{
-    IPhone::Log("Assert:");
-    IPhone::Log("File: %s, Line: %d", gpszRipFile, giRipLine);
-    IPhone::Log(psz, va);
-    IPhone::Break();
-}
-
-void DoAssertRip(int fNoAssert, char *psz, ...)
-{
-    if (fNoAssert)
-        return;
-    va_list va;
-    va_start(va, psz);
-	DoRip(psz, va);
-    va_end(va);
-}
-
-void DoAssertRip(int fNoAssert)
-{
-	if (fNoAssert)
-		return;
-	DoRip("", 0);
-}
-
-void DoAssertRip(char *psz, ...)
-{
-    va_list va;
-    va_start(va, psz);
-	DoRip(psz, va);
-    va_end(va);
-}
-
-void DoAssertRip()
-{
-	Break();
-}
-
-void dprintf(const char *psz, ...)
-{
-    va_list va;
-    va_start(va, psz);
-    vprintf(psz, va);
-    va_end(va);
-}
-
-} // namespace wi
-    
-#endif // IPHONE
 
 #ifndef RIP_DEFINED
 
@@ -383,15 +317,11 @@ void DoRip(char *psz, va_list va)
 {
     printf("Assert:\n");
     printf("File: %s, Line: %d\n", gpszRipFile, giRipLine);
-#ifdef __ANDROID__
-    printf("%s", psz);
-#else
     if (va == NULL) {
         printf("%s", psz);
     } else {
         vprintf(psz, va);
     }
-#endif
     Break();
 }
 

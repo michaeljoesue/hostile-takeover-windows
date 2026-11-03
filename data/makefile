@@ -1,10 +1,6 @@
 MONO=mono
 
 UNAME := $(shell uname)
-ifeq ($(UNAME), Darwin)
-INICRUNCH=inicrunch_osx
-CPP=cpp -P -Wno-invalid-pp-token -Wno-trigraphs
-endif
 ifeq ($(UNAME), Linux)
 INICRUNCH=inicrunch_linux
 CPP=cpp -P -Wno-trigraphs
