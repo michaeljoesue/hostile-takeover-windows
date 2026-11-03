@@ -58,6 +58,17 @@ so it stays about the size players are used to. Big maps have been tested in
 single player; multiplayer on them hasn't been tried.
 
 
+THE CRIMSON SIDE
+----------------
+This version has a fifth side, Crimson, as well as sides 1-4. Choose
+"Crimson" in the side list above the unit pictures to place its units and
+buildings, use Settings > Side 5 (Crimson) to set its starting credits,
+view and whether a person or the computer plays it, and tick "Crimson" in
+a trigger's sides or side arguments like any other side.
+
+Saved games from before Crimson was added can't be loaded.
+
+
 CHECKS BEFORE PLAYING
 ---------------------
 Before a level goes into the game, M checks it and lists anything odd in its

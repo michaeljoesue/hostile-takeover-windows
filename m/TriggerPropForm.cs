@@ -584,7 +584,7 @@ namespace m
 			// Have to do this initialization here because the sides checked
 			// list box will get unchecked before display if we don't.
 
-			checkedListBoxSides.DataSource = Enum.GetNames(typeof(Side));
+			checkedListBoxSides.DataSource = Helper.GetDisplayNames(typeof(Side));	// same order as the enum; shows "Crimson" for side 5
 			InitSidesListBox();
 		}
 	}

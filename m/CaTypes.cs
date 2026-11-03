@@ -129,7 +129,9 @@ namespace m {
 	}
 
 	[Flags]
-	public enum CaSide { SideNeutral, Side1, Side2, Side3, Side4, Enemies, Allies, AllSides, CurrentSide };
+	// Side5 (Crimson) was added after the others, so it comes last; the
+	// values are bit numbers in saved levels (knCaSide* in game/res.h)
+	public enum CaSide { SideNeutral, Side1, Side2, Side3, Side4, Enemies, Allies, AllSides, CurrentSide, Side5 };
 
 	[Serializable]
 	public class CaTypeSide : CaType {
@@ -154,7 +156,7 @@ namespace m {
 					if (m_af[i]) {
 						if (str.Length != 0)
 							str += ", ";
-						str += ((CaSide)i).ToString();
+						str += (CaSide)i == CaSide.Side5 ? "Crimson" : ((CaSide)i).ToString();
 					}
 				}
 				return str;
@@ -165,6 +167,7 @@ namespace m {
 			Regex re = new Regex(@"^(?<mask>\d+)(?<end>.*)$");
 			Match m = re.Match(strArgs);
 			uint dwMask = uint.Parse(m.Groups["mask"].Value);
+			GrowFlags();
 			for (int i = 0; i < m_af.Length; i++) {
 				m_af[i] = ((dwMask & (1 << i)) != 0);
 			}
@@ -250,6 +253,29 @@ namespace m {
 			set {
 				m_af[(int)CaSide.Side4] = value;
 				m_fInit = true;
+			}
+		}
+
+		[System.ComponentModel.DisplayName("Crimson (Side5)")]
+		public bool Side5 {
+			get {
+				GrowFlags();
+				return m_af[(int)CaSide.Side5];
+			}
+			set {
+				GrowFlags();
+				m_af[(int)CaSide.Side5] = value;
+				m_fInit = true;
+			}
+		}
+
+		// Levels saved before Side5 existed have one flag fewer
+		void GrowFlags() {
+			int c = Enum.GetNames(typeof(CaSide)).Length;
+			if (m_af.Length < c) {
+				bool[] af = new bool[c];
+				m_af.CopyTo(af, 0);
+				m_af = af;
 			}
 		}
 

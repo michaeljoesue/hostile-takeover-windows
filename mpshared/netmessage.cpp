@@ -280,7 +280,7 @@ void NetMessageByteOrderSwap(NetMessage *pnm, bool fNative)
     case knmidScSyncError:
         {
             SyncErrorNetMessage *psenm = (SyncErrorNetMessage *)pnm;
-            for (int i = 0; i < kcPlayersMax; i++) {
+            for (int i = 0; i < kcPlayersMaxNet; i++) {
                 psenm->aur[i].cUpdatesBlock =
                         SwapDword(psenm->aur[i].cUpdatesBlock);
                 psenm->aur[i].hash = SwapDword(psenm->aur[i].hash);

@@ -750,6 +750,15 @@ void SetHslAdjustedPalette(Palette *ppal, short nHueOffset, short nSatMultiplier
 	else if (nLumOffset > 100)
 		nLumOffset = 100;
 
+	// With no adjustment, use the palette as it is. The HSL round trip below
+	// is off by one level for some colours, so this keeps colours exact
+	// (e.g. the Crimson side's #DC143C).
+
+	if (nHueOffset == 0 && nSatMultiplier == 0 && nLumOffset == 0) {
+		gpdisp->SetPalette(ppal);
+		return;
+	}
+
 	short nHueAdd = (nHueOffset * (3 * SCALEFACTOR)) / 100;
 	short nLumAdd = (short)((nLumOffset * 10000L) / 100);
 
@@ -1367,6 +1376,13 @@ Color gaclr4bpp[] = {
 	0x000f, // neutral side 2
 	0x000f, // neutral side 3
 	0x000f, // neutral side 4
+	0x000f, // Galaxite fullness indicator
+	0x0007, // side 5 color (Crimson)
+	0x0007, // crimson side 0
+	0x0008, // crimson side 1
+	0x000a, // crimson side 2
+	0x000c, // crimson side 3
+	0x000d, // crimson side 4
 };
 
 Color gaclr8bpp[] = {
@@ -1419,9 +1435,15 @@ Color gaclr8bpp[] = {
 	40,		// neutral side 3
 	45,		// neutral side 4
 	52,		// Galaxite fullness indicator/neon pink
+	67,		// side 5 color (Crimson)
+	67,		// crimson side 0 (palette entries 67-71: see data/art824/common_8bpp.pal)
+	68,		// crimson side 1
+	69,		// crimson side 2
+	70,		// crimson side 3
+	71,		// crimson side 4
 };
 
-int gaiclrSide[kcSides] = { kiclrSideNeutral, kiclrSide1, kiclrSide2, kiclrSide3, kiclrSide4 };
+int gaiclrSide[kcSides] = { kiclrSideNeutral, kiclrSide1, kiclrSide2, kiclrSide3, kiclrSide4, kiclrSide5 };
 
 void DrawBorder(DibBitmap *pbm, Rect *prc, int nThickness, Color clr, UpdateMap *pupd)
 {

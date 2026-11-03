@@ -8,7 +8,8 @@
 #define kside2 2
 #define kside3 3
 #define kside4 4
-#define kcSides 5
+#define kside5 5	// Crimson. Added for the Windows port; see PORTING_NOTES.md
+#define kcSides 6
 
 #define knIntelligenceHuman 0
 #define knIntelligenceComputer 1

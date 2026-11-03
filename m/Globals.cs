@@ -247,12 +247,13 @@ namespace m {
 												  Color.FromArgb(0, 63, 64)		// (h: 128, s: 255, l: 32)
 											  },
 								  new Color[] {
-												  // green (h: 104)
-												  Color.FromArgb(0, 232, 104),
-												  Color.FromArgb(0, 196, 88),
-												  Color.FromArgb(0, 120, 54),
-												  Color.FromArgb(0, 92, 41),
-												  Color.FromArgb(0, 64, 29)
+												  // crimson (side 5), #DC143C; same
+												  // ramp as the game's palette entries 67-71
+												  Color.FromArgb(220, 20, 60),
+												  Color.FromArgb(186, 17, 51),
+												  Color.FromArgb(114, 10, 31),
+												  Color.FromArgb(87, 8, 24),
+												  Color.FromArgb(61, 6, 17)
 											  },
 			};
 

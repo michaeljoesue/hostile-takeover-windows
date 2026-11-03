@@ -613,6 +613,82 @@ as ordinary colours. That was harmless while they matched side 1's ramp
 exactly, but after recolouring they took palette entries of their own, so
 `paltool` now skips them like the transparent and shadow key colours.
 
+## 27. A sixth side: Crimson (branch `feature/crimson-side`)
+
+The game had the neutral side plus sides 1–4. This branch adds side 5,
+**Crimson** (#DC143C), which levels can use like any other side (computer
+or human).
+
+**Game.**
+- `kside5` / `kcSides = 6` (`mpshared/side.h`), `ksidmSide5`, and one
+  player per side (`kcPlayersMax = kcSides`). The multiplayer
+  sync-error message keeps its 5 slots (`kcPlayersMaxNet`), because that
+  protocol is fixed by the old servers.
+- `Level::m_asidi` (the per-side starting info) was a hard-coded `[5]`; it is
+  `[kcSides]` now. This one overwrote the trigger manager next to it in
+  memory and crashed the first test, so it's worth knowing if more sides
+  are ever added.
+- Colours: `kiclrSide5` and `kiclr0CrimsonSide`…`kiclr4CrimsonSide` in
+  `game/res.h`, pointing at palette entries 67–71 (`gaclr8bpp`), a Crimson
+  row in `TBitmap::InitClass`'s side table, and `gaiclrSide[5]` for the
+  minimap. The white "flash" side-code table that used to be number 5 is now
+  `kiColoredSideWhite` (after the last side).
+- Triggers: in a trigger's side argument bits 0–4 mean neutral and sides
+  1–4, but bits 5–8 already meant Enemies, Allies, All sides and Current
+  side. So Crimson is bit 9 (`knCaSideSide5`), and
+  `GetSideMaskFromCaSideMask` maps it to the side-5 mask explicitly.
+- Saved games are version 10 (`knVerGameState`). Saves made before this
+  branch can't be loaded by it, because the trigger
+  and player state now has six sides.
+- Levels without a `[side5]` section get the usual default for a missing
+  side (a computer player with nothing on the map), so all existing missions
+  load and play as before.
+
+**Palette.** The palettes were full, so Crimson needed real entries: the
+crimson ramp (220,20,60 / 186,17,51 / 114,10,31 / 87,8,24 / 61,6,17, the same
+light-to-dark steps as the other sides; the build rounds palettes to 6 bits,
+giving 220,20,60 / 184,16,48 / 112,8,28 / 84,8,24 / 60,4,16 in the game) went into
+`data/art824/common_8bpp.pal` at entries 67–71, which were padding, and the
+game data was rebuilt with the Linux recipe in `BUILDING.md` and checked in
+as `game/htdata832.pdb`. In every palette entries 0–66 are unchanged and
+67–71 are Crimson; the art colours after them are re-chosen by the build
+(four fewer of them fit), so terrain shades differ very slightly from the
+shipped data: in C4's opening view the average change was about 3 levels
+out of 255 per colour channel, which is not visible.
+
+**Exact colours on screen.** The game passes every palette through
+`SetHslAdjustedPalette` (the Options brightness/colour sliders), and its
+RGB → HSL → RGB round trip was off by one level for some colours even with
+the sliders at zero, so Crimson showed as 219,20,60. With all adjustments at
+zero the palette is now used as it is, so the main colour is exactly
+220,20,60 (#DC143C) on screen; moving the sliders works as before.
+
+**Editor.** `Side.side5` with display name "Crimson" (the unit panel's side
+list, unit properties, trigger sides), `CaSide.Side5` (appended last, saved
+as bit 9) shown as "Crimson (Side5)" in trigger arguments,
+**Settings → Side 5 (Crimson)** for its starting credits, view and
+intelligence, and crimson unit pictures. Levels saved before side 5 existed
+have one trigger list and one side flag fewer; both grow when used.
+The embedded `res.h` used for mission packs defines `kside5` and
+`knCaSideSide5` too.
+
+**Tested** (`game/sdl/win`, under Wine) with two levels made from C4 by the
+editor's own code and played through Play Level in Game:
+- C4 with the ACME side (side 2) moved to Crimson: its 37 units, 7 unit
+  groups, its starting info, the "Crimson and side 1 are allies" trigger
+  and the "destroy the Crimson base" victory condition (side bit 9). The
+  debug build ran it with the computer players active for several minutes
+  without an assert.
+- C4 with the player's own side moved to Crimson: buildings, units,
+  minimap dots and the build menu's pictures are crimson; saving and
+  loading worked.
+- Original C4 and M4 still load and play with the rebuilt data; in M4
+  side 1's units are their original blue (0,116,232), pixel for pixel as
+  many as before.
+
+Not tested: multiplayer with a fifth player (the lobby and servers only
+know four).
+
 ## File map
 
 | File | Purpose |
@@ -650,3 +726,5 @@ exactly, but after recolouring they took palette entries of their own, so
 | `m/LevelDoc.cs` | Map size up to 120 × 120; canvas grows with it |
 | `tools/set_side_color.py` | Sets a side's colour in the game data and source palettes |
 | `paltool/PalTool.cs` | Skips the side key colours when building palettes |
+| `mpshared/side.h`, `mpshared/mpht.h` | Side 5 (Crimson): side count, masks, players |
+| `data/art824/common_8bpp.pal` | Crimson ramp at palette entries 67–71 |

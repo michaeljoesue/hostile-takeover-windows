@@ -1119,7 +1119,10 @@ public:
 #define kfTbShared 2
 
 #define kcCopyBy4Procs 32
-#define kcColoredSides 6
+// One side-code table per side, plus one that maps every code to white
+// (used to flash a Replicator)
+#define kcColoredSides (kcSides + 1)
+#define kiColoredSideWhite kcSides
 class TBitmap : public HtBitmap
 {
 public:
@@ -5449,7 +5452,7 @@ private:
 	FogMap *m_pfogm;
 	TerrainMap *m_ptrmap;
 	bool m_fInitialized;
-	SideInfo m_asidi[5];
+	SideInfo m_asidi[kcSides];
 	TriggerMgr m_tgrm;
 	UnitGroupMgr m_ugm;
 

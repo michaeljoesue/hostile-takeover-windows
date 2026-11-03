@@ -142,7 +142,8 @@
 #define kside2 2
 #define kside3 3
 #define kside4 4
-#define kcSides 5
+#define kside5 5	// Crimson. Added for the Windows port; see PORTING_NOTES.md
+#define kcSides 6
 
 #define knIntelligenceHuman 0
 #define knIntelligenceComputer 1
@@ -619,6 +620,14 @@
 #define kiclr4NeutralSide 47
 #define kiclrNeutralSideLast 47
 #define kiclrFullnessIndicator 48
+#define kiclrSide5 49
+#define kiclrCrimsonSideFirst 50
+#define kiclr0CrimsonSide 50
+#define kiclr1CrimsonSide 51
+#define kiclr2CrimsonSide 52
+#define kiclr3CrimsonSide 53
+#define kiclr4CrimsonSide 54
+#define kiclrCrimsonSideLast 54
 
 // ARM code resource ids
 
@@ -657,6 +666,7 @@
 #define knCaSideAllies 6
 #define knCaSideAllSides 7
 #define knCaSideCurrentSide 8
+#define knCaSideSide5 9
 
 #define knCounterTypeNone 0
 #define knCounterTypeTotal 1

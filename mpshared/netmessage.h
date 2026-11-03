@@ -473,11 +473,11 @@ class SyncErrorNetMessage : public NetMessage {
 public:
     SyncErrorNetMessage();
     UpdateResult urLastStraw;
-    UpdateResult aur[kcPlayersMax];
+    UpdateResult aur[kcPlayersMaxNet];
 
 #ifdef LOGGING
 	void ToString(char *psz, int cb) {
-        CompileAssert(kcPlayersMax == 5);
+        CompileAssert(kcPlayersMaxNet == 5);
         const char *pszT = base::Format::ToString("ScSyncErrorNetMessage "
                 "pid 0: cUpdatesBlock=%d, hash=%08x "
                 "pid 1: cUpdatesBlock=%d, hash=%08x "

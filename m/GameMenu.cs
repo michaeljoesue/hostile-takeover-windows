@@ -101,6 +101,14 @@ public class GameMenu {
             }
             mniTop.MenuItems.Add(iInsert, mniMapSize);
             fAdded = true;
+
+            // Settings > Side 5 (Crimson), after Side 4
+            for (int n = 0; n < mniTop.MenuItems.Count; n++) {
+                if (mniTop.MenuItems[n].Text.Replace("&", "") == "Side 4") {
+                    mniTop.MenuItems.Add(n + 1, new MenuItem("Side &5 (Crimson)", new EventHandler(OnSide5)));
+                    break;
+                }
+            }
             break;
         }
         if (!fAdded)
@@ -681,6 +689,12 @@ public class GameMenu {
             return false;
         }
         return true;
+    }
+
+    void OnSide5(object sender, EventArgs e) {
+        LevelDoc lvld = (LevelDoc)DocManager.GetActiveDocument(typeof(LevelDoc));
+        if (lvld != null)
+            Globals.PropertyGrid.SelectedObject = lvld.GetSideInfo(Side.side5);
     }
 
     void OnMapSize(object sender, EventArgs e) {

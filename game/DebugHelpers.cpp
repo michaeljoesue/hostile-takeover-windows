@@ -1823,6 +1823,8 @@ char *PszFromCaSideMask(word wfCaSideMask)
 		strcat(psz, "side 3,");
 	if (wfCaSideMask & (1 << knCaSideSide4))
 		strcat(psz, "side 4,");
+	if (wfCaSideMask & (1 << knCaSideSide5))
+		strcat(psz, "Crimson,");
 
 	// Trim trialing ','
 

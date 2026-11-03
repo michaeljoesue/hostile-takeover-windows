@@ -2279,7 +2279,7 @@ Form *Game::GetMiniMapForm()
     return m_pfrmMiniMap;
 }
 
-#define knVerGameState 9
+#define knVerGameState 10	// 10: side 5 (Crimson)
 int Game::PlaySavedGame(Stream *pstm)
 {
 	// Overall, look at build version first

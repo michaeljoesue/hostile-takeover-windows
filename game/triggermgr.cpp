@@ -598,7 +598,15 @@ SideMask GetSideMaskFromCaSideMask(Side sideCur, word wfCaSideMask)
 
 	// TODO: this approach is expensive at run-time
 
-	SideMask sidm = wfCaSideMask & ksidmAll;
+	// Bits 0-4 of a CaSide mask are the neutral side and sides 1-4, the same
+	// as a SideMask. Side 5 came later, so its CaSide bit (knCaSideSide5) is
+	// after the Enemies/Allies/AllSides/CurrentSide bits, and SideMask bit 5
+	// (ksidmSide5) must not be read straight from the CaSide mask, where it
+	// means "enemies".
+
+	SideMask sidm = wfCaSideMask & (ksidmNeutral | ksidmSide1 | ksidmSide2 | ksidmSide3 | ksidmSide4);
+	if (wfCaSideMask & (1 << knCaSideSide5))
+		sidm |= ksidmSide5;
 	if (wfCaSideMask & (1 << knCaSideAllSides)) {
 		sidm |= ksidmAll;
 	} else {

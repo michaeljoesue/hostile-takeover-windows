@@ -11,7 +11,9 @@ namespace m
 		[DisplayName("side 1")] side1, 
 		[DisplayName("side 2")] side2,
 		[DisplayName("side 3")] side3, 
-		[DisplayName("side 4")] side4 
+		[DisplayName("side 4")] side4,
+		// Added for the Windows port. Levels name it "side5" / kside5.
+		[DisplayName("Crimson")] side5
 	};
 
 	[AttributeUsage(AttributeTargets.All, Inherited = true, AllowMultiple = false)]
@@ -66,6 +68,20 @@ namespace m
 				m_aalsSideTriggers[n] = new ArrayList();
 		}
 
+		// Levels saved before side 5 existed have one list fewer
+		ArrayList[] SideTriggers {
+			get {
+				int c = Enum.GetValues(typeof(Side)).Length;
+				if (m_aalsSideTriggers.Length < c) {
+					ArrayList[] aals = new ArrayList[c];
+					for (int n = 0; n < c; n++)
+						aals[n] = n < m_aalsSideTriggers.Length ? m_aalsSideTriggers[n] : new ArrayList();
+					m_aalsSideTriggers = aals;
+				}
+				return m_aalsSideTriggers;
+			}
+		}
+
 		public ArrayList Triggers {
 			get {
 				return m_alsTriggers;
@@ -85,7 +101,7 @@ namespace m
 		}
 
 		public Trigger[] GetTriggerList(Side side) {
-			ArrayList als = (ArrayList)m_aalsSideTriggers[(int)side];
+			ArrayList als = (ArrayList)SideTriggers[(int)side];
 			return (Trigger[])als.ToArray(typeof(Trigger));
 		}
 
@@ -93,7 +109,7 @@ namespace m
 			m_alsTriggers.Add(tgr);
 			foreach(Side side in Enum.GetValues(typeof(Side))) {
 				if ((tgr.Sides & SideToMask(side)) != 0) {
-					ArrayList als = (ArrayList)m_aalsSideTriggers[(int)side];
+					ArrayList als = (ArrayList)SideTriggers[(int)side];
 					als.Add(tgr);
 				}
 			}
@@ -104,7 +120,7 @@ namespace m
 			m_alsTriggers.Remove(tgr);
 			foreach (Side side in Enum.GetValues(typeof(Side))) {
 				if ((tgr.Sides & SideToMask(side)) != 0) {
-					ArrayList als = (ArrayList)m_aalsSideTriggers[(int)side];
+					ArrayList als = (ArrayList)SideTriggers[(int)side];
 					als.Remove(tgr);
 				}
 			}
@@ -116,7 +132,7 @@ namespace m
 			if (n >= 0)
 				m_alsTriggers[n] = tgr;
 			foreach(Side side in Enum.GetValues(typeof(Side))) {
-				ArrayList als = (ArrayList)m_aalsSideTriggers[(int)side];
+				ArrayList als = (ArrayList)SideTriggers[(int)side];
 				if ((SideToMask(side) & tgr.Sides) != 0) {
 					n = als.IndexOf(tgrModify);
 					if (n >= 0) {
@@ -132,7 +148,7 @@ namespace m
 		}
 
 		public int MoveUpTrigger(Side side, Trigger tgr) {
-			ArrayList als = (ArrayList)m_aalsSideTriggers[(int)side];
+			ArrayList als = (ArrayList)SideTriggers[(int)side];
 			int n = als.IndexOf(tgr);
 			if (n > 0) {
 				als.Remove(tgr);
@@ -144,7 +160,7 @@ namespace m
 		}
 
 		public int MoveDownTrigger(Side side, Trigger tgr) {
-			ArrayList als = (ArrayList)m_aalsSideTriggers[(int)side];
+			ArrayList als = (ArrayList)SideTriggers[(int)side];
 			int n = als.IndexOf(tgr);
 			if (n != -1 && n < als.Count - 1) {
 				als.Remove(tgr);
@@ -223,8 +239,8 @@ namespace m
 				// Calc per side indexes
 
 				string strT = "";
-				for (int n = 0; n < m_aalsSideTriggers.Length; n++) {
-					ArrayList als = (ArrayList)m_aalsSideTriggers[n];
+				for (int n = 0; n < SideTriggers.Length; n++) {
+					ArrayList als = (ArrayList)SideTriggers[n];
 					int j = als.IndexOf(tgr);
 					if (j != -1) {
 						if (strT != "")
@@ -282,7 +298,7 @@ namespace m
 
 			// Add the triggers for each side in proper order
 
-			for (int side = 0; side < m_aalsSideTriggers.Length; side++) {
+			for (int side = 0; side < SideTriggers.Length; side++) {
 				int index = 0;
 				while (true) {
 					bool fFound = false;
@@ -296,7 +312,7 @@ namespace m
 							continue;
 						}
 						fFound = true;
-						m_aalsSideTriggers[side].Add(map[key]);
+						SideTriggers[side].Add(map[key]);
 					}
 					if (!fFound) {
 						break;

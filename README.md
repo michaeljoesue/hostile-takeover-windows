@@ -84,6 +84,11 @@ playable area. The minimap switches to one pixel per tile on maps bigger
 than 64 tiles so it stays the familiar size. Big maps have been tested in
 single player; multiplayer on them hasn't been tried.
 
+**Crimson side** (branch `feature/crimson-side`). Besides sides 1–4
+there is a fifth side, Crimson (#DC143C). Pick "Crimson" in the editor's
+unit panel to place its units, set it up under **Settings → Side 5
+(Crimson)**, and choose it in triggers like any other side.
+
 You can also drag a `.ld` level file onto `M.exe` to open it. Levels you only
 try out with Play Level in Game don't appear in the Add-On list; only
 installed packs do.

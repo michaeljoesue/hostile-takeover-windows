@@ -29,7 +29,10 @@ typedef signed short TCoord;
 typedef signed short WCoord;	
 typedef word Pid; // pid
 
-const int kcPlayersMax = 4 + 1;	// + 1 computer controlled neutral player
+const int kcPlayersMax = kcSides;	// one per side, including the computer controlled neutral player
+
+// Multiplayer messages carry 4 + 1 players; the protocol predates side 5
+const int kcPlayersMaxNet = 4 + 1;
 
 const Pid kpidNeutral = 0xffff;
 
@@ -61,7 +64,8 @@ const SideMask ksidmSide1 = 1 << kside1;
 const SideMask ksidmSide2 = 1 << kside2;
 const SideMask ksidmSide3 = 1 << kside3;
 const SideMask ksidmSide4 = 1 << kside4;
-const SideMask ksidmAll = ksidmNeutral | ksidmSide1 | ksidmSide2 | ksidmSide3 | ksidmSide4;
+const SideMask ksidmSide5 = 1 << kside5;
+const SideMask ksidmAll = ksidmNeutral | ksidmSide1 | ksidmSide2 | ksidmSide3 | ksidmSide4 | ksidmSide5;
 
 #define GetSideMask(side) (1 << side)
 
