@@ -107,6 +107,9 @@ struct NetAddress // nad
 #define knVersionSimulation 2
 
 #define PACKID_MAIN 0xffffffff
+// Pack the map editor installs for "Play Level in Game" (see m/GameMenu.cs).
+// It's started with -pack and never listed with the add-on missions.
+#define PACKID_EDITORTEST 0x7e570001
 
 struct PackId {
     dword id;

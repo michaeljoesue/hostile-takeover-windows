@@ -240,6 +240,9 @@ A new **Game** menu, added from one line in `Form1.cs`:
   `-pack 7e570001`.
 - **Install Mission Pack in Game** asks for a title and an author, then
   exports all open levels and installs them as a pack.
+- **Remove Mission Pack from Game** lists installed packs by title and
+  deletes the one picked. The game's own remove button only exists on the
+  online download screen, which needs Spiffcode's server.
 - **Open Built-in Mission**, **Rebuild Built-in Missions** and
   **Restore Original Missions** work on the Author Kit (section 14).
 - Levels given on the command line, or dropped onto `M.exe`, are opened at
@@ -260,6 +263,10 @@ author (it printed "by (null)").
 On the game side, `game/sdl/main.cpp` now passes the command line through
 (the SDL port dropped it), and `GameMain` gained `-pack <id>`, which starts
 the first mission of that pack directly.
+
+The "Editor Test" pack (`PACKID_EDITORTEST` in `mpshared/mpht.h`) is
+skipped when the game lists add-on missions, so trying a level with F5
+doesn't add it to the Add-On list. The editor deletes it when it closes.
 
 ### Validation
 
@@ -357,6 +364,9 @@ All under Wine, with the packaged files only:
 - F5 on challenge C1 and C4 started the game straight into those missions.
 - Install Mission Pack in Game with C5: the pack appeared in the Add-On list
   as "C5: Get Ready by Michael" and played.
+- After F5, the Add-On list stayed empty although the test pack was on disk.
+  Remove Mission Pack from Game deleted the C5 pack's files, and closing
+  the editor deleted the test pack.
 - Story mission M1 was renamed, then rebuilt from the editor. The game's
   mission list showed the new name, and campaign progress was kept. Restore
   Original Missions put back data identical to the shipped file.
@@ -388,6 +398,7 @@ Windows 11 PC is still to come.
 | `game/form.cpp`, `game/Builder.cpp` | Right click cancels queued units in build menus |
 | `game/game.cpp`, `game/sdl/main.cpp` | Command line passed through; `-pack <id>` |
 | `game/selectmission.cpp`, `game/creategameform.cpp` | Packs without an author show just their title |
+| `game/missionlist.cpp`, `game/httpindexloader.cpp` | The editor's test pack isn't listed with add-on missions |
 | `m/GameMenu.cs` | The editor's Game menu |
 | `tools/build_dotnet_tools.py` | Builds the editor and data tools for .NET 4 |
 | `ppini/` | C preprocessor subset for the data build |

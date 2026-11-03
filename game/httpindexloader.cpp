@@ -37,6 +37,11 @@ void HttpIndexLoader::MergeInstalled(PackManager *ppackm) {
     Enum enm;
     PackId packid;
     while (ppackm->EnumPacks(&enm, &packid)) {
+        // The map editor's test pack isn't a real mission pack
+        if (packid.id == PACKID_EDITORTEST) {
+            continue;
+        }
+
         // If in the index, move on.
         std::map<dword,IndexEntry *>::const_iterator it = map.find(packid.id);
         if (it != map.end()) {

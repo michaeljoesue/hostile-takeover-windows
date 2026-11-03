@@ -8,6 +8,8 @@
 //   Install Mission Pack in Game   Exports all open levels as a named mission
 //                                  pack and installs it, so it shows up in the
 //                                  game's Add-On mission list.
+//   Remove Mission Pack from Game  Lists the installed packs and removes the
+//                                  one picked.
 //   Open Built-in Mission...       Opens one of the game's own story (S_*),
 //                                  challenge (C_*) or multiplayer (M_*) levels
 //                                  from the Author Kit.
@@ -66,9 +68,10 @@ public class GameMenu {
         MenuItem mniOpenBuiltIn = new MenuItem("&Open Built-in Mission...", new EventHandler(OnOpenBuiltIn));
         MenuItem mniRebuild = new MenuItem("&Rebuild Built-in Missions", new EventHandler(OnRebuild));
         MenuItem mniRestore = new MenuItem("Res&tore Original Missions", new EventHandler(OnRestore));
+        MenuItem mniRemove = new MenuItem("Re&move Mission Pack from Game...", new EventHandler(OnRemovePack));
         MenuItem mniLocation = new MenuItem("Game &Location...", new EventHandler(OnLocation));
         mniGame.MenuItems.AddRange(new MenuItem[] {
-            mniPlay, mniInstall, new MenuItem("-"),
+            mniPlay, mniInstall, mniRemove, new MenuItem("-"),
             mniOpenBuiltIn, mniRebuild, mniRestore, new MenuItem("-"),
             mniLocation });
 
@@ -94,6 +97,31 @@ public class GameMenu {
         // Levels named on the command line (or dropped onto M.exe) are
         // opened once the main window is up.
         m_frmMain.Load += new EventHandler(OnMainLoad);
+
+        // The "Editor Test" pack is only for Play Level in Game; tidy it away
+        // when the editor closes.
+        m_frmMain.Closed += new EventHandler(OnMainClosed);
+    }
+
+    void OnMainClosed(object sender, EventArgs e) {
+        if (GameExe == null || IsGameRunning())
+            return;
+        try {
+            DeletePack(kidTestPack.ToString("x8") + "-");
+        } catch {
+        }
+    }
+
+    // Deletes the pack and info files whose names start with strPrefix
+    // ("<id>-" for every version of a pack, or a full file name).
+    void DeletePack(string strPrefix) {
+        foreach (string strDir in new string[] { "MissionPacks", "MissionPackInfos" }) {
+            string strPath = Path.Combine(GameUserDir, strDir);
+            if (!Directory.Exists(strPath))
+                continue;
+            foreach (string strFile in Directory.GetFiles(strPath, strPrefix + "*"))
+                File.Delete(strFile);
+        }
     }
 
     void OnMainLoad(object sender, EventArgs e) {
@@ -524,6 +552,117 @@ public class GameMenu {
         MessageBox.Show(m_frmMain, "The original built-in missions are back.", "Restore Original Missions");
     }
 
+    // An installed pack, as listed in the Remove dialog.
+    internal class InstalledPack {
+        public string FileName;
+        public string Title;
+        public string Author;
+        public override string ToString() {
+            if (Author != null && Author.Length != 0)
+                return Title + " by " + Author;
+            return Title;
+        }
+    }
+
+    ArrayList GetInstalledPacks() {
+        ArrayList als = new ArrayList();
+        string strPacks = Path.Combine(GameUserDir, "MissionPacks");
+        if (!Directory.Exists(strPacks))
+            return als;
+        string strTest = kidTestPack.ToString("x8") + "-";
+        foreach (string strFile in Directory.GetFiles(strPacks)) {
+            string strName = Path.GetFileName(strFile);
+            // Pack files are named <8 hex digit id>-<32 hex digit md5>
+            if (strName.Length != 8 + 1 + 32 || strName[8] != '-')
+                continue;
+            if (strName.StartsWith(strTest))
+                continue;
+            InstalledPack pack = new InstalledPack();
+            pack.FileName = strName;
+            pack.Title = "(untitled pack " + strName.Substring(0, 8) + ")";
+            string strInfo = Path.Combine(Path.Combine(GameUserDir, "MissionPackInfos"), strName);
+            try {
+                if (File.Exists(strInfo)) {
+                    string strJson = File.ReadAllText(strInfo, Encoding.UTF8);
+                    string strT = JsonGetString(strJson, "t");
+                    if (strT != null && strT.Trim().Length != 0)
+                        pack.Title = strT;
+                    pack.Author = JsonGetString(strJson, "a");
+                }
+            } catch {
+            }
+            als.Add(pack);
+        }
+        return als;
+    }
+
+    // Reads a top level string value from the small JSON files the game uses.
+    static string JsonGetString(string strJson, string strKey) {
+        string strPattern = "\"" + strKey + "\"";
+        int i = strJson.IndexOf(strPattern);
+        if (i < 0)
+            return null;
+        i = strJson.IndexOf(':', i + strPattern.Length);
+        if (i < 0)
+            return null;
+        i = strJson.IndexOf('"', i + 1);
+        if (i < 0)
+            return null;
+        StringBuilder sb = new StringBuilder();
+        for (i++; i < strJson.Length; i++) {
+            char ch = strJson[i];
+            if (ch == '"')
+                return sb.ToString();
+            if (ch != '\\' || i + 1 >= strJson.Length) {
+                sb.Append(ch);
+                continue;
+            }
+            char chEsc = strJson[++i];
+            switch (chEsc) {
+            case 'n': sb.Append('\n'); break;
+            case 't': sb.Append('\t'); break;
+            case 'r': sb.Append('\r'); break;
+            case 'u':
+                if (i + 4 < strJson.Length) {
+                    sb.Append((char)Convert.ToInt32(strJson.Substring(i + 1, 4), 16));
+                    i += 4;
+                }
+                break;
+            default: sb.Append(chEsc); break;
+            }
+        }
+        return null;
+    }
+
+    void OnRemovePack(object sender, EventArgs e) {
+        if (!EnsureGame())
+            return;
+        RemovePackForm frm = new RemovePackForm(this);
+        frm.ShowDialog(m_frmMain);
+    }
+
+    // Used by RemovePackForm
+    internal ArrayList InstalledPacks() {
+        return GetInstalledPacks();
+    }
+
+    internal bool RemovePack(Form frmOwner, string strFileName) {
+        while (IsGameRunning()) {
+            DialogResult dr = MessageBox.Show(frmOwner,
+                    "Hostile Takeover is running. Please close it so the pack can be removed, then click Retry.",
+                    "Hostile Takeover is running", MessageBoxButtons.RetryCancel, MessageBoxIcon.Information);
+            if (dr != DialogResult.Retry)
+                return false;
+        }
+        try {
+            DeletePack(strFileName);
+        } catch (Exception ex) {
+            MessageBox.Show(frmOwner, "Couldn't remove the mission pack:\n\n" + ex.Message, "Remove Mission Pack");
+            return false;
+        }
+        return true;
+    }
+
     void OnLocation(object sender, EventArgs e) {
         ChooseGame();
     }
@@ -537,6 +676,91 @@ public class GameMenu {
         } catch (Exception ex) {
             MessageBox.Show(m_frmMain, "Couldn't start the game:\n\n" + ex.Message, "Hostile Takeover");
         }
+    }
+}
+
+// Lists the installed mission packs and removes the selected one.
+class RemovePackForm : Form {
+    GameMenu m_gm;
+    ListBox m_lst;
+    Button m_btnRemove;
+    Label m_lbl;
+
+    public RemovePackForm(GameMenu gm) {
+        m_gm = gm;
+        Text = "Remove Mission Pack from Game";
+        Size = new Size(480, 360);
+        StartPosition = FormStartPosition.CenterParent;
+        MinimizeBox = false;
+        MaximizeBox = false;
+        ShowInTaskbar = false;
+
+        m_lbl = new Label();
+        m_lbl.Text = "Mission packs installed in the game (shown under Play > Add-On):";
+        m_lbl.Dock = DockStyle.Top;
+        m_lbl.Height = 28;
+        m_lbl.TextAlign = ContentAlignment.MiddleLeft;
+        m_lbl.Padding = new Padding(6, 0, 0, 0);
+
+        m_lst = new ListBox();
+        m_lst.Dock = DockStyle.Fill;
+        m_lst.IntegralHeight = false;
+        m_lst.SelectedIndexChanged += new EventHandler(OnSelectionChanged);
+
+        Panel pnl = new Panel();
+        pnl.Dock = DockStyle.Bottom;
+        pnl.Height = 40;
+
+        m_btnRemove = new Button();
+        m_btnRemove.Text = "&Remove";
+        m_btnRemove.Size = new Size(90, 26);
+        m_btnRemove.Location = new Point(270, 7);
+        m_btnRemove.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+        m_btnRemove.Click += new EventHandler(OnRemove);
+
+        Button btnClose = new Button();
+        btnClose.Text = "Close";
+        btnClose.Size = new Size(90, 26);
+        btnClose.Location = new Point(368, 7);
+        btnClose.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+        btnClose.DialogResult = DialogResult.Cancel;
+        CancelButton = btnClose;
+
+        pnl.Controls.Add(m_btnRemove);
+        pnl.Controls.Add(btnClose);
+        Controls.Add(m_lst);
+        Controls.Add(pnl);
+        Controls.Add(m_lbl);
+
+        Fill();
+    }
+
+    void Fill() {
+        m_lst.Items.Clear();
+        foreach (object ob in m_gm.InstalledPacks())
+            m_lst.Items.Add(ob);
+        if (m_lst.Items.Count == 0)
+            m_lbl.Text = "No mission packs are installed in the game.";
+        else
+            m_lst.SelectedIndex = 0;
+        OnSelectionChanged(null, null);
+    }
+
+    void OnSelectionChanged(object sender, EventArgs e) {
+        m_btnRemove.Enabled = m_lst.SelectedItem != null;
+    }
+
+    void OnRemove(object sender, EventArgs e) {
+        object ob = m_lst.SelectedItem;
+        if (ob == null)
+            return;
+        DialogResult dr = MessageBox.Show(this, "Remove \"" + ob.ToString() + "\" from the game?\n\n" +
+                "Its missions disappear from the Add-On list. The level files you made in the editor are not affected.",
+                "Remove Mission Pack", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2);
+        if (dr != DialogResult.Yes)
+            return;
+        if (m_gm.RemovePack(this, ((GameMenu.InstalledPack)ob).FileName))
+            Fill();
     }
 }
 

@@ -78,6 +78,9 @@ bool MissionList::Init(const PackId *ppackid, MissionListType mlt) {
         Enum enm;
         PackId packid;
         while (gppackm->EnumPacks(&enm, &packid)) {
+            if (packid.id == PACKID_EDITORTEST) {
+                continue;
+            }
             AddLevelFiles(&packid);
         }
 

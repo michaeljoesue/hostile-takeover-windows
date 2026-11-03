@@ -16,12 +16,18 @@ M has a Game menu that connects it to Hostile Takeover:
   Play Level in Game (F5)
       Starts the game straight into the level you're editing, so you can try
       it out. Single player levels only. Close the game before using it again.
+      The level doesn't appear in the game's Add-On list; use Install Mission
+      Pack in Game for that.
 
   Install Mission Pack in Game...
       Puts all the levels you have open into a mission pack with the title
       and author you choose. In the game it appears under Play > Single
       Player (or Multiplayer) > Add-On as "<title> by <author>". Installing
       again with the same title replaces it.
+
+  Remove Mission Pack from Game...
+      Lists the mission packs installed in the game and removes the one you
+      pick. Your level files are not affected.
 
   Open Built-in Mission...
       Opens the game's own missions: story (S_*), challenge (C_*) and

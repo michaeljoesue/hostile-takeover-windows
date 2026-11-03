@@ -68,11 +68,14 @@ game:
 | --- | --- |
 | Play Level in Game (F5) | Starts the game straight into the level you're editing |
 | Install Mission Pack in Game | Installs the open levels as a mission pack; it shows up under Play → Single Player (or Multiplayer) → Add-On |
+| Remove Mission Pack from Game | Lists the installed packs and removes the one you pick |
 | Open Built-in Mission | Opens the game's own story (`S_*`), challenge (`C_*`) and multiplayer (`M_*`) missions |
 | Rebuild Built-in Missions | Rebuilds the game data from `Editor\AuthorKit` so your changes to built-in missions take effect (a few minutes the first time) |
 | Restore Original Missions | Puts the shipped missions back |
 
-You can also drag a `.ld` level file onto `M.exe` to open it.
+You can also drag a `.ld` level file onto `M.exe` to open it. Levels you only
+try out with Play Level in Game don't appear in the Add-On list; only
+installed packs do.
 
 The editor checks a level before exporting it. Many of the game's own missions
 have "placement" warnings (a building on terrain the editor considers blocked)
