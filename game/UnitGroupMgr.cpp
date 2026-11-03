@@ -1147,8 +1147,11 @@ bool AttackUnitGroupAction::Perform(UnitGroup *pug)
 		puntTarget->GetTilePosition(&tpt);
 		TCoord dtx = tpt.tx - txGroupCenter;
 		TCoord dty = tpt.ty - tyGroupCenter;
-		word nDistT = dtx * dtx + dty * dty;	// should not exceed 8192 for 64x64 maps
-		Assert(nDistT < 8192);
+		// At most 2 * 126^2 = 31752 on the largest (127 x 127) map, which is
+		// below the 0x7fff starting value of nDist. (The original assert
+		// here, < 8192, held for 64 x 64 maps.)
+		word nDistT = dtx * dtx + dty * dty;
+		Assert(nDistT < 2 * (ktcMax - 1) * (ktcMax - 1) + 1);
 
 		// Keep track of the nearest target.
 

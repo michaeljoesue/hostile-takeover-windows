@@ -462,6 +462,130 @@ through menus and into a mission.
 
 What remains is listening to it on a real PC.
 
+# Part 4: maps up to 120 × 120
+
+The original missions are at most 62 × 62 tiles on a 64 × 64 canvas, and the
+engine was written for that. This part raises the limit.
+
+## 20. Where the limit comes from
+
+World coordinates (`WCoord`) are signed 16-bit numbers with 256 units per
+tile, so a map can be at most 127 tiles across before the far edge stops
+fitting (127 × 256 = 32512; 128 would be 32768). Within that, the engine had
+a handful of things sized for 64:
+
+- `ktcMax = 64` in `game/ht.h`, which sizes the world ↔ pixel lookup tables
+  and a few work arrays.
+- `game.cpp` built the pixel → world table with a hard-coded `64 * 32`.
+- `ganSquared[64]` (squares used for path-finding distances) was indexed with
+  tile differences up to the map size; on a bigger map it would read past
+  the end.
+- `TRectSmall` (a gob's on-screen tile rectangle) stored tile numbers in
+  `char`s, and used 127 / -128 as "empty" markers.
+- The memory manager allocates in chunks of at most 63 KB, and the world →
+  pixel table for 127 tiles is 64 KB.
+
+## 21. The engine changes
+
+- `ktcMax` is now 127, the engine's ceiling. `ktcMapOriginal = 64` is kept
+  for the places where behaviour must not change on the original maps.
+- `Game::InitCoordMappingTables` builds both lookup tables as plain heap
+  arrays sized from `kwcMax` / `kpcMax` (no more hard-coded 64), and
+  saturates the pixel → world entries that only exist for tiles smaller than
+  32 pixels instead of letting them wrap.
+- `ganSquared` has 128 entries.
+- `TRectSmall` uses `short`s, with `0x7fff` / `-0x7fff` as the empty markers.
+- Path finding (`terrainmap.cpp`):
+  - The search's node budget scales with the map
+    (`max(64, map size) × 9`), so on maps up to 64 tiles it is exactly what
+    it was.
+  - On maps bigger than 64 tiles, scores are added in 32 bits and saturate
+    at 65535 instead of wrapping (the distance term alone can reach
+    126² × 2 = 31752). Smaller maps keep the original 16-bit arithmetic,
+    wrap-around included, so the original missions route exactly as before.
+  - `MakePath` collects the route in a buffer sized for the whole map. The
+    old one was sized by the node budget, but heads are recycled, so that
+    was never a real bound.
+- Loading a terrain map larger than 127 tiles shows "Map too big" and stops,
+  rather than corrupting memory.
+- Scrolling: the map drag (stylus/finger) and minimap drag paths add view
+  offsets in 32 bits and clamp before converting back to `WCoord`.
+- The computer player's unit groups pick the nearest target by squared tile
+  distance in a `word`, with an assert that it stays under 8192 ("for 64x64
+  maps"). On a 120 × 120 map it reaches about 28000, still below the
+  `0x7fff` starting value, so release builds were fine; the assert now
+  checks the real bound for 127 tiles. The debug build found this one.
+- The minimap uses one pixel per tile when either side of the map is bigger
+  than 64, so it stays at most 127 pixels. Both scales of mini-tiles were
+  always in the data (`m/OutputTools.cs` writes 2 × 2 and 1 × 1 sets), so
+  no data change was needed.
+
+What was checked and left alone: gob gid map (2 bytes per tile, 32 KB at
+127 × 127, inside one memory chunk), the fog and terrain maps (one byte per
+tile, heap), path offsets (`word`, 16129 tiles at most), range checks (done in
+tiles, under 10), shots (brought inside the map before they fly), line
+iterators (32-bit maths), and the gob count limits (per category, not per map
+size, so a big map holds the same number of units and buildings).
+
+## 22. Why the editor stops at 120
+
+127 is where the numbers run out. Anything that can stray past the map edge
+for a moment (a shot's start point, a view position before it's clamped,
+an explosion offset) needs room beyond the last tile, and at 127 there is
+under one tile of it. At 120 there are 7 tiles (1792 world units), more than
+any of those offsets. The engine accepts up to 127, so raising the editor's
+cap later is a one-line change (`LevelDoc.ktcPlayableMax`).
+
+## 23. The editor
+
+- `LevelDoc.Bounds` (the green playable rectangle) can now be up to 120 × 120;
+  larger values are refused with a message. The canvas the editor draws on
+  (previously always 64 × 64) grows automatically to hold the bounds plus a
+  one-tile border, and never shrinks, so nothing already placed is lost.
+- **Settings → Map Size…** (`MapSizeForm` in `m/GameMenu.cs`) sets the playable
+  width and height, keeping the top left corner.
+- Validation reports maps over 120 as an error.
+- Importing a mission pack's tile map was hard-coded to 64 × 64 and now uses
+  the map's size.
+- `LevelView.UpdateImage` compared the canvas bitmap against the *control's*
+  width rather than the level's, so it rebuilt the bitmap on every update; it
+  now compares against the level size and rebuilds only when the canvas
+  really changes size (after Map Size, for example).
+
+## 24. Testing big maps
+
+A small harness (not part of the build) used the editor's own code to turn
+C4 "Tables Turned" (60 × 60) into a 120 × 120 level: the terrain repeated to
+fill the new area, and copies of the player's units placed on open ground
+near the far corner, in the last column on the right edge and near the
+bottom edge. It also checked that the editor refuses 121 and grows the
+canvas for 100 × 80. The level then went through the real editor under
+Wine: Play Level in Game (F5) validated and exported it and started the
+game.
+
+In the game:
+- the level loaded; the minimap was 120 pixels square and showed the fog
+  lifted around the far units;
+- clicking the minimap's corners, and holding the arrow keys against each
+  edge, scrolled the view to every edge of the map;
+- the far-corner units, ordered to the player's base in the top left, walked
+  across the whole map (about 2½ minutes for infantry), and the right-edge
+  units walked down the last column;
+- saving and loading worked, in the same session and after restarting the
+  game;
+- the debug build (asserts on) ran the same level with the computer players
+  active; that is how the unit-group assert above was found. (The debug
+  build can't load saves made by the release build, as before; the debug
+  makefile also needed `-lgdi32 -luser32` to link.)
+
+The original missions: C4 run through the same Play Level in Game path still
+has the 2-pixel-per-tile minimap, and saves and loads. Nothing about the
+original-size maps changed: the path-finding node budget and score
+arithmetic, and the minimap scale, only change above 64 tiles, and the
+other changes are wider types holding the same values.
+
+Not tested: multiplayer on big maps.
+
 ## File map
 
 | File | Purpose |
@@ -493,3 +617,7 @@ What remains is listening to it on a real PC.
 | `game/sounddevice.h` | `PlayAdpcmEx`: per-sound volume and pan |
 | `game/soundmgr.cpp` | `PlaySfx(sfx, wx, wy)` and `CalcSfxPosition` |
 | `tools/audio_tests/` | Mixer and positioning tests |
+| `game/ht.h`, `game/game.cpp` | Map size limit (127 in the engine), coordinate tables |
+| `game/terrainmap.cpp` | Path finding on big maps; "Map too big" check |
+| `game/SimUI.cpp` | Minimap at 1 pixel per tile on big maps |
+| `m/LevelDoc.cs` | Map size up to 120 × 120; canvas grows with it |

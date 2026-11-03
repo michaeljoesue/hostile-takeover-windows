@@ -11,7 +11,7 @@ for (j = 0; j < 64; j += 8) {
 }
 */
 
-int ganSquared[64] = {
+int ganSquared[ktcMax + 1] = {
 	0, 1, 4, 9, 16, 25, 36, 49,
 	64, 81, 100, 121, 144, 169, 196, 225,
 	256, 289, 324, 361, 400, 441, 484, 529,
@@ -20,6 +20,14 @@ int ganSquared[64] = {
 	1600, 1681, 1764, 1849, 1936, 2025, 2116, 2209,
 	2304, 2401, 2500, 2601, 2704, 2809, 2916, 3025,
 	3136, 3249, 3364, 3481, 3600, 3721, 3844, 3969,
+	4096, 4225, 4356, 4489, 4624, 4761, 4900, 5041,
+	5184, 5329, 5476, 5625, 5776, 5929, 6084, 6241,
+	6400, 6561, 6724, 6889, 7056, 7225, 7396, 7569,
+	7744, 7921, 8100, 8281, 8464, 8649, 8836, 9025,
+	9216, 9409, 9604, 9801, 10000, 10201, 10404, 10609,
+	10816, 11025, 11236, 11449, 11664, 11881, 12100, 12321,
+	12544, 12769, 12996, 13225, 13456, 13689, 13924, 14161,
+	14400, 14641, 14884, 15129, 15376, 15625, 15876, 16129,
 };
 
 byte gmpdirdirOpposite[8] = { 4, 5, 6, 7, 0, 1, 2, 3 };
@@ -41,7 +49,10 @@ word TerrainMap::s_anScoreVector[] = { 5, 7, 5, 7, 5, 7, 5, 7 };
 // Max nodes futility cutoff. Traverse the map three times, and * 3 because of how
 // nodes are added to the list
 
+// kcNodesMax sizes arrays for the largest map; the limit actually used scales
+// with the map so maps of the original sizes search exactly as before.
 #define kcNodesMax (ktcMax * 3 * 3)
+#define CNodesLimit(ctx, cty) (_max((int)ktcMapOriginal, _max((ctx), (cty))) * 3 * 3)
 
 TerrainMap::TerrainMap()
 {
@@ -78,6 +89,13 @@ bool TerrainMap::Init(char *pszFn)
 
 	m_ctx = BigWord(m_ptrmaph->ctx);
 	m_cty = BigWord(m_ptrmaph->cty);
+
+	// Refuse maps bigger than the engine's coordinate range rather than
+	// corrupting memory
+	if (m_ctx <= 0 || m_cty <= 0 || m_ctx > ktcMax || m_cty > ktcMax) {
+		HtMessageBox(kfMbWhiteBorder, "Map too big", "This level's map is larger than the game supports (127 x 127 tiles).");
+		return false;
+	}
 	m_cbBuffer = m_ctx * m_cty;
 	m_abBuffer = new byte[m_cbBuffer];
 	Assert(m_abBuffer != NULL, "out of memory!");
@@ -560,6 +578,7 @@ Path *TerrainMap::FindPath(int txFrom, int tyFrom, int txTo, int tyTo, byte bfTe
 
 	word offClosest;
 	word nDistClosest = (word)-1;
+	bool fSaturate = m_ctx > ktcMapOriginal || m_cty > ktcMapOriginal;
 	while (ppathhLast != NULL) {
 		for (int n = 0; n < 8; n++) {
 			// Get next pos
@@ -607,9 +626,15 @@ Path *TerrainMap::FindPath(int txFrom, int tyFrom, int txTo, int tyTo, byte bfTe
 			// Link in this square, add it to the list. It is a path head.
 
 			*pbNew = (*pbNew & (kbfMobileUnit | kbfStructure | kbfReserved)) | kbfHead | kbfLinked | n;
-			word wScoreKnown = ppathhLast->wScoreKnown + s_anScoreVector[n] + wScoreTerrain;
+			// On big maps scores saturate instead of wrapping around (the
+			// distance term alone can reach 126^2 * 2 = 31752). Maps of the
+			// original sizes keep the original 16 bit arithmetic exactly.
+
+			dword dwScoreKnown = (dword)ppathhLast->wScoreKnown + s_anScoreVector[n] + wScoreTerrain;
+			word wScoreKnown = (fSaturate && dwScoreKnown > 0xffff) ? 0xffff : (word)dwScoreKnown;
 			word nDist = ganSquared[abs(txNew - txTo)] + ganSquared[abs(tyNew - tyTo)];
-			word wScore = wScoreKnown + nDist;
+			dword dwScore = (dword)wScoreKnown + nDist;
+			word wScore = (fSaturate && dwScore > 0xffff) ? 0xffff : (word)dwScore;
 			PathHead *ppathhNew = AddPathHead(wScoreKnown, wScore, ppathhLast->cSteps + 1, offHead, txNew, tyNew);
 
 			// Remember "closest" point
@@ -652,7 +677,7 @@ PathHead *TerrainMap::AddPathHead(word wScoreKnown, word wScore, int cSteps, wor
 		ppathh = m_ppathhFreeList;
 		m_ppathhFreeList = ppathh->ppathhNext;
 	} else {
-		if (m_cNodes >= kcNodesMax)
+		if (m_cNodes >= CNodesLimit(m_ctx, m_cty))
 			return NULL;
 		ppathh = new PathHead;
 		if (ppathh == NULL)
@@ -742,7 +767,9 @@ bool TerrainMap::GetFlags(int tx, int ty, byte *pbf)
 
 Path *TerrainMap::MakePath(TCoord txStart, TCoord tyStart, word off)
 {
-	Direction adir[kcNodesMax];
+	// Each tile is linked at most once, so a path is never longer than the
+	// map has tiles. (Path heads are recycled, so kcNodesMax isn't a bound.)
+	static Direction adir[ktcMax * ktcMax];
 
 	TCoord ty = off / m_ctx;
 	TCoord tx = off % m_ctx;

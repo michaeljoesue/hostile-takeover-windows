@@ -342,13 +342,13 @@ void UpdateMap::CalcTileRect(Rect *prc, TRectSmall *ptrc)
 		x = kpcMax - 1;
 	if (x < 0)
 		x = 0;
-	ptrc->txLeft = (char)TcFromPc(x);
+	ptrc->txLeft = (short)TcFromPc(x);
 	int y = prc->top + m_yMapOffset;
 	if (y >= kpcMax)
 		y = kpcMax - 1;
 	if (y < 0)
 		y = 0;
-	ptrc->tyTop = (char)TcFromPc(y);
+	ptrc->tyTop = (short)TcFromPc(y);
 
 	// Preclip right/bottom to the coordinate range supported
 	// by TcFromPc.
@@ -360,11 +360,11 @@ void UpdateMap::CalcTileRect(Rect *prc, TRectSmall *ptrc)
 	if (yT >= kpcMax)
 		yT = kpcMax - 1;
 
-	ptrc->txRight = (char)TcFromPc(xT);
+	ptrc->txRight = (short)TcFromPc(xT);
 	if (ptrc->txRight > m_ctx)
 		ptrc->txRight = m_ctx;
 
-	ptrc->tyBottom = (char)TcFromPc(yT);
+	ptrc->tyBottom = (short)TcFromPc(yT);
 	if (ptrc->tyBottom > m_cty)
 		ptrc->tyBottom = m_cty;
 }

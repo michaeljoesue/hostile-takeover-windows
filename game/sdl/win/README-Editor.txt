@@ -45,6 +45,19 @@ M has a Game menu that connects it to Hostile Takeover:
       Only needed if the Editor folder is moved away from the game.
 
 
+BIGGER MAPS
+-----------
+The game's own missions are at most 64 x 64 tiles. This version of the game
+supports maps up to 120 x 120. Open a level and use Settings > Map Size to set
+the size of the playable area (the green rectangle). The top left corner stays
+put; growing a map adds empty space to the right and bottom, which you can
+then paint. You can also type the size into the level's Bounds property.
+
+On maps bigger than 64 tiles the in-game minimap shows one pixel per tile,
+so it stays about the size players are used to. Big maps have been tested in
+single player; multiplayer on them hasn't been tried.
+
+
 CHECKS BEFORE PLAYING
 ---------------------
 Before a level goes into the game, M checks it and lists anything odd in its

@@ -41,7 +41,7 @@ LDFLAGS = -static -static-libgcc -static-libstdc++ -mwindows \
 -L$(SDL2DIR)/lib -L$(CURLDIR)/lib \
 -lmingw32 -lSDL2main -lSDL2 -lcurl \
 -lws2_32 -lwldap32 -lcrypt32 -lbcrypt -lsecur32 -liphlpapi -lnormaliz \
--lshlwapi -lshell32 -lole32 -lwinmm -limm32 -lversion -lsetupapi -loleaut32 -luuid
+-lshlwapi -lshell32 -lole32 -lwinmm -limm32 -lversion -lsetupapi -loleaut32 -luuid -lgdi32 -luser32
 
 ifeq ($(REL),1)
 OUTDIR = release

@@ -142,7 +142,7 @@ namespace m
 			// The TileMap is a list of indexes into a tile set. A Tileset is a list of tiles compiled
 			// from Templates. Reverse the tilemap into Templates, and set into lvld.
 
-			bool[,] afCellTaken = new bool[64, 64];
+			bool[,] afCellTaken = new bool[tmap.Height, tmap.Width];
 			ArrayList alsTemplPos = new ArrayList();
 			Template[] atmpl = tmpd.GetTemplates();
 			for (int ty = 0; ty < tmap.Height; ty++) {
@@ -170,7 +170,7 @@ namespace m
 						for (int txTmpl = 0; txTmpl < tmpl.Ctx; txTmpl++) {
 							int txT = txOrigin + txTmpl;
 							int tyT = tyOrigin + tyTmpl;
-							if (txT < 0 || txT >= 64 || tyT < 0 || tyT >= 64) {
+							if (txT < 0 || txT >= tmap.Width || tyT < 0 || tyT >= tmap.Height) {
 								continue;
 							}
 							if (afCellTaken[tyT, txT]) {
@@ -196,7 +196,11 @@ namespace m
 
 			// Figure out the bounds.
 
-			Rectangle rcBounds = new Rectangle((64 - tmap.Width) / 2, (64 - tmap.Height) / 2,
+			// Center it on the canvas (64 x 64, or bigger for big maps)
+			int ctxCanvas = Math.Max(LevelDoc.ktcCanvasDefault, tmap.Width + 2);
+			int ctyCanvas = Math.Max(LevelDoc.ktcCanvasDefault, tmap.Height + 2);
+			lvld.GrowCanvas(ctxCanvas, ctyCanvas);
+			Rectangle rcBounds = new Rectangle((ctxCanvas - tmap.Width) / 2, (ctyCanvas - tmap.Height) / 2,
 					tmap.Width, tmap.Height);
 			lvld.Bounds = rcBounds;
 

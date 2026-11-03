@@ -795,7 +795,14 @@ public:
 // World coordinates are high-byte = tile coord, low-byte = sub-tile coord
 // Coordinate types and macros
 
-const short ktcMax = 64;
+// Largest map the engine supports, in tiles. World coords are signed 16 bit
+// with 256 per tile, so 127 is the ceiling (127 * 256 = 32512). The original
+// game used 64; the editor keeps a few tiles of headroom below this (see
+// ktcMapEditorMax in m/LevelDoc.cs) so anything slightly past the map edge
+// can't wrap around. ktcMapOriginal is the old limit, used where behavior
+// must not change for maps of the original sizes.
+const short ktcMax = 127;
+const short ktcMapOriginal = 64;
 const short kpcMax = ktcMax * 32;	// + 1 to allow for conversion of inclusive/exclusive rects
 const WCoord kwcMax = ktcMax * 256;
 const WCoord kwcTile = 0x0100;
@@ -911,10 +918,12 @@ public:
 
 struct TRectSmall
 {
-	char txLeft;
-	char tyTop;
-	char txRight;
-	char tyBottom;
+	// Was char (fine for 64 tile maps); short so tile 127 and the empty
+	// sentinels below can't collide.
+	short txLeft;
+	short tyTop;
+	short txRight;
+	short tyBottom;
 
 	void Union(TRectSmall *ptrc) {
 		if (ptrc->txLeft >= ptrc->txRight || ptrc->tyTop >= ptrc->tyBottom)
@@ -929,7 +938,7 @@ struct TRectSmall
 			tyBottom = ptrc->tyBottom;
 	}
 
-	void Offset(char tx, char ty) {
+	void Offset(short tx, short ty) {
 		txLeft += tx;
 		tyTop += ty;
 		txRight += tx;
@@ -8527,7 +8536,7 @@ extern bool gfStress;
 extern long gtStressTimeout;
 #endif
 extern byte gmpdirdirOpposite[8];
-extern int ganSquared[64];
+extern int ganSquared[ktcMax + 1];
 extern bool gfClearFog;
 extern int gnUnitCostMin;
 extern int gnUnitCostMax;

@@ -57,7 +57,8 @@ The Editor folder contains M, the map & mission editor the game's missions
 were made with. Start Editor\M.exe. Its Game menu can start the game
 straight into the level you're editing (F5), install your levels as an
 add-on mission pack, and rebuild the game's built-in missions after you
-change them. See Editor\README.txt.
+change them. Maps can be up to 120 x 120 tiles (the game's own are at
+most 64 x 64); see Settings > Map Size in the editor. See Editor\README.txt.
 
 
 WHERE YOUR SAVES ARE

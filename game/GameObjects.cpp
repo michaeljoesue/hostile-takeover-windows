@@ -192,10 +192,10 @@ Gob::Gob()
 	m_gid = kgidNull;
 	m_pplr = &gplrDummy;
 	m_ff = kfGobRedraw;
-	m_trcBoundingLast.txLeft = 127;
-	m_trcBoundingLast.tyTop = 127;
-	m_trcBoundingLast.txRight = -128;
-	m_trcBoundingLast.tyBottom = -128;
+	m_trcBoundingLast.txLeft = 0x7fff;
+	m_trcBoundingLast.tyTop = 0x7fff;
+	m_trcBoundingLast.txRight = -0x7fff;
+	m_trcBoundingLast.tyBottom = -0x7fff;
 }
 
 Gob::~Gob()
@@ -274,12 +274,12 @@ bool Gob::Invalidate()
 	// Change into a tile rect
 
 	TRectSmall trcNew;
-	trcNew.txLeft = (char)TcFromPc(rc.left);
-	trcNew.tyTop = (char)TcFromPc(rc.top);
+	trcNew.txLeft = (short)TcFromPc(rc.left);
+	trcNew.tyTop = (short)TcFromPc(rc.top);
 	int xT = _min(rc.right + gcxTile - 1, (int)kpcMax);
-	trcNew.txRight = (char)TcFromPc(xT);
+	trcNew.txRight = (short)TcFromPc(xT);
 	int yT = _min(rc.bottom + gcyTile - 1, (int)kpcMax);
-	trcNew.tyBottom = (char)TcFromPc(yT);
+	trcNew.tyBottom = (short)TcFromPc(yT);
 
     // If the gob was transitioning from off screen to on screen, use the
     // current invalidation rect. Otherwise Union with the old rect so that the

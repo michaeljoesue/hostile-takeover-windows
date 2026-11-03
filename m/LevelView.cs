@@ -354,7 +354,7 @@ namespace m
 
 		void UpdateImage() {
 			Size sizTile = GetTileSize();
-			if (sizTile.Width * Width != m_bm.Width || sizTile.Height * Height != m_bm.Height) {
+			if (sizTile.Width * m_lvld.Width != m_bm.Width || sizTile.Height * m_lvld.Height != m_bm.Height) {
 				CreateBitmap();
 			}
 			Redraw();

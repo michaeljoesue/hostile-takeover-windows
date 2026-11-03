@@ -637,8 +637,14 @@ void SimUIForm::FingerHandler::EnterDrag(Event *pevt) {
 void SimUIForm::FingerHandler::UpdateDrag(Event *pevt) {
     Vec2d v(m_xDrag - pevt->x, m_yDrag - pevt->y);
     v = v.scale(gnScrollSpeed);
-    gsim.SetViewPos(m_wxViewDrag + WcFromPc(v.dx),
-            m_wyViewDrag + WcFromPc(v.dy));
+    // Sum in long and clamp so big maps can't wrap the WCoords
+    long pcMac = PcFromWc(kwcMax - 1);
+    long dx = _max(-pcMac, _min(pcMac, (long)v.dx));
+    long dy = _max(-pcMac, _min(pcMac, (long)v.dy));
+    long wxT = (long)m_wxViewDrag + WcFromPc((int)dx);
+    long wyT = (long)m_wyViewDrag + WcFromPc((int)dy);
+    gsim.SetViewPos((WCoord)_max(0L, _min((long)kwcMax - 1, wxT)),
+            (WCoord)_max(0L, _min((long)kwcMax - 1, wyT)));
 }
 
 void SimUIForm::FingerHandler::OnPaint(DibBitmap *pbm) {

@@ -818,6 +818,13 @@ namespace m {
 		public int Validate(ValidateErrorDelegate dgt) {
 			int cError = 0;
 
+			// Validate map size (the engine's limit is 127; M keeps headroom)
+
+			if (Bounds.Width > ktcPlayableMax || Bounds.Height > ktcPlayableMax) {
+				dgt(this, ValidateError.Error, 0, 0, null, String.Format("Map is {0} x {1}; the most allowed is {2} x {2}", Bounds.Width, Bounds.Height, ktcPlayableMax));
+				cError++;
+			}
+
 			// Validate switch count
 
 			int cSwitchesMax = 16;
@@ -1835,19 +1842,52 @@ namespace m {
 			}
 		}
 
+		// Largest playable area (Bounds) M allows, in tiles. The game engine
+		// supports up to 127 x 127 (ktcMax in game/ht.h); staying a few tiles
+		// below that keeps anything that strays slightly past the map edge
+		// from wrapping around the game's 16 bit world coordinates.
+		public const int ktcPlayableMax = 120;
+		public const int ktcPlayableMin = 16;
+
+		// The original maps were all made on a 64 x 64 canvas
+		public const int ktcCanvasDefault = 64;
+
 		public Rectangle Bounds {
 			get {
 				return m_trcBounds;
 			}
 			set {
-				if (value.Left < 0 || value.Left >= m_ctx || value.Right < 0 || value.Right >= m_ctx ||
-						value.Top < 0 || value.Top >= m_cty || value.Bottom < 0 || value.Bottom >= m_cty) {
+				if (value.Left < 0 || value.Top < 0 || value.Width <= 0 || value.Height <= 0)
 					return;
+				if (value.Width > ktcPlayableMax || value.Height > ktcPlayableMax) {
+					throw new ArgumentException(String.Format("The playable area can be at most {0} x {0} tiles.", ktcPlayableMax));
 				}
+
+				// The playable area must lie strictly inside the canvas; grow
+				// the canvas if needed (bigger than 64 x 64 maps)
+				GrowCanvas(value.Right + 1, value.Bottom + 1);
+
 				m_trcBounds = value;
 				m_fUpdateDirty = true;
 				SetModified(true);
 			}
+		}
+
+		// Grows (never shrinks) the editing canvas so nothing already placed
+		// can end up outside it
+		public void GrowCanvas(int ctx, int cty) {
+			if (ctx <= m_ctx && cty <= m_cty)
+				return;
+			m_ctx = Math.Max(m_ctx, ctx);
+			m_cty = Math.Max(m_cty, cty);
+			SetModified(true);
+			if (ImageChanged != null)
+				ImageChanged();
+		}
+
+		// Sets the size of the playable area, keeping its top left corner
+		public void SetMapSize(int ctx, int cty) {
+			Bounds = new Rectangle(m_trcBounds.X, m_trcBounds.Y, ctx, cty);
 		}
 
 		public int MinPlayers {

@@ -547,7 +547,11 @@ void GraffitiScrollControl::OnPenEvent(Event *pevt)
 				dyT = -pcMac;
 			if (dyT > pcMac)
 				dyT = pcMac;
-			gsim.SetViewPos(m_wxViewStart + WcFromPc(dxT), m_wyViewStart + WcFromPc(dyT));
+			// Sum in long and clamp so big maps can't wrap the WCoords
+			long wxT = (long)m_wxViewStart + WcFromPc(dxT);
+			long wyT = (long)m_wyViewStart + WcFromPc(dyT);
+			gsim.SetViewPos((WCoord)_max(0L, _min((long)kwcMax - 1, wxT)),
+					(WCoord)_max(0L, _min((long)kwcMax - 1, wyT)));
 		}
 #endif
 		break;

@@ -77,6 +77,13 @@ game:
 | Rebuild Built-in Missions | Rebuilds the game data from `Editor\AuthorKit` so your changes to built-in missions take effect (a few minutes the first time) |
 | Restore Original Missions | Puts the shipped missions back |
 
+**Bigger maps.** The original missions are at most 64 × 64 tiles. This
+version of the game supports maps up to 120 × 120 (about 3.5 times the area of 64 × 64):
+open a level and use **Settings → Map Size** to set the size of the
+playable area. The minimap switches to one pixel per tile on maps bigger
+than 64 tiles so it stays the familiar size. Big maps have been tested in
+single player; multiplayer on them hasn't been tried.
+
 You can also drag a `.ld` level file onto `M.exe` to open it. Levels you only
 try out with Play Level in Game don't appear in the Add-On list; only
 installed packs do.

@@ -683,54 +683,54 @@ bool Game::LoadGameData()
 
 bool Game::InitCoordMappingTables()
 {
-	// Initialize world -> pixel coord mapping table
+	// World <-> pixel coordinate lookup tables.
+	//
+	// The original code built these through the memory manager in pieces
+	// (PalmOS storage heap). For 127 tile maps the world -> pixel table is
+	// 2 * 32512 bytes, more than one memory manager chunk (63K), so on this
+	// platform they are plain heap arrays.
 
-#define knSplit 32
-//#define knSplit 4
-	gmpPcFromWc = (short *)gmmgr.AllocPtr(2 * kwcMax);
-	if (gmpPcFromWc == NULL)
+	int cwc = kwcMax;
+	short *mpPcFromWc = new short[cwc];
+	if (mpPcFromWc == NULL)
 		return false;
-
-	Assert(kwcMax / knSplit <= gcbScratch);
-	Assert((kwcMax / knSplit) * knSplit == kwcMax);
 
 	short s = 0;
 	short nOverflow = 0;
-	for (int j = 0; j < knSplit; j++) {
-		short *psT = (short *)gpbScratch;
-		for (int i = 0; i < kwcMax / knSplit; i++) {
-			// Duplicate the behavior of gmpWcFromPc so that
-			// gmpPcFromWc[gmpWcFromPc[2]] == 2
+	for (int i = 0; i < cwc; i++) {
+		// Duplicate the behavior of gmpWcFromPc so that
+		// gmpPcFromWc[gmpWcFromPc[2]] == 2
 
-			*psT++ = s;
-			nOverflow += gcxTile;
-			if (nOverflow == 256) {
-				nOverflow = 0;
-				s++;
-			} else if (nOverflow > 256) {
-				nOverflow -= 256;
-			} else if (nOverflow + gcxTile - 1 >= 256) {
-				s++;
-			}
+		mpPcFromWc[i] = s;
+		nOverflow += gcxTile;
+		if (nOverflow == 256) {
+			nOverflow = 0;
+			s++;
+		} else if (nOverflow > 256) {
+			nOverflow -= 256;
+		} else if (nOverflow + gcxTile - 1 >= 256) {
+			s++;
 		}
-		gmmgr.WritePtr(gmpPcFromWc, j * 2 * (kwcMax / knSplit), gpbScratch, 2 * (kwcMax / knSplit));
 	}
 
-	// Initialize pixel -> world coord mapping table
+	// Pixel -> world. The "+ 1" entry supports the mapping of
+	// inclusive/exclusive rects that lay at the extreme of the allowed
+	// coordinate range.
 
-	WCoord *pwcT = (WCoord *)gpbScratch;
-	for (int i = 0; i <= 64 * 32; i++) {
-		*pwcT++ = (WCoord)((i * 256L) / gcxTile);
-	}
-
-	// These "+ 1"s are to support the mapping of inclusive/exclusive rects
-	// that lay at the extreme of the allowed coordinate range
-
-	gmpWcFromPc = (WCoord *)gmmgr.AllocPtr((2 * 64 * 32) + 1);
-	if (gmpWcFromPc == NULL)
+	WCoord *mpWcFromPc = new WCoord[kpcMax + 1];
+	if (mpWcFromPc == NULL) {
+		delete[] mpPcFromWc;
 		return false;
-	gmmgr.WritePtr(gmpWcFromPc, 0, gpbScratch, (2 * 64 * 32) + 1);
+	}
+	// With tiles smaller than 32 pixels the top of this range is beyond any
+	// map; saturate those entries rather than wrapping.
+	for (int i = 0; i <= kpcMax; i++) {
+		long wc = (i * 256L) / gcxTile;
+		mpWcFromPc[i] = (WCoord)(wc > 0x7fff ? 0x7fff : wc);
+	}
 
+	gmpPcFromWc = mpPcFromWc;
+	gmpWcFromPc = mpWcFromPc;
 	return true;
 }
 
@@ -2096,11 +2096,11 @@ void Game::Exit()
 		;
 
 	if (gmpWcFromPc != NULL) {
-		gmmgr.FreePtr(gmpWcFromPc);
+		delete[] gmpWcFromPc;
 		gmpWcFromPc = NULL;
 	}
 	if (gmpPcFromWc != NULL) {
-		gmmgr.FreePtr(gmpPcFromWc);
+		delete[] gmpPcFromWc;
 		gmpPcFromWc = NULL;
 	}
 

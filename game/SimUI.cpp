@@ -2345,12 +2345,15 @@ bool MiniMapControl::Init(Form *pfrm, IniReader *pini, FindProp *pfind)
 	}
 	if (siz.cx >= 320)
 		m_nScale = 2;
-	gsim.SetMiniMapScale(m_nScale);
 
-	// Size
+	// Size. Maps bigger than the original 64 x 64 limit use 1 pixel per tile
+	// so the minimap stays the size players know (at most 127 pixels).
 
 	Size sizMap;
 	gsim.GetLevel()->GetTileMap()->GetMapSize(&sizMap);
+	if (sizMap.cx / gcxTile > ktcMapOriginal || sizMap.cy / gcyTile > ktcMapOriginal)
+		m_nScale = 1;
+	gsim.SetMiniMapScale(m_nScale);
 	m_rc.left = m_rc.right - ((sizMap.cx / (gcxTile / m_nScale)) + m_cxyBorder);
 	m_rc.bottom = m_rc.top + (sizMap.cy / (gcyTile / m_nScale)) + m_cxyBorder;
 
@@ -2628,12 +2631,16 @@ void MiniMapControl::OnPenEvent2(Event *pevt)
 		s_wxViewDown = wxView;
 		s_wyViewDown = wyView;
 	} else {
+        // In int, then clamped: dragging far outside the minimap would
+        // otherwise wrap the 16 bit world coordinates around
         int dx = xPen - s_xPenDown;
-		wxView = s_wxViewDown + WcFromTc(dx / m_nScale);
-        wxView += (dx % m_nScale) * kwcTile / m_nScale;
+		long wxT = s_wxViewDown + (long)(dx / m_nScale) * kwcTile;
+        wxT += (dx % m_nScale) * kwcTile / m_nScale;
         int dy = yPen - s_yPenDown;
-		wyView = s_wyViewDown + WcFromTc(dy / m_nScale);
-        wyView += (dy % m_nScale) * kwcTile / m_nScale;
+		long wyT = s_wyViewDown + (long)(dy / m_nScale) * kwcTile;
+        wyT += (dy % m_nScale) * kwcTile / m_nScale;
+		wxView = (WCoord)_max(-(long)kwcMax, _min((long)kwcMax, wxT));
+		wyView = (WCoord)_max(-(long)kwcMax, _min((long)kwcMax, wyT));
 	}
 
 	gsim.SetViewPos(wxView, wyView);

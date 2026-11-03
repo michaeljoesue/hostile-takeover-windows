@@ -86,6 +86,26 @@ public class GameMenu {
         }
         menu.MenuItems.Add(i, mniGame);
 
+        // Settings > Map Size..., just above "Level" (the level's properties)
+        MenuItem mniMapSize = new MenuItem("Map Si&ze...", new EventHandler(OnMapSize));
+        bool fAdded = false;
+        foreach (MenuItem mniTop in menu.MenuItems) {
+            if (mniTop.Text.Replace("&", "") != "Settings")
+                continue;
+            int iInsert = mniTop.MenuItems.Count;
+            for (int n = 0; n < mniTop.MenuItems.Count; n++) {
+                if (mniTop.MenuItems[n].Text.Replace("&", "") == "Level") {
+                    iInsert = n;
+                    break;
+                }
+            }
+            mniTop.MenuItems.Add(iInsert, mniMapSize);
+            fAdded = true;
+            break;
+        }
+        if (!fAdded)
+            mniGame.MenuItems.Add(mniMapSize);
+
         // Open file dialogs start in the Author Kit's level folder
         if (Directory.Exists(AuthorKitDataDir)) {
             try {
@@ -663,6 +683,24 @@ public class GameMenu {
         return true;
     }
 
+    void OnMapSize(object sender, EventArgs e) {
+        LevelDoc lvld = (LevelDoc)DocManager.GetActiveDocument(typeof(LevelDoc));
+        if (lvld == null) {
+            MessageBox.Show(m_frmMain, "Open a level first.", "Map Size");
+            return;
+        }
+        MapSizeForm frm = new MapSizeForm(lvld.Bounds.Width, lvld.Bounds.Height);
+        if (frm.ShowDialog(m_frmMain) != DialogResult.OK)
+            return;
+        if (frm.MapWidth == lvld.Bounds.Width && frm.MapHeight == lvld.Bounds.Height)
+            return;
+        try {
+            lvld.SetMapSize(frm.MapWidth, frm.MapHeight);
+        } catch (ArgumentException ex) {
+            MessageBox.Show(m_frmMain, ex.Message, "Map Size");
+        }
+    }
+
     void OnLocation(object sender, EventArgs e) {
         ChooseGame();
     }
@@ -877,3 +915,73 @@ class BuildForm : Form {
 }
 
 }
+
+namespace m {
+
+// Settings > Map Size: the size of the playable area (the level's Bounds).
+class MapSizeForm : Form {
+    NumericUpDown m_nudWidth;
+    NumericUpDown m_nudHeight;
+
+    public int MapWidth { get { return (int)m_nudWidth.Value; } }
+    public int MapHeight { get { return (int)m_nudHeight.Value; } }
+
+    public MapSizeForm(int ctx, int cty) {
+        Text = "Map Size";
+        FormBorderStyle = FormBorderStyle.FixedDialog;
+        ClientSize = new Size(330, 190);
+        StartPosition = FormStartPosition.CenterParent;
+        MinimizeBox = false;
+        MaximizeBox = false;
+        ShowInTaskbar = false;
+
+        Label lblInfo = new Label();
+        lblInfo.Text = String.Format(
+            "Size of the playable area, in tiles ({0} to {1}). The original " +
+            "missions are at most 64 x 64.\n\nThe top left corner stays where it " +
+            "is; growing adds empty space at the right and bottom.",
+            LevelDoc.ktcPlayableMin, LevelDoc.ktcPlayableMax);
+        lblInfo.Location = new Point(12, 10);
+        lblInfo.Size = new Size(306, 74);
+
+        Label lblWidth = new Label();
+        lblWidth.Text = "&Width:";
+        lblWidth.Location = new Point(12, 96);
+        lblWidth.Size = new Size(60, 20);
+        m_nudWidth = MakeNud(ctx, new Point(76, 94));
+
+        Label lblHeight = new Label();
+        lblHeight.Text = "&Height:";
+        lblHeight.Location = new Point(170, 96);
+        lblHeight.Size = new Size(60, 20);
+        m_nudHeight = MakeNud(cty, new Point(234, 94));
+
+        Button btnOK = new Button();
+        btnOK.Text = "OK";
+        btnOK.Size = new Size(90, 26);
+        btnOK.Location = new Point(132, 150);
+        btnOK.DialogResult = DialogResult.OK;
+        AcceptButton = btnOK;
+
+        Button btnCancel = new Button();
+        btnCancel.Text = "Cancel";
+        btnCancel.Size = new Size(90, 26);
+        btnCancel.Location = new Point(228, 150);
+        btnCancel.DialogResult = DialogResult.Cancel;
+        CancelButton = btnCancel;
+
+        Controls.AddRange(new Control[] { lblInfo, lblWidth, m_nudWidth, lblHeight, m_nudHeight, btnOK, btnCancel });
+    }
+
+    NumericUpDown MakeNud(int n, Point pt) {
+        NumericUpDown nud = new NumericUpDown();
+        nud.Minimum = Math.Min(LevelDoc.ktcPlayableMin, n);
+        nud.Maximum = LevelDoc.ktcPlayableMax;
+        nud.Value = Math.Max(nud.Minimum, Math.Min(nud.Maximum, n));
+        nud.Location = pt;
+        nud.Size = new Size(70, 20);
+        return nud;
+    }
+}
+
+} // namespace m
