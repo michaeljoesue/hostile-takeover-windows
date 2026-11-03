@@ -694,7 +694,7 @@ void StructGob::Takeover(Player *pplr)
 
 	// Reveal fog around this newly owned structure
 
-	if (pplr == gpplrLocal) {
+	if (IsVisionSharedWithLocal(pplr)) {
 		WCoord wxView, wyView;
 		gsim.GetViewPos(&wxView, &wyView);
 		FogMap *pfogm = gsim.GetLevel()->GetFogMap();

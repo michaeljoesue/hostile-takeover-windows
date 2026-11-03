@@ -89,6 +89,10 @@ there is a fifth side, Crimson (#DC143C). Pick "Crimson" in the editor's
 unit panel to place its units, set it up under **Settings → Side 5
 (Crimson)**, and choose it in triggers like any other side.
 
+**Allies share vision** (branch `feature/crimson-side`). Your allies' units
+and buildings lift the fog of war for you, as yours do (the original game
+only counted your own).
+
 You can also drag a `.ld` level file onto `M.exe` to open it. Levels you only
 try out with Play Level in Game don't appear in the Add-On list; only
 installed packs do.

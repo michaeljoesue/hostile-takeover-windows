@@ -5867,6 +5867,7 @@ public:
 	Player *AllocPlayer(word wf = 0) secPlayer;
 	void Update(int cUpdates) secPlayer;
 	void SetAllies(Player **applr, int cplrs, SideMask sidmAllies) secPlayer;
+	void RevealSharedVision() secPlayer;
 
 	void FreePlayer(Player *pplr) {
 		pplr->m_wf = 0;
@@ -6535,6 +6536,7 @@ public:
 	}
 
 	bool IsAlly(Side side) secUnitGob;
+	void RevealFogAround() secUnitGob;
 
 	fix GetHealth() {
 		return m_fxHealth;
@@ -8477,6 +8479,11 @@ extern IniReader *gpiniForms;
 extern IniReader *gpiniGame;
 extern Font *gapfnt[];
 extern Player *gpplrLocal;
+
+// True if what pplr's units and buildings see should be shown to the local
+// player: its own, or an ally's when the alliance is mutual. (Originally only
+// the local player's own units lifted the fog.)
+bool IsVisionSharedWithLocal(Player *pplr) secPlayer;
 extern byte *gmpiclriclrShadow;
 extern UnitConsts *gapuntc[kutMax];
 extern PlaceStructureForm *gpfrmPlace;

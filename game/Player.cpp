@@ -288,6 +288,41 @@ void PlayerMgr::SetAllies(Player **applr, int cplrs, SideMask sidmAllies)
 		UnitGob *punt = (UnitGob *)pgobT;
 		punt->RecalcEnemyNearby(false);
 	}
+
+	// New allies share what they can see
+
+	RevealSharedVision();
+}
+
+bool IsVisionSharedWithLocal(Player *pplr)
+{
+	if (pplr == NULL || gpplrLocal == NULL)
+		return false;
+	if (pplr == gpplrLocal)
+		return true;
+	Side side = pplr->GetSide();
+	if (side == ksideNeutral)
+		return false;
+	return (gpplrLocal->GetAllies() & GetSideMask(side)) != 0 &&
+			(pplr->GetAllies() & GetSideMask(gpplrLocal->GetSide())) != 0;
+}
+
+// Lifts the fog around every unit and building of the local player's allies.
+// Units lift fog as they move, but buildings (and units standing still) only
+// when they appear, which may be before the alliance was made.
+
+void PlayerMgr::RevealSharedVision()
+{
+	if (gpplrLocal == NULL || gsim.GetLevel() == NULL)
+		return;
+	for (Gob *pgobT = ggobm.GetFirstGob(); pgobT != NULL; pgobT = ggobm.GetNextGob(pgobT)) {
+		if ((pgobT->GetFlags() & (kfGobUnit | kfGobActive)) != (kfGobUnit | kfGobActive))
+			continue;
+		UnitGob *punt = (UnitGob *)pgobT;
+		if (punt->GetOwner() == gpplrLocal || !IsVisionSharedWithLocal(punt->GetOwner()))
+			continue;
+		punt->RevealFogAround();
+	}
 }
 
 bool PlayerMgr::SaveState(Stream *pstm)

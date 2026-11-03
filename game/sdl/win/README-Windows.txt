@@ -44,6 +44,9 @@ to move", right click instead.
 The window can be resized or maximized; the picture scales to fit and
 keeps its shape.
 
+Your allies' units and buildings lift the fog of war for you too, so you
+can see your allies' bases and armies.
+
 Sound is in stereo: fighting to the left of the screen comes from the
 left speaker (or headphone), fighting to the right from the right, and
 battles off screen sound quieter the farther away they are. Fights

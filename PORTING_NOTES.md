@@ -700,6 +700,35 @@ exactly #FF3333 and its darker shades, and none of the earlier colour
 remains. The same entries colour Fox's text in the in-game messages. A data
 rebuild rounds to 6 bits (252,48,48).
 
+## 29. Allies share what they see
+
+In the original game only the local player's own units and buildings lifted
+the fog of war (`m_pplr == gpplrLocal` in `Unit.cpp`, `MobileUnit.cpp` and
+`Struct.cpp`), so an ally's base and army stayed hidden under fog even
+while you fought alongside them. Now:
+
+- `IsVisionSharedWithLocal(pplr)` (`Player.cpp`) is true for the local player
+  and for any side that is a *mutual* ally (each lists the other in its
+  allies). One-way alliances and the neutral side don't share. Those three
+  fog checks use it.
+- `PlayerMgr::SetAllies` ends with `RevealSharedVision()`, which lifts the
+  fog around every unit and building of the new allies. Units also lift fog
+  as they move, but buildings never move and missions usually make
+  alliances with a trigger just after the level loads, after everything
+  was placed.
+- Fog in this game never closes again once lifted, so if an alliance ends
+  (M9 does this) what you have seen stays visible; new ground is no longer
+  uncovered by the former ally.
+
+Fog only affects what is drawn, and which Galaxite a human player's miners
+look for in single player; computer players' miners and all multiplayer
+miners already ignore fog, so the simulation is otherwise unchanged.
+
+Tested with M9 "Limited Partnership", where you (side 1) and OMNI (side 2)
+are allies from the start: before the change only your starting corner was
+uncovered; after it OMNI's base and units were visible on the map and
+minimap. The debug build ran the mission for 3 minutes without an assert.
+
 ## File map
 
 | File | Purpose |
@@ -739,3 +768,4 @@ rebuild rounds to 6 bits (252,48,48).
 | `paltool/PalTool.cs` | Skips the side key colours when building palettes |
 | `mpshared/side.h`, `mpshared/mpht.h` | Side 5 (Crimson): side count, masks, players |
 | `data/art824/common_8bpp.pal` | Crimson ramp at palette entries 67–71 |
+| `game/Player.cpp` (`IsVisionSharedWithLocal`, `RevealSharedVision`) | Allies share vision |
