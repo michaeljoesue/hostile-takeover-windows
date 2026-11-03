@@ -44,6 +44,12 @@ to move", right click instead.
 The window can be resized or maximized; the picture scales to fit and
 keeps its shape.
 
+Sound is in stereo: fighting to the left of the screen comes from the
+left speaker (or headphone), fighting to the right from the right, and
+battles off screen sound quieter the farther away they are. Fights
+straight above or below the screen sound centered. The volume slider in
+Options adjusts the game's volume.
+
 
 MAKING YOUR OWN MISSIONS
 ------------------------

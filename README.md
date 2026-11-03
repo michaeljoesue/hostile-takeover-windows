@@ -43,6 +43,10 @@ phones, so when it says "tap on grass to move", right click instead.
 The window can be resized or maximized; the 800×600 picture scales to fit and
 keeps its shape.
 
+Sound is in stereo: battles to the left of the screen come from the left
+speaker, and fighting off screen is quieter the farther away it is. The
+volume slider in Options works.
+
 ### Saves
 
 Saved games, progress, settings and a `log.txt` are stored in

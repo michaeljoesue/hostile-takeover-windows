@@ -397,7 +397,7 @@ lbError:
 				if (!m_fDoorMoving) {
 					m_fDoorMoving = true;
 					if (m_pplr == gpplrLocal)
-						gsndm.PlaySfx(ksfxGalaxiteProcessorDoorOpening);
+						gsndm.PlaySfx(ksfxGalaxiteProcessorDoorOpening, m_wx, m_wy);
 				}
 			}
 
@@ -510,7 +510,7 @@ lbError:
 					if (!m_fDoorMoving) {
 						m_fDoorMoving = true;
 						if (m_pplr == gpplrLocal)
-							gsndm.PlaySfx(ksfxGalaxiteProcessorDoorClosing);
+							gsndm.PlaySfx(ksfxGalaxiteProcessorDoorClosing, m_wx, m_wy);
 					}
 				}
 			}

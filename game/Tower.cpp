@@ -510,7 +510,7 @@ bool GunTowerGob::Fire(UnitGob *puntTarget, WCoord wx, WCoord wy, WCoord wdx, WC
 
 	// Play sound
 
-	gsndm.PlaySfx(m_ptwrc->sfxFire);
+	gsndm.PlaySfx(m_ptwrc->sfxFire, m_wx, m_wy);
 
 	return true;
 }
@@ -606,7 +606,7 @@ bool RocketTowerGob::Fire(UnitGob *puntTarget, WCoord wx, WCoord wy, WCoord wdx,
 
 	// Play sound
 
-	gsndm.PlaySfx(m_ptwrc->sfxFire);
+	gsndm.PlaySfx(m_ptwrc->sfxFire, m_wx, m_wy);
 
 	return true;
 }

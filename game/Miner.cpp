@@ -187,7 +187,7 @@ void MinerGob::OnMenuItemSelected(int idc)
 			msg.DeliverCommand.gidTarget = kgidNull;
 			msg.tDelivery = 0;
 			gcmdq.Enqueue(&msg);
-			gsndm.PlaySfx(ksfxGalaxMinerDeliver);
+			gsndm.PlaySfx(ksfxGalaxMinerDeliver, m_wx, m_wy);
 		}
 		break;
 	}
@@ -262,7 +262,7 @@ void MinerGob::SetTarget(Gid gid, WCoord wx, WCoord wy, WCoord wxCenter, WCoord 
 
 	// Play deliver sfx
 
-	gsndm.PlaySfx(ksfxGalaxMinerDeliver);
+	gsndm.PlaySfx(ksfxGalaxMinerDeliver, m_wx, m_wy);
 
 	// Flash the target Gob
 

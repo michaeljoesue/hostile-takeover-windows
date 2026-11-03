@@ -1353,7 +1353,7 @@ lbHitNoDamage:
 
 			m_ff ^= kfGobLayerDepthSorted | kfGobLayerSurfaceDecal;
 
-			gsndm.PlaySfx(SfxFromCategory(m_pmuntc->sfxcDestroyed));
+			gsndm.PlaySfx(SfxFromCategory(m_pmuntc->sfxcDestroyed), m_wx, m_wy);
 
 			// remove corpse in .2 seconds
 

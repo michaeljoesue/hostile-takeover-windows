@@ -8269,6 +8269,10 @@ public:
 	void Enable(bool fEnable) secSoundMgr;
 	bool IsEnabled() secSoundMgr;
 	void PlaySfx(Sfx sfx) secSoundMgr;
+
+	// Plays a sound that happens at a place on the map: panned left/right by
+	// where it is relative to the view, and quieter the farther away it is.
+	void PlaySfx(Sfx sfx, WCoord wx, WCoord wy) secSoundMgr;
 	void WaitSilence() secSoundMgr;
 	long FilterSleepTicks(long ct) secSoundMgr;
 	void SetVolume(int nVolume) secSoundMgr;
@@ -8277,6 +8281,8 @@ public:
 	void RestoreState() secSoundMgr;
 
 private:
+	void PlaySfxEx(Sfx sfx, int nVolume, int nPan) secSoundMgr;
+
 	int m_cChannels;
 	byte m_anPriorityChannel[kcChannelsMax];
 	FileMap *m_afmap;

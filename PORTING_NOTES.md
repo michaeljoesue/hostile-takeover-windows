@@ -183,8 +183,9 @@ screenshots. The following were verified:
 - Build menu: three units queued, right-click on the icon and on Order each
   removed one, and right-clicking a unit with nothing queued changed nothing
 
-Not verified: sound (the test environment had no audio device; SDL uses
-standard Windows audio) and a run on a physical Windows 11 PC.
+Not verified at this stage: sound (the test environment has no audio device;
+see Part 3 for how the new mixer was checked) and a run on a physical
+Windows 11 PC.
 
 ## 9. Packaging
 
@@ -378,6 +379,89 @@ used for testing, so they were driven by keyboard. That is a testing quirk,
 not something seen on Windows. As with the game, a run on a physical
 Windows 11 PC is still to come.
 
+# Part 3: positional stereo sound
+
+## 16. The problem
+
+A player noticed that battles elsewhere on the map sounded exactly like
+battles on screen, with no hint of direction. Reading the code showed why:
+
+- `SoundMgr::PlaySfx(sfx)` takes only the sound, never a position. Every
+  gunshot and explosion on the map played at full volume, dead center.
+- The SDL sound device output 8 kHz, 8-bit **mono**, the format of the
+  original handhelds' speakers.
+- It mixed only **4 voices** at once and *averaged* them, so each sound got
+  quieter whenever another started, and a distant battle could take the
+  voices that on-screen sounds needed.
+- The Options screen's volume slider called `SetVolume`, but the SDL device
+  ignored it (the setting was even saved in the preferences).
+
+## 17. The new mixer (`game/sdl/sdlsounddev.cpp`)
+
+- 16-bit stereo at 44.1 kHz. The 8 kHz ADPCM sound effects are decoded
+  exactly as before and upsampled with linear interpolation, so pitch and
+  length are unchanged.
+- 16 voices (`kcChannelsMax`), each with its own volume and left/right
+  pan (linear pan: the far speaker fades, the near one stays at full).
+- Voices are added together with headroom, and a soft limiter compresses
+  pile-ups instead of letting them clip harshly.
+- The master volume works, so the Options slider does too.
+
+`SoundDevice` gained `PlayAdpcmEx(ichnl, pb, cb, nVolume, nPan)`. Its default
+implementation calls the old `PlayAdpcm`, so the iOS and other sound devices
+are unaffected.
+
+## 18. Positioning sounds (`game/soundmgr.cpp`)
+
+`SoundMgr::PlaySfx(sfx, wx, wy)` positions a sound relative to the view;
+the maths is in `CalcSfxPosition` so it can be tested on its own:
+
+- **Pan** follows the horizontal distance from the center of the view: up
+  to half-way to one side at the edge of the screen, and up to 80% one more
+  screen-width away. Neither ear ever goes completely silent, which is
+  tiring on headphones.
+- **Volume** is full anywhere on screen. Outside it, it halves 12 tiles from
+  the edge of the view and keeps falling, but never below 1/8, so a battle
+  across the map is still a faint sound from its side.
+- Stereo can't show above/below: a battle straight north of the view is
+  centered, just quieter.
+
+The 23 calls for sounds that happen somewhere on the map now pass their
+object's position: weapons firing (infantry, tanks, artillery, towers,
+Andy), projectile impacts, units and buildings destroyed, buildings
+damaged, miners delivering, processor doors, and the Replicator building.
+Interface sounds, voice announcements ("unit ready", "base under attack",
+"miner under attack") and responses to your own commands stay centered and
+at full volume, so they are never missed.
+
+## 19. Testing the sound without a sound card
+
+The test machine has no audio device, so the sound was checked by
+measuring, not listening. `tools/audio_tests/run.sh` runs two test programs
+against the Linux build:
+
+- **Mixer** (`mixer_test.cpp`): the new decoder reproduces the original
+  mixer's samples exactly (8,000 of 8,000); a sound panned fully left comes
+  only out of the left channel; half right gives exactly twice the level on
+  the right; half volume halves the level; the master volume at 0 is
+  silent and at 128 about half; one second of sound lasts one second after
+  upsampling; and 16 voices at once stay within range.
+- **Positioning** (`position_test.cpp`): on screen is full volume; 12 tiles
+  off screen is half volume and panned further to that side; far away is
+  quiet but audible; straight above is centered; nearer is always louder.
+
+Then a real battle: challenge C4 ran for about 5 minutes with SDL's dummy
+audio driver standing in for a sound card, and a test build (`-DSFX_TRACE`)
+logged every positioned sound. Of 2,580 sounds, 2,270 were off screen. They
+were quieter than on-screen ones (median 54% volume; the only exceptions were
+two sounds less than a tile past the edge, which count as on screen) and
+all were panned to their side, and
+after the view was scrolled left, the fighting to the right came out mostly
+on the right. The Windows `.exe` also ran under Wine with the dummy driver
+through menus and into a mission.
+
+What remains is listening to it on a real PC.
+
 ## File map
 
 | File | Purpose |
@@ -405,3 +489,7 @@ Windows 11 PC is still to come.
 | `data/build-data.bat`, `data/makefile` | Data build on Windows |
 | `game/sdl/win/package-editor.sh` | Packages the editor and Author Kit |
 | `game/sdl/win/README-Editor.txt` | Editor README shipped in the zip |
+| `game/sdl/sdlsounddev.cpp` | Stereo 44.1 kHz mixer, 16 voices, master volume |
+| `game/sounddevice.h` | `PlayAdpcmEx`: per-sound volume and pan |
+| `game/soundmgr.cpp` | `PlaySfx(sfx, wx, wy)` and `CalcSfxPosition` |
+| `tools/audio_tests/` | Mixer and positioning tests |

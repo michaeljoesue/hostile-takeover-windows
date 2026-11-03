@@ -147,6 +147,111 @@ bool SoundMgr::SaveStateAndClear()
 
 void SoundMgr::PlaySfx(Sfx sfx)
 {
+	PlaySfxEx(sfx, kcVolumeFull, 0);
+}
+
+// How positioned sounds fade with distance. A sound inside the view plays
+// at full volume. Outside it, the volume falls to half at kctHalfVolume
+// tiles from the edge of the view, but never below knVolumeFar, so a distant
+// battle stays audible as a faint sound from its side.
+
+#define kctHalfVolume 12
+#define knVolumeFar (kcVolumeFull / 8)
+
+// Sounds at the edge of the view are panned this far; sounds a further
+// view-width away (or more) reach knPanMax. Neither speaker goes completely
+// silent, which is tiring on headphones.
+
+#define knPanViewEdge (kcPanFull / 2)
+#define knPanMax (kcPanFull * 4 / 5)
+
+// Volume (0..kcVolumeFull) and pan (-kcPanFull..kcPanFull) for a sound at
+// wx, wy when the view's top-left is wxView, wyView and it is wcxView by
+// wcyView world units. Long math: world coordinates are 16 bit and their
+// differences can overflow.
+void CalcSfxPosition(long wx, long wy, long wxView, long wyView, long wcxView,
+        long wcyView, int *pnVolume, int *pnPan)
+{
+	// Pan from the horizontal distance to the center of the view
+
+	long wcxHalf = wcxView / 2;
+	long dwx = wx - (wxView + wcxHalf);
+	long adwx = dwx < 0 ? -dwx : dwx;
+	long nPan;
+	if (adwx <= wcxHalf) {
+		nPan = adwx * knPanViewEdge / wcxHalf;
+	} else {
+		nPan = knPanViewEdge + (adwx - wcxHalf) * (knPanMax - knPanViewEdge) / wcxView;
+		if (nPan > knPanMax)
+			nPan = knPanMax;
+	}
+	if (dwx < 0)
+		nPan = -nPan;
+
+	// Volume from the distance to the edge of the view
+
+	long dx = 0;
+	if (wx < wxView)
+		dx = wxView - wx;
+	else if (wx > wxView + wcxView)
+		dx = wx - (wxView + wcxView);
+	long dy = 0;
+	if (wy < wyView)
+		dy = wyView - wy;
+	else if (wy > wyView + wcyView)
+		dy = wy - (wyView + wcyView);
+	long nVolume = kcVolumeFull;
+	if (dx != 0 || dy != 0) {
+		// Distance in tiles (rough, avoids a square root): max + min / 2
+		long tdx = dx / kwcTile;
+		long tdy = dy / kwcTile;
+		long tc = tdx > tdy ? tdx + tdy / 2 : tdy + tdx / 2;
+		nVolume = (long)kcVolumeFull * kctHalfVolume / (kctHalfVolume + tc);
+		if (nVolume < knVolumeFar)
+			nVolume = knVolumeFar;
+	}
+
+	*pnVolume = (int)nVolume;
+	*pnPan = (int)nPan;
+}
+
+void SoundMgr::PlaySfx(Sfx sfx, WCoord wx, WCoord wy)
+{
+	if (m_psndd == NULL || gsim.GetLevel() == NULL) {
+		PlaySfx(sfx);
+		return;
+	}
+
+	WCoord wxView, wyView;
+	gsim.GetViewPos(&wxView, &wyView);
+	Size sizPlayfield;
+	ggame.GetPlayfieldSize(&sizPlayfield);
+	long wcxView = WcFromUpc(_min(sizPlayfield.cx, kpcMax - 1));
+	long wcyView = WcFromUpc(_min(sizPlayfield.cy, kpcMax - 1));
+	if (wcxView <= 0 || wcyView <= 0) {
+		PlaySfx(sfx);
+		return;
+	}
+
+	int nVolume, nPan;
+	CalcSfxPosition(wx, wy, wxView, wyView, wcxView, wcyView, &nVolume, &nPan);
+#ifdef SFX_TRACE
+	// Test builds only: log positioned sounds (see PORTING_NOTES.md)
+	{
+		FILE *pf = fopen("sfx-trace.txt", "a");
+		if (pf != NULL) {
+			fprintf(pf, "sfx=%d at=%d,%d view=%d,%d size=%ld,%ld vol=%d pan=%d\n", (int)sfx,
+					wx / kwcTile, wy / kwcTile, wxView / kwcTile, wyView / kwcTile,
+					wcxView / kwcTile, wcyView / kwcTile, nVolume, nPan);
+			fclose(pf);
+		}
+	}
+#endif
+	PlaySfxEx(sfx, nVolume, nPan);
+}
+
+void SoundMgr::PlaySfxEx(Sfx sfx, int nVolume, int nPan)
+{
 	// Get the sfx entry and channel
 
 	if (m_psndd == NULL)
@@ -209,7 +314,7 @@ void SoundMgr::PlaySfx(Sfx sfx)
 	// Play the sound
 
 	PcmHeader *pcmh = &m_apcmh[psfxe->nSound];
-	m_psndd->PlayAdpcm(ichnlUse, pcmh->pb, pcmh->cb);
+	m_psndd->PlayAdpcmEx(ichnlUse, pcmh->pb, pcmh->cb, nVolume, nPan);
 }
 
 void SoundMgr::WaitSilence()

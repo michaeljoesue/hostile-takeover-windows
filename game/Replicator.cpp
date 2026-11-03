@@ -363,7 +363,7 @@ BeginStateMachine
 					// Let player know the replication process has happened
 					// play cool replication sound effect
 
-					gsndm.PlaySfx(ksfxReplicatorBuild);
+					gsndm.PlaySfx(ksfxReplicatorBuild, m_wx, m_wy);
 
 					// wait a quarter second and let the new unit announce itself
 

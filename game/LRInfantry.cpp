@@ -70,7 +70,7 @@ bool LRInfantryGob::Fire(UnitGob *puntTarget, WCoord wx, WCoord wy, WCoord wdx, 
 
 	// Play sfx
 
-	gsndm.PlaySfx(m_pmuntc->sfxFire);
+	gsndm.PlaySfx(m_pmuntc->sfxFire, m_wx, m_wy);
 
 	return true;
 }
@@ -116,7 +116,7 @@ BeginStateMachine
 
 			m_ff ^= kfGobLayerDepthSorted | kfGobLayerSurfaceDecal;
 
-			gsndm.PlaySfx(SfxFromCategory(m_pmuntc->sfxcDestroyed));
+			gsndm.PlaySfx(SfxFromCategory(m_pmuntc->sfxcDestroyed), m_wx, m_wy);
 			m_ani.Start("die 3", kfAniIgnoreFirstAdvance);
 			MarkRedraw();
 
@@ -346,7 +346,7 @@ BeginStateMachine
 				UnitGob *punt = (UnitGob *)ggobm.GetGob(m_gidOwner);
 				if (punt != NULL) {
 					UnitConsts *puntc = (UnitConsts *)punt->GetConsts();
-					gsndm.PlaySfx(puntc->sfxImpact);
+					gsndm.PlaySfx(puntc->sfxImpact, m_wx, m_wy);
 				}
 
 				// Start the impact animation
