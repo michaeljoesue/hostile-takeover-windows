@@ -689,16 +689,16 @@ editor's own code and played through Play Level in Game:
 Not tested: multiplayer with a fifth player (the lobby and servers only
 know four).
 
-## 28. Side 2 in tomato red (#FF6347)
+## 28. Side 2 in light red (#FF6666)
 
-`python3 tools/set_side_color.py 2 FF6347` turned side 2's ramp (originally
-232,32,0 down to 64,8,0) into 255,99,71 / 215,83,60 / 132,51,37 /
-101,39,28 / 70,27,19 in the game data's palettes and the source palettes.
-(It was briefly pure red, #FF0000, first.) Tested with C4 changed so the
-player is side 2: units and buildings draw with exactly #FF6347 and its
-darker shades, and none of the old red remains. The same entries colour
-Fox's text in the in-game messages. A data rebuild rounds to 6 bits
-(252,96,68).
+`python3 tools/set_side_color.py 2 FF6666` turned side 2's ramp (originally
+232,32,0 down to 64,8,0) into 255,102,102 / 215,86,86 / 132,53,53 /
+101,40,40 / 70,28,28 in the game data's palettes and the source palettes.
+(It was pure red, #FF0000, and then tomato, #FF6347, first.) Tested with C4
+changed so the player is side 2: units and buildings draw with exactly
+#FF6666 and its darker shades, and none of the earlier colour remains. The
+same entries colour Fox's text in the in-game messages. A data rebuild
+rounds to 6 bits (252,100,100).
 
 ## File map
 
