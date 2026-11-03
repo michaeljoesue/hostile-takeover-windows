@@ -22,6 +22,17 @@ namespace PalTool
 		static string gstrOutputFileName = null;
 		static bool gfVerbose = false;
 		static bool gfEliminateShadowColor = false;
+		static Color[] gaclrSideKeys = {
+			Color.FromArgb(0, 116, 232), Color.FromArgb(0, 96, 196), Color.FromArgb(0, 64, 120),
+			Color.FromArgb(0, 48, 92), Color.FromArgb(0, 32, 64) };
+
+		static bool IsSideKeyColor(Color clr) {
+			foreach (Color clrT in gaclrSideKeys) {
+				if (clr.R == clrT.R && clr.G == clrT.G && clr.B == clrT.B)
+					return true;
+			}
+			return false;
+		}
 		static bool gfEliminateTransparentColor = false;
 		static bool gfPrintColorUsers = false;
 		static bool gfAnalyse = false;
@@ -239,6 +250,16 @@ namespace PalTool
 								continue;
 
 							if (gfEliminateShadowColor && clr == clrShadow)
+								continue;
+
+							// The five source blues that mark side-coloured pixels
+							// become side codes, not palette colours (see
+							// SpiffLib/tbitmap.cs), so they don't need palette
+							// entries. They used to match the side 1 ramp in the
+							// preload palette exactly; once a side's colour is
+							// changed (tools/set_side_color.py) they would otherwise
+							// take up palette entries of their own.
+							if (gfEliminateShadowColor && IsSideKeyColor(clr))
 								continue;
 
 							if (gf6bitRGB)

@@ -586,6 +586,69 @@ other changes are wider types holding the same values.
 
 Not tested: multiplayer on big maps.
 
+# Part 5: side 1's colour (branch `feature/side1-color`)
+
+Side 1 (blue in the original game) is light blue, `#99CCFF`
+(R 153, G 204, B 255), on this branch.
+
+## 25. How side colours work
+
+Unit and building art isn't stored in a side's colour. When the art is
+compiled, pixels in five special source blues (`SpiffLib/tbitmap.cs`) become
+"side codes" 0–4, from brightest to darkest. At run time
+`TBitmap::InitClass` maps each side's codes onto five palette entries, its
+*ramp* (`kiclr0BlueSide`…`kiclr4BlueSide` in `game/res.h`, which
+`gaclr8bpp` in `game/misc.cpp` points at palette entries 16–20 for side 1).
+The minimap dot and a few interface details (side 1's title colour, some
+button borders and the slider track) use the same entries.
+
+So a side's colour is just those five palette entries, and changing it needs
+no new art and no code change.
+
+## 26. The change
+
+`tools/set_side_color.py 1 99CCFF` sets entry 16 to the new colour and
+scales entries 17–20 by the original ramp's brightness steps (232, 196, 120,
+92, 64 → 1, 0.84, 0.52, 0.40, 0.28), giving
+153,204,255 / 129,172,215 / 79,106,132 / 61,81,101 / 42,56,70. It writes them
+into:
+
+- all ten palettes (`.palbin` records) in `game/htdata832.pdb`, the data the
+  Windows build ships (150 bytes change);
+- `data/preload_8bpp.pal` and `data/art824/common_8bpp.pal`, the palettes a
+  data rebuild starts from, so the editor's Rebuild Built-in Missions keeps
+  the colour.
+
+A test rebuild showed one more thing to fix. `paltool`, which builds the
+palettes from the art, counted the five source blues that mark side-coloured
+pixels as ordinary colours. Before, they matched the preloaded side 1 ramp
+exactly and merged into it; after the change they took five palette
+entries of their own, pushing out five real colours. `paltool` now skips
+them, as it already skipped the transparent and shadow key colours. A
+rebuild rounds palette values to 6 bits like the rest of the palette, so
+rebuilt data has 152,204,252 (indistinguishable from 153,204,255).
+
+The shadow maps (which palette entry a colour turns into under a shadow)
+are left as they were, so a side-1 unit in shadow uses the darker entries of
+its own ramp as before.
+
+The same script can recolour sides 2–4 (ramps at entries 21, 26 and 11).
+
+## 27. Checking it
+
+- In M4 (the player is side 1) the units drew with exactly 153,204,255 and
+  129,172,215 and none of the old blues remained; the minimap dots are
+  light blue too.
+- In C4 the starting view, compared pixel by pixel with a screenshot taken
+  before the change, differed in only 5 pixels: a bit of terrain art that
+  happened to use the two darkest old blues. On the main menu 168 pixels of
+  the dark background pattern moved from navy to slate (same reason), which
+  isn't noticeable.
+- The map editor still shows side 1 in its old blue (its unit pictures are
+  separate images).
+
+To undo it, don't merge the branch (or revert its commit).
+
 ## File map
 
 | File | Purpose |
@@ -621,3 +684,5 @@ Not tested: multiplayer on big maps.
 | `game/terrainmap.cpp` | Path finding on big maps; "Map too big" check |
 | `game/SimUI.cpp` | Minimap at 1 pixel per tile on big maps |
 | `m/LevelDoc.cs` | Map size up to 120 × 120; canvas grows with it |
+| `tools/set_side_color.py` | Sets a side's colour in the game data and source palettes |
+| `paltool/PalTool.cs` | Skips the side key colours when building palettes |
