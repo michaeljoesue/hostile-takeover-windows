@@ -689,6 +689,16 @@ editor's own code and played through Play Level in Game:
 Not tested: multiplayer with a fifth player (the lobby and servers only
 know four).
 
+## 28. Side 2 in pure red (branch `feature/side2-red`, on top of Crimson)
+
+`python3 tools/set_side_color.py 2 FF0000` turned side 2's ramp (originally
+232,32,0 down to 64,8,0) into 255,0,0 / 215,0,0 / 132,0,0 / 101,0,0 / 70,0,0
+in the game data's palettes and the source palettes. Tested with C4 changed
+so the player is side 2: units and buildings draw with exactly #FF0000 and
+none of the old red remains. The same entries colour Fox's text in the
+in-game messages, so that is pure red too. A data rebuild rounds to 6 bits
+(252,0,0).
+
 ## File map
 
 | File | Purpose |
