@@ -1,23 +1,23 @@
 # Windows port (SDL2, MinGW-w64)
 
 Builds a native, self-contained `HostileTakeover.exe` for Windows 10/11 from
-the existing SDL port. Single player is the target; multiplayer code is
-compiled in but untested.
+the existing SDL port. Single player only: multiplayer, chat, the
+leaderboard/score upload and mission pack downloads have been removed (see
+"Online features removed" in `PORTING_NOTES.md`).
 
 ## Build
 
 On Ubuntu/Debian, or in WSL on Windows 11:
 
 ```sh
-sudo apt install mingw-w64 cmake make curl python3 zip mono-devel p7zip-full
+sudo apt install mingw-w64 make curl python3 zip mono-devel p7zip-full
 cd game/sdl/win
 ./build.sh
 ```
 
 Output: `game/sdl/win/dist/HostileTakeover-Windows.zip` (exe, data files,
 README, and the `Editor` folder with the map editor and Author Kit). The
-script downloads SDL2 2.30.9 (MinGW dev package), builds a static libcurl
-8.10.1 with Schannel and fetches w64devkit 2.10.0 (for `make`/`sh`) the first
+script downloads SDL2 2.30.9 (MinGW dev package) and fetches w64devkit 2.10.0 (for `make`/`sh`) the first
 time, into `game/sdl/win/deps/`.
 
 `NO_EDITOR=1 ./build.sh` builds only the game. `package-editor.sh <game

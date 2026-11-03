@@ -4,9 +4,7 @@
 //   <folder containing HostileTakeover.exe>\htdata832.pdb, htsfx.pdb   (game data)
 //   %APPDATA%\HostileTakeover\                                         (saves, prefs, log)
 
-#include "game/sdl/win/winchatcontroller.h"
 #include "game/sdl/hosthelpers.h"
-#include "game/sdl/sdlhttpservice.h"
 #include "base/thread.h"
 #include "base/wincompat.h"
 #include <shellapi.h>
@@ -25,14 +23,12 @@ namespace wi {
 char gszHomeDir[PATH_MAX];              // %APPDATA%\HostileTakeover
 char gszMainDataDir[PATH_MAX];          // data files directory (next to the exe)
 char gszTempDir[PATH_MAX];              // temp file directory
-char gszMissionPacksDir[PATH_MAX];      // downloaded mission packs
+char gszMissionPacksDir[PATH_MAX];      // installed mission packs
 char gszMissionPackInfosDir[PATH_MAX];
 char gszSaveGamesDir[PATH_MAX];         // saved games
 char gszPrefsFilename[PATH_MAX];        // game prefs
 char gszCompletesDir[PATH_MAX];         // for "mission completed" tracking
 char gszLogFilename[PATH_MAX];
-HttpService *gphttp;
-IChatController *gpchat;
 
 static void StripTrailingSlash(char *psz) {
     int cch = (int)strlen(psz);
@@ -106,16 +102,10 @@ bool HostHelpers::Init() {
 
     base::WinsockInit();
 
-    extern HttpService *gphttp;
-    gphttp = (HttpService *)new SdlHttpService();
-
-    gpchat = NULL;
-
     return true;
 }
 
 void HostHelpers::Cleanup() {
-    delete gphttp;
 }
 
 const char *HostHelpers::GetMainDataDir() {
@@ -144,10 +134,6 @@ const char *HostHelpers::GetCompletesDir() {
 
 const char *HostHelpers::GetPrefsFilename() {
     return gszPrefsFilename;
-}
-
-void HostHelpers::OpenUrl(const char *pszUrl) {
-    SDL_OpenURL(pszUrl);
 }
 
 void HostHelpers::Log(const char *pszFormat, va_list va)
@@ -208,59 +194,6 @@ void HostHelpers::GetSurfaceProperties(SurfaceProperties *pprops)
 bool HostHelpers::IsExiting()
 {
     return false;
-}
-
-const char *HostHelpers::GetUdid()
-{
-    // A stable per-machine id derived from the computer name and the
-    // system volume serial number.
-    static char gszUdid[24];
-    if (gszUdid[0] == 0) {
-        DWORD serial = 0;
-        GetVolumeInformationA("C:\\", NULL, 0, &serial, NULL, NULL, NULL, 0);
-        char szName[MAX_COMPUTERNAME_LENGTH + 1];
-        DWORD cch = sizeof(szName);
-        if (!GetComputerNameA(szName, &cch)) {
-            szName[0] = 0;
-        }
-        dword hash = 2166136261u;
-        for (const char *pch = szName; *pch != 0; pch++) {
-            hash = (hash ^ (byte)*pch) * 16777619u;
-        }
-        snprintf(gszUdid, sizeof(gszUdid), "%08x%08x", (unsigned)hash,
-                (unsigned)serial);
-    }
-    return gszUdid;
-}
-
-void HostHelpers::InitiateAsk(const char *title, int max, const char *def,
-        int keyboard, bool secure)
-{
-    // Only used by online multiplayer / custom mission pack URLs.
-    Log("HostHelpers::InitiateAsk not implemented");
-}
-
-void HostHelpers::GetAskString(char *psz, int cb)
-{
-    if (cb > 0) {
-        *psz = 0;
-    }
-}
-
-IChatController *HostHelpers::GetChatController()
-{
-    if (gpchat == NULL) {
-        gpchat = new wi::WinChatController();
-    }
-    return gpchat;
-}
-
-void HostHelpers::InitiateWebView(const char *title, const char *url) {
-    SDL_OpenURL(url);
-}
-
-const char *HostHelpers::GetPlatformString() {
-    return "Windows";
 }
 
 } // namespace wi

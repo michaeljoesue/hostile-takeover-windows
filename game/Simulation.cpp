@@ -1,6 +1,5 @@
 #include "game/ht.h"
 #include "game/wistrings.h"
-#include "game/stateframe.h"
 
 namespace wi {
 
@@ -452,13 +451,6 @@ void Simulation::Update(CommandQueue *pcmdq)
     int i = 0;
     Message *pmsg = pcmdq->GetFirst();
     for (; i < cmsg; i++, pmsg++) {
-        // Disconnect is processed in order, by all clients, at the same time.
-        // To do this, it is turned into a message, since messages have a
-        // synchronization mechanism.
-        if (pmsg->mid == kmidPlayerDisconnect) {
-            HandlePlayerDisconnect(pmsg);
-            continue;
-        }
         gsmm.RouteMessage(pmsg);
     }
     pcmdq->Clear();
@@ -499,12 +491,6 @@ void Simulation::Update(CommandQueue *pcmdq)
         if (pgobT == NULL)
             continue;
 
-#ifdef MP_DEBUG_SHAREDMEM
-        gsideCurrent = pgobT->GetOwner()->GetSide();
-        ggidCurrent = pgobT->GetId();
-        gcupdCurrent = m_cUpdates;
-        ggtCurrent = pgobT->GetType();
-#endif
 
         UpdateInterval *punvl = pgobT->GetUpdateInterval();
         if (punvl->Decrement()) {
@@ -590,61 +576,9 @@ void Simulation::Update(CommandQueue *pcmdq)
     }
 
 
-#ifdef MP_STRESS
-    // Has to be at the end of Update() because gcmdq serves the needs of both
-    // collecting client commands and collecting multiplayer commands. This
-    // role switching occurs in in knmidScUpdate handling in
-    // SimUIForm::OnReceive.
-
-    extern void MPStressUpdate();
-    MPStressUpdate();
-#endif
 
 }
 
-void Simulation::HandlePlayerDisconnect(Message *pmsg) {
-    // Re-route this as a NetMessage to get proper handling
-    if (gptra == NULL) {
-        return;
-    }
-    IGameCallback *pgcb = gptra->GetGameCallback();
-    if (pgcb == NULL) {
-        return;
-    }
-
-    // This must not be modal
-    PlayerDisconnectNetMessage pdnm;
-    pdnm.pid = pmsg->PlayerDisconnect.pid;
-    pdnm.nReason = pmsg->PlayerDisconnect.nReason;
-    NetMessage *pnm = &pdnm;
-    pgcb->OnNetMessage(&pnm);
-}
-
-#ifdef TRACKSTATE
-void Simulation::TrackState(StateFrame *frame) {
-    // Sim stuff
-
-    int i = frame->AddCountedValue('SIMU');
-    frame->AddValue('SEED', (dword)GetRandomSeed(), i);
-    frame->AddValue('CMPU', (dword)gcMessagesPerUpdate, i);
-    frame->AddValue('CUPD', (dword)m_cUpdates, i);
-
-    // gobs
-
-    Gob *pgobT;
-    for (pgobT = ggobm.GetFirstGob(); pgobT != NULL;
-            pgobT = ggobm.GetNextGob(pgobT)) {
-        if (!(pgobT->GetFlags() & kfGobStateMachine)) {
-            continue;
-        }
-        pgobT->TrackState(frame);
-    }
-
-    // players
-
-    gplrm.TrackState(frame);
-}
-#endif
 
 void Simulation::SetSelection(Rect *prc)
 {

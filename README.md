@@ -19,7 +19,7 @@ along with it.
    are needed.
 3. If Windows shows **"Windows protected your PC"**, click **More info → Run
    anyway**. This happens for any program that isn't code-signed.
-4. Choose **Play → Single Player → M0: Introduction** to start the story.
+4. Choose **Play → M0: Introduction** to start the story.
 
 ### Controls
 
@@ -56,8 +56,12 @@ beside `HostileTakeover.exe`.
 
 ### Known limitations
 
-- Single player is the focus. Multiplayer, the leaderboard and add-on mission
-  downloads depend on the original online servers and may not work.
+- Single player only. On branch `feature/crimson-side` the online features
+  (multiplayer, chat, the leaderboard and score upload, the Forums button and
+  downloading add-on mission packs) have been removed, since the original
+  servers are gone. Add-on mission packs are installed with the editor (see
+  below). The multiplayer maps (`M_*`) are still in the game data and the
+  editor, but the game doesn't play them.
 - Arrow keys are the only keyboard scrolling; there is no edge-of-screen
   mouse scrolling.
 
@@ -71,7 +75,7 @@ game:
 | Command | What it does |
 | --- | --- |
 | Play Level in Game (F5) | Starts the game straight into the level you're editing |
-| Install Mission Pack in Game | Installs the open levels as a mission pack; it shows up under Play → Single Player (or Multiplayer) → Add-On |
+| Install Mission Pack in Game | Installs the open levels as a mission pack; it shows up under Play → Add-On (single player levels only) |
 | Remove Mission Pack from Game | Lists the installed packs and removes the one you pick |
 | Open Built-in Mission | Opens the game's own story (`S_*`), challenge (`C_*`) and multiplayer (`M_*`) missions |
 | Rebuild Built-in Missions | Rebuilds the game data from `Editor\AuthorKit` so your changes to built-in missions take effect (a few minutes the first time) |
@@ -81,8 +85,7 @@ game:
 version of the game supports maps up to 120 × 120 (about 3.5 times the area of 64 × 64):
 open a level and use **Settings → Map Size** to set the size of the
 playable area. The minimap switches to one pixel per tile on maps bigger
-than 64 tiles so it stays the familiar size. Big maps have been tested in
-single player; multiplayer on them hasn't been tried.
+than 64 tiles so it stays the familiar size.
 
 **Crimson side** (branch `feature/crimson-side`). Besides sides 1–4
 there is a fifth side, Crimson (#DC143C). Pick "Crimson" in the editor's
@@ -108,12 +111,12 @@ The Windows version is cross-compiled with MinGW-w64. On Ubuntu/Debian, or in
 WSL on Windows 11:
 
 ```sh
-sudo apt install mingw-w64 cmake make curl python3 zip mono-devel p7zip-full
+sudo apt install mingw-w64 make curl python3 zip mono-devel p7zip-full
 cd game/sdl/win
 ./build.sh
 ```
 
-The script downloads SDL2, builds a static libcurl and fetches `make`/`sh` from
+The script downloads SDL2 and fetches `make`/`sh` from
 w64devkit the first time, compiles the game, the editor and the data tools,
 assembles the Author Kit, and writes `game/sdl/win/dist/HostileTakeover-Windows.zip`.
 Set `NO_EDITOR=1` to build only the game.
@@ -125,6 +128,9 @@ and [`PORTING_NOTES.md`](PORTING_NOTES.md) for how the port was done.
 
 The original build instructions for iOS, Android, macOS, Linux, the data file
 and the multiplayer server are in [`README-upstream.md`](README-upstream.md).
+On this branch the multiplayer server (`server/`, `stats/`, `syncerror/`) and
+the game's online code have been removed, and the other platforms' builds
+haven't been updated for that.
 
 ## License
 

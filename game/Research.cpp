@@ -334,7 +334,7 @@ void ResearchGob::UpgradeUpdate()
 
 	// God can upgrade things instantly and for free
 
-	if (gfGodMode && !ggame.IsMultiplayer()) {
+	if (gfGodMode) {
 		m_nCreditsSpentOnUpgrade = nCost;
 		WaitingForCredits(false);
 	} else {
@@ -456,7 +456,7 @@ void UpgradeForm::SetOwner(ResearchGob *pgobOwner)
 	UpgradeMask upgmAllowed = pplr->GetAllowedUpgrades();
 
 	int cUpgrades = 0;
-	Upgrade *pupg = gfMultiplayer ? gaupgMP : gaupg;
+	Upgrade *pupg = gaupg;
 	for (int i = 0; i < kupgtMax; i++, pupg++) {
 
 		// Has the player already acquired this upgrade? If so, don't add it to the list
@@ -566,7 +566,7 @@ void UpgradeForm::OnControlSelected(word idc)
 
 	case kidcHelp:
 		// UNDONE: upgrade help text
-		Help("upgrades", !ggame.IsMultiplayer());
+		Help("upgrades", true);
 		break;
 
 	case kidcList:

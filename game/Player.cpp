@@ -1,6 +1,4 @@
 #include "ht.h"
-#include "mpshared/netmessage.h"
-#include "game/stateframe.h"
 #include "game/completemanager.h"
 #include "base/md5.h"
 
@@ -87,23 +85,6 @@ Player *PlayerMgr::GetNextHumanPlayer(Player *pplr)
 	return NULL;
 }
 
-Player *PlayerMgr::GetNextObservingPlayer(Player *pplr)
-{
-	int i = pplr == NULL ? 0 : pplr->m_pid + 1;
-	pplr = &m_aplr[i];
-	for (; i < kcPlayersMax; i++, pplr++) {
-        if (pplr->m_fLeftGame) {
-            continue;
-        }
-		if ((pplr->m_wf & (kfPlrInUse | kfPlrComputer | kfPlrObserver)) ==
-                (kfPlrInUse | kfPlrComputer | kfPlrObserver)) {
-			return pplr;
-        }
-	}
-
-	return NULL;
-}
-
 int PlayerMgr::GetPlayerCount()
 {
 	int cplr = 0;
@@ -114,82 +95,6 @@ int PlayerMgr::GetPlayerCount()
 	}
 
 	return cplr;
-}
-
-int PlayerMgr::GetHumanTeamCount(bool fExtra, Pid pidExtra) {
-    // Count the # of unique ally masks among active human players,
-    // even though it is a mask. This simulates team count.
-    SideMask asidmAlliesUnique[kcPlayersMax];
-    int cUnique = 0;
-	Player *pplr = m_aplr;
-    for (int i = 0; i < kcPlayersMax; i++,  pplr++) {
-        if ((pplr->m_wf & kfPlrInUse) == 0) {
-            continue;
-        }
-        bool fSkipCheck = false;
-        if (fExtra && pplr->m_pid == pidExtra) {
-            fSkipCheck = true;
-        }
-        if (!fSkipCheck) {
-            if ((pplr->m_wf & (kfPlrInUse | kfPlrComputer | kfPlrUnfulfilled))
-                    != kfPlrInUse) {
-                continue;
-            }
-        }
-        bool fFound = false;
-        for (int j = 0; j < cUnique; j++) {
-            if (pplr->GetAllies() == asidmAlliesUnique[j]) {
-                fFound = true;
-                break;
-            }
-        }
-        if (!fFound) {
-            asidmAlliesUnique[cUnique] = pplr->GetAllies();
-            cUnique++;
-        }
-    }
-    return cUnique;
-}
-
-bool PlayerMgr::DetectTransitionToSingleHumanTeam(Pid pidLeft) {
-    // Detect if there were two or more opposing sides, and now there are
-    // no opposing sides.
-
-    int cBefore = GetHumanTeamCount(true, pidLeft);
-    int cAfter = GetHumanTeamCount(false, 0);
-    return (cAfter == 1 && cBefore > 1);
-}
-
-void PlayerMgr::Init(PlayersUpdateNetMessage *ppunm)
-{
-	Reset();
-
-	PlayerRecord *pplrr = ppunm->aplrr;
-	for (int i = 0; i < ppunm->cplrr; i++, pplrr++) {
-		Player *pplr = &m_aplr[pplrr->pid];
-		pplr->Init(pplrr->pid);
-
-		pplr->m_wf |= kfPlrInUse;
-		pplr->SetSide(pplrr->side);
-
-		strncpyz(pplr->m_szName, pplrr->szName, sizeof(pplr->m_szName));
-		if (pplrr->wf & kfPlrrReady)
-			pplr->m_wf |= kfPlrReady;
-		if (pplrr->wf & kfPlrrComputer)
-			pplr->m_wf |= kfPlrComputer;
-		if (pplrr->wf & kfPlrrComputerOvermind)
-			pplr->m_wf |= kfPlrComputerOvermind;
-		if (pplrr->wf & kfPlrrUnfulfilled)
-			pplr->m_wf |= kfPlrUnfulfilled;
-        if (pplrr->wf & kfPlrrCreator)
-            pplr->m_wf |= kfPlrCreator;
-		if (pplrr->wf & kfPlrrLocal)
-			gpplrLocal = pplr;
-
-		// Life is hard for everybody in a multiplayer game!
-
-		pplr->SetHandicap(kfHcapHard);
-	}
 }
 
 bool PlayerMgr::Init(char *pszLevel)
@@ -263,12 +168,7 @@ void PlayerMgr::SetAllies(Player **applr, int cplrs, SideMask sidmAllies)
 
 	for (int n = 0; n < cplrs; n++) {
 		applr[n]->SetAllies(sidmAllies);
-
-        // Send this to the server so it can use it for ally chat
-        if (gptra != NULL) {
-            gptra->UpdateAllies(applr[n]->GetSide(), sidmAllies);
-        }
-    }
+	}
 
 	// Recalc enemies. Clear first
 
@@ -347,17 +247,6 @@ bool PlayerMgr::IsSideInUse(Side side)
 }
 #endif
 
-const char *PlayerMgr::GetCreatorName()
-{
-	Player *pplr = m_aplr;
-	for (int i = 0; i < kcPlayersMax; i++, pplr++) {
-		if (pplr->m_wf & kfPlrCreator) {
-            return pplr->m_szName;
-        }
-	}
-    return NULL;
-}
-
 void PlayerMgr::Update(int cUpdates)
 {
 	Player *pplr = m_aplr;
@@ -379,81 +268,6 @@ int PlayerMgr::GetUnitInstanceCountFromMask(UnitMask um, word wfPlr)
 	return cUnits;
 }
 
-#ifdef TRACKSTATE
-void PlayerMgr::TrackState(StateFrame *frame)
-{
-	Player *pplr = m_aplr;
-	for (int i = 0; i < kcPlayersMax; i++, pplr++) {
-		if (!(pplr->m_wf & kfPlrInUse)) {
-            continue;
-        }
-        pplr->TrackState(frame);
-	}
-}
-#endif
-
-void PlayerMgr::SendWinStats()
-{
-    if (!gfMultiplayer || gptra == NULL) {
-        return;
-    }
-
-    // Find the allies of the winner, if any. They are all winners.
-    // Since kfPlrWinner only gets set by the human winner, this will
-    // only be != 0 by the winning player.
-    SideMask sidmWinners = 0;
-    Player *pplr = NULL;
-    while ((pplr = GetNextPlayer(pplr)) != NULL) {
-        if (pplr->GetFlags() & kfPlrWinner) {
-            sidmWinners = pplr->GetAllies();
-            break;
-        }
-    }
-
-    pplr = NULL;
-    while ((pplr = GetNextPlayer(pplr)) != NULL) {
-        // Collect and send stats for each player; let the server sort it out
-        WinStatsNetMessage wsnm;
-        wsnm.pid = pplr->m_pid;
-        wsnm.ws.sidm = GetSideMask(pplr->m_side);
-        wsnm.ws.sidmAllies = pplr->m_sidmAllies;
-        wsnm.ws.cCreditsAcquired = pplr->GetTotalCreditsAcquired();
-        wsnm.ws.cCreditsConsumed = pplr->GetTotalCreditsConsumed();
-        wsnm.ws.cEnemyMobileUnitsKilled = pplr->GetEnemyMobileUnitsKilled();
-        wsnm.ws.cEnemyStructuresKilled = pplr->GetEnemyStructuresKilled();
-        wsnm.ws.cMobileUnitsLost = pplr->GetMobileUnitsLost();
-        wsnm.ws.cStructuresLost = pplr->GetStructuresLost();
-        Assert(ARRAYSIZE(pplr->m_acut) == ARRAYSIZE(wsnm.ws.acut));
-        for (int i = 0; i < ARRAYSIZE(wsnm.ws.acut); i++) {
-            wsnm.ws.acut[i] = pplr->m_acut[i];
-        }
-        Assert(ARRAYSIZE(pplr->m_acutBuilt) == ARRAYSIZE(wsnm.ws.acutBuilt));
-        for (int i = 0; i < ARRAYSIZE(wsnm.ws.acutBuilt); i++) {
-            wsnm.ws.acutBuilt[i] = pplr->m_acutBuilt[i];
-        }
-        wsnm.ws.ff = 0;
-
-        // If there is a winner team, then the rest are losers
-        if (sidmWinners != 0) {
-            if (GetSideMask(pplr->GetSide()) & sidmWinners) {
-                wsnm.ws.ff |= kfwsWinner;
-            } else {
-                wsnm.ws.ff |= kfwsLoser;
-            }
-        } else {
-            // This side isn't the winner. It doesn't know who the winners
-            // are, but it does know it is a loser.
-            if (pplr->m_wf & kfPlrLoser) {
-                wsnm.ws.ff |= kfwsLoser;
-            }
-        }
-
-        // Note: Update wsnm.hash with whatever is helpful to validate these
-        // results on the server. See validating code in server/game.cpp.
-
-        gptra->SendNetMessage(&wsnm);
-    }
-}
 
 //---------------------------------------------------------------------------
 // Player Implementation
@@ -476,28 +290,6 @@ Player::~Player()
 	}
 }
 
-#ifdef TRACKSTATE
-void Player::TrackState(StateFrame *frame) {
-    int i = frame->AddCountedValue('PLYR');
-    frame->AddValue('WFUP', (dword)m_wfUpgrades, i);
-    frame->AddValue('SIDE', (dword)m_side, i);
-    frame->AddValue('SALI', (dword)m_sidmAllies, i);
-    frame->AddValue('SDIS', (dword)m_sidmDiscovered, i);
-    frame->AddValue('CRED', (dword)m_nCredits, i);
-    frame->AddValue('POWR', (dword)m_nPowerSupply, i);
-    frame->AddValue('DMND', (dword)m_nPowerDemand, i);
-    frame->AddValue('UPGR', (dword)m_upgm, i);
-    frame->AddValue('CMUK', (dword)m_cmuntKilled, i);
-    frame->AddValue('CSTK', (dword)m_cstruKilled, i);
-    frame->AddValue('CMLS', (dword)m_cmuntLost, i);
-    frame->AddValue('CSLS', (dword)m_cstruLost, i);
-    frame->AddValue('TCAQ', (dword)m_nTotalCreditsAcquired, i);
-    frame->AddValue('TCCN', (dword)m_nTotalCreditsConsumed, i);
-    frame->AddValue('CURL', (dword)m_cUpdatesRepairLast, i);
-    frame->AddValue('CSNC', (dword)m_cStructsNeedCredits, i);
-    frame->AddValue('WFHN', (dword)m_wfHandicap, i);
-}
-#endif
 
 void Player::Init(Pid pid) 
 {
@@ -522,9 +314,6 @@ void Player::Init(Pid pid)
 	m_cUpdatesRepairLast = 0;
 	m_cStructsNeedCredits = 0; 
 	m_wfHandicap = kfHcapDefault;
-	m_cUpdates = -1;
-	m_nLagState = knLagNone;
-    m_fLeftGame = false;
 
 	memset(m_acut, 0, ARRAYSIZE(m_acut));
 	memset(m_acutBuilt, 0, ARRAYSIZE(m_acutBuilt));
@@ -673,103 +462,6 @@ bool Player::SaveState(Stream *pstm)
 	pstm->WriteWord(m_wfHandicap);
 
 	return pstm->IsSuccess();
-}
-
-// TUNE:
-#define kctLagGrace 100 // lag time period to be declared laggy player
-#define kctLagRedemption 0 // 300 // to become non-laggy, the player must be not laggy for this period
-#define kctLagKill 800 // if still laggy after this period, recommend kill
-
-bool Player::IsBehind(int cUpdates)
-{
-    // If this player has already broadcasted a disconnect message, force it
-    // into a no-lag state
-
-	bool fBehind = m_cUpdates < cUpdates;
-	if (m_wf & kfPlrDisconnectBroadcasted) {
-		SetLagState(knLagNone);
-		return fBehind;
-	}
-
-	if (fBehind) {
-		// Player is behind
-
-		switch (m_nLagState) {
-		case knLagNone:
-			// Remember that pplr is lagging and when this started
-
-			m_tLagStart = HostGetTickCount();
-			m_nLagState = knLagGrace;
-			break;
-
-		case knLagGrace:
-            // This state is effectively a grace period. If the player remains
-            // laggy through this period, it becomes guilty of lag
-			
-            if (HostGetTickCount() - m_tLagStart >= kctLagGrace) { m_nLagState
-= knLagGuilty; m_tLastLag = HostGetTickCount(); } break;
-
-		case knLagGuilty:
-		case knLagKill:
-            // This player has lagged long enough to be guilty as charged.  Now
-            // the player needs to be *not* laggy over a fixed period to get
-            // out of this state
-
-			m_tLastLag = HostGetTickCount();
-			if (HostGetTickCount() - m_tLagStart >= kctLagKill)
-				m_nLagState = knLagKill;
-			break;
-		}
-	} else {
-		// Player is not behind
-
-		switch (m_nLagState) {
-		case knLagNone:
-			// All is ok
-
-			break;
-
-		case knLagGrace:
-			// This player has "caught up" during the grace period. Assume there is no lag now.
-
-			m_nLagState = knLagNone;
-			break;
-
-		case knLagGuilty:
-		case knLagKill:
-			// Guilty of lag and yet the player has caught up. If the player can keep this state
-			// it will be declared not laggy
-
-			if (HostGetTickCount() - m_tLastLag >= kctLagRedemption) {
-				m_nLagState = knLagNone;
-				break;
-			}
-		}
-	}
-
-	return fBehind;
-}
-
-int Player::GetLagState()
-{
-	return m_nLagState;
-}
-
-void Player::SetLagState(int nLagState)
-{
-	m_nLagState = nLagState;
-	m_tLastLag = HostGetTickCount();
-	m_tLagStart = m_tLastLag;
-}
-
-int Player::GetLagTimeout()
-{
-	// Return seconds until this player gets to the kill state
-
-	long ctElapsed = HostGetTickCount() - m_tLagStart;
-	if (ctElapsed > kctLagKill)
-		return 0;
-	return (int)((kctLagKill - ctElapsed + 50) / 100);
 }
 
 void Player::SetUpgrades(word wfUpgrades)
@@ -1156,7 +848,7 @@ int Player::ShowObjectives(int so, bool fForceInfoDisplay, bool fAborting)
 
 	switch (so) {
 	case ksoObjectives:
-		idf = gfMultiplayer ? kidfMultiplayerObjectives : kidfObjectives;
+		idf = kidfObjectives;
         nGo = knGoSuccess;
 		break;
 
@@ -1164,9 +856,8 @@ int Player::ShowObjectives(int so, bool fForceInfoDisplay, bool fAborting)
 		if (m_wf & kfPlrSummaryShown)
 			return knGoSuccess;
 		m_wf |= kfPlrSummaryShown | kfPlrWinner;
-		idf = gfMultiplayer ? kidfMultiplayerWinSummary : kidfWinSummary;
-        gplrm.SendWinStats();
-        if (!gfMultiplayer && !fAborting) {
+		idf = kidfWinSummary;
+        if (!fAborting) {
             // Mark current game complete.
             // Doing it here ensures it is done when the mission is
             // completed.
@@ -1179,8 +870,7 @@ int Player::ShowObjectives(int so, bool fForceInfoDisplay, bool fAborting)
 		if (m_wf & kfPlrSummaryShown)
 			return knGoSuccess;
 		m_wf |= kfPlrSummaryShown | kfPlrLoser;
-		idf = gfMultiplayer ? kidfMultiplayerLoseSummary : kidfLoseSummary;
-        gplrm.SendWinStats();
+		idf = kidfLoseSummary;
         nGo = knGoAbortLevel;
 		break;
 
@@ -1205,7 +895,7 @@ lbTryAgain:
 	}
 
 	if (so != ksoObjectives) {
-		gsndm.PlaySfx((idf == kidfLoseSummary || idf == kidfMultiplayerLoseSummary || fAborting) ? ksfxGameLoseLevel : ksfxGameWinLevel);
+		gsndm.PlaySfx((idf == kidfLoseSummary || fAborting) ? ksfxGameLoseLevel : ksfxGameWinLevel);
     }
 
 	int idc;

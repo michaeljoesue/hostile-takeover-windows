@@ -729,6 +729,92 @@ are allies from the start: before the change only your starting corner was
 uncovered; after it OMNI's base and units were visible on the map and
 minimap. The debug build ran the mission for 3 minutes without an assert.
 
+# Part 6: online features removed (branch `feature/crimson-side`)
+
+## 30. What was removed
+
+The original servers for multiplayer, the leaderboard and the add-on mission
+pack catalogue no longer run, so this branch removes the code that used
+them. Single player is unchanged.
+
+- **Multiplayer**: the lobby, rooms, game creation and game start forms, the
+  login form, chat, the transport layer (`xtransport`, `SocTransport`,
+  `transportmgr`) and the network messages (`mpshared/netmessage`,
+  `messages`, `xpump`, `xmsg*`). The simulation no longer has a server
+  command queue, lag handling, "waiting for all players" form, observer mode,
+  resign or disconnect handling; `SimUIForm::OnTimer` just runs
+  `gsim.Update(&gcmdq)`.
+- **`gfMultiplayer` and `Game::IsMultiplayer()`**: every place that tested
+  them now does what single player always did (unit costs, armour, build
+  times and upgrades use the single player values; unit limits use the
+  single player limits; god mode, ecoms, cut scenes and "jump to mission"
+  triggers work as before).
+- **Leaderboard and score upload**: the LEADERBOARD button, the web view,
+  win statistics upload, the sync-error uploader and the state tracker.
+- **Forums button** and the URL-opening and "ask" helpers behind it.
+- **Downloading mission packs**: the ADD-ON MISSION PACKS button, the
+  download form and progress box, the HTTP pack and index loaders and the
+  libcurl-based HTTP service. `PackManager` (`mpshared/packmanager.*`) keeps
+  only the local part: listing, mounting and deleting installed packs. The
+  globals for it moved to `game/packs.h`.
+- **The server code**: `server/`, `stats/` and `syncerror/`.
+- **Build**: no more libcurl (`build.sh` no longer downloads or builds it),
+  and `-liphlpapi` is gone. Winsock (`-lws2_32`) stays, because the game's
+  event loop is woken through a loopback socket (`base/eventer.cpp`).
+
+The main menu is now PLAY, LOAD SAVED GAME, OPTIONS and HELP. PLAY goes
+straight to the mission list (Story, Challenge, Add-On); the old "Single
+Player / Multiplayer" screen is gone. The in-game menu and the battlefield
+no longer have a CHAT button. The help text (`data/helpiphone-multiplayer.txt`,
+which is the help the data build uses) no longer describes multiplayer, login,
+the leaderboard or downloading, and explains installing packs with the editor.
+
+## 31. What was kept
+
+- **Multiplayer maps.** The `M_*` levels stay in the game data and in the
+  editor's Author Kit, so they can still be opened and edited. The game's
+  mission list only shows single player missions, so they can't be played.
+- **Add-on packs installed with the editor** (Game > Install Mission Pack in
+  Game) still show under PLAY > Add-On, F5 still launches a level with
+  `-pack <id>`, and Options > Delete Mission Pack still works.
+- **File formats.** Saved games are unchanged (version 10 on this branch).
+  The preferences file keeps its layout; the online account fields
+  (user name, password, token, device id, ask URL) are written empty.
+  Resource ids in `res.h` and the message ids in `mpshared/mpht.h` were left
+  alone.
+- **Other platforms.** The iOS, Android, macOS, Linux and Palm folders were
+  not touched. They still refer to the removed files and won't build without
+  similar changes; only the Windows build is maintained here.
+
+## 32. Data changes
+
+Two records of `game/htdata832.pdb` were replaced, the rest of the file is
+byte for byte the same (so the side colours set earlier are untouched):
+
+- `forms.ini`, built from `data/forms.ini.pp` with the data makefile's
+  options (`cpp -P -DTILESIZE=32 -DIPHONE -DMULTIPLAYER`, then
+  `inicrunch`). The multiplayer, download and login forms were deleted and
+  the main menu re-laid out.
+- `help.txt`, packed from the edited help file with `packpdb2`. Packing the
+  old help file gives exactly the records the PDB had, so the new records
+  are what a full data rebuild would produce.
+
+## 33. Testing
+
+- Release and debug builds compile and link with no references to the
+  removed code.
+- Main menu shows PLAY / LOAD SAVED GAME / OPTIONS / HELP; PLAY opens the
+  mission list; story mission M1 played, objectives and ecoms shown by
+  triggers, in-game menu without CHAT, Options (game speed slider), Help.
+- Save game, abort mission (summary), load the save again.
+- Editor F5 on the 120 × 120 test level launched the game into the level
+  through `-pack`.
+- The debug build ran the 120 × 120 level for almost 5 minutes of game time
+  with fighting (3 enemy units destroyed, 2 own units lost) and no assert.
+- Saves made before the Crimson side was added (save version 9) are
+  reported as out of date, as they already were on this branch; this change
+  doesn't alter the save format.
+
 ## File map
 
 | File | Purpose |
@@ -748,8 +834,8 @@ minimap. The debug build ran the mission for 3 minutes without an assert.
 | `inc/basictypes.h` | `pword` is now `uintptr_t` |
 | `game/form.cpp`, `game/Builder.cpp` | Right click cancels queued units in build menus |
 | `game/game.cpp`, `game/sdl/main.cpp` | Command line passed through; `-pack <id>` |
-| `game/selectmission.cpp`, `game/creategameform.cpp` | Packs without an author show just their title |
-| `game/missionlist.cpp`, `game/httpindexloader.cpp` | The editor's test pack isn't listed with add-on missions |
+| `game/selectmission.cpp` | Packs without an author show just their title |
+| `game/missionlist.cpp` | The editor's test pack isn't listed with add-on missions |
 | `m/GameMenu.cs` | The editor's Game menu |
 | `tools/build_dotnet_tools.py` | Builds the editor and data tools for .NET 4 |
 | `ppini/` | C preprocessor subset for the data build |
@@ -769,3 +855,5 @@ minimap. The debug build ran the mission for 3 minutes without an assert.
 | `mpshared/side.h`, `mpshared/mpht.h` | Side 5 (Crimson): side count, masks, players |
 | `data/art824/common_8bpp.pal` | Crimson ramp at palette entries 67–71 |
 | `game/Player.cpp` (`IsVisionSharedWithLocal`, `RevealSharedVision`) | Allies share vision |
+| `game/packs.h`, `mpshared/packmanager.*` | Local mission packs only (online code removed) |
+| `data/forms.ini.pp`, `data/helpiphone-multiplayer.txt` | Main menu without online buttons; help text |

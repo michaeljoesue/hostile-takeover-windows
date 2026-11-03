@@ -3,10 +3,7 @@
 #include "base/tick.h"
 #include "base/log.h"
 #include "base/thread.h"
-#include "base/md5.h"
-#include "game/httppackmanager.h"
-#include "game/httppackinfomanager.h"
-#include "game/httpservice.h"
+#include "game/packs.h"
 #include "game/completemanager.h"
 #include <sys/types.h>
 #include <errno.h>
@@ -15,15 +12,14 @@
 namespace wi {
 
 SdlPackFileReader gpakr;
-HttpPackManager *gppackm;
-HttpPackInfoManager *gppim;
+PackManager *gppackm;
+PackInfoManager *gppim;
 CompleteManager *gpcptm;
 base::Thread *gpgt;
 
 SurfaceProperties gprops;
 SDL_FingerID gtouches[2];
 wi::Point gaptLast[2];
-bool gfWasBackgrounded;
 
 char *gpszUdid;
 
@@ -32,9 +28,9 @@ bool HostInit()
     HostHelpers::Init();
     HostHelpers::GetSurfaceProperties(&gprops);
 
-    gppackm = new HttpPackManager(gphttp, HostHelpers::GetMissionPacksDir(), HostHelpers::GetTempDir());
+    gppackm = new PackManager(HostHelpers::GetMissionPacksDir());
     gppackm->InitFromInstalled();
-    gppim = new HttpPackInfoManager(gphttp, HostHelpers::GetMissionPackInfosDir(), HostHelpers::GetTempDir());
+    gppim = new PackInfoManager(HostHelpers::GetMissionPackInfosDir());
     gpcptm = new CompleteManager(HostHelpers::GetCompletesDir());
     gpcptm->Init();
 
@@ -54,42 +50,6 @@ void HostExit()
     delete gppackm;
 
     HostHelpers::Cleanup();
-}
-
-const char *HostGenerateDeviceId() {
-    // Hash it so query params aren't obnoxious                                 
-    MD5_CTX md5;
-    MD5Init(&md5);
-    const char *udid = HostHelpers::GetUdid();
-    MD5Update(&md5, (const byte *)udid, strlen(udid));
-    byte hash[16];
-    MD5Final(hash, &md5);
-    return base::Format::ToHex(hash, 16);
-}
-
-const char *HostGetPlatformString() {
-    return HostHelpers::GetPlatformString();
-}
-
-void HostInitiateWebView(const char *title, const char *url) {
-    return HostHelpers::InitiateWebView(title, url);
-}
-
-IChatController *HostGetChatController() {
-    return HostHelpers::GetChatController();
-}
-
-void HostInitiateAsk(const char *title, int max, const char *def,
-        int keyboard, bool secure) {
-    return HostHelpers::InitiateAsk(title, max, def, keyboard, secure);
-}
-
-void HostGetAskString(char *psz, int cb) {
-    return HostHelpers::GetAskString(psz, cb);
-}
-
-void HostOpenUrl(const char *pszUrl) {
-    HostHelpers::OpenUrl(pszUrl);
 }
 
 void HostSuspendModalLoop(DibBitmap *pbm)
@@ -456,21 +416,6 @@ bool ProcessSdlEvent(base::Message *pmsg, Event *pevt)
         // Unpause simulation
         ggame.GamePause(false);
 
-        // The client was disconected in SDL_APP_DIDENTERBACKGROUND.
-        // Notify the callbacks about this to present the user with a message.
-        if (gfWasBackgrounded && gptra != NULL) {
-            if (gptra->GetGameCallback() != NULL) {
-                gptra->GetGameCallback()->OnGameDisconnect();
-            }
-
-            if (gptra->GetCallback() != NULL) {
-                gptra->GetCallback()->OnConnectionClose();
-            }
-
-            // This should already be closed from SDL_APP_DIDENTERBACKGROUND
-            gptra->Close();
-        }
-
         // SDL may have released its graphics context if the app was previously
         // backgrounded. This leaves the screen black when the user returns.
         // Hack: Draw dib and render
@@ -479,16 +424,8 @@ bool ProcessSdlEvent(base::Message *pmsg, Event *pevt)
         break;
 
     case SDL_APP_DIDENTERBACKGROUND:
-        gfWasBackgrounded = true;
-
         // Pause simulation
         ggame.GamePause(true);
-
-        // Close the connection to the server. If the user returns to the app,
-        // SDL_APP_DIDENTERFOREGROUND will notify gptra's callbacks.
-        if (gptra != NULL) {
-            gptra->Close();
-        }
 
         // Stop display rendering; SDL may release its graphics context when
         // backgrounded, so we don't want to try to render to a non-existant context.
@@ -748,11 +685,7 @@ dword HostReadFile(FileHandle hf, void *pv, dword cb)
 
 void HostSleep(dword ct)
 {
-    int cms = ct * 10;
-    struct timeval tvWait;
-    tvWait.tv_sec = cms / 1000;
-    tvWait.tv_usec = (cms % 1000) * 1000;
-    select(0, NULL, NULL, NULL, &tvWait);
+    SDL_Delay(ct * 10);
 }
 
 void HostGetSilkRect(int irc, Rect *prc)
@@ -858,7 +791,6 @@ void HostAppStop() {
 
     ggame.SaveReinitializeGame();
     gevm.SetAppStopping();
-    ggame.AskResignGame();
 }
 
 } // namespace wi

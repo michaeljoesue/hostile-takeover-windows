@@ -1,5 +1,4 @@
 #include "mpshared/packmanager.h"
-#include "mpshared/indexloader.h"
 #include "mpshared/mpht.h"
 #include "mpshared/misc.h"
 #include "inc/rip.h"
@@ -142,66 +141,6 @@ bool PackManager::ParseFilename(const char *filename, PackId *ppackid) {
         return false;
     }
     return base::Format::FromHex(filename + 8 + 1, ppackid->hash, 16);
-}
-
-void PackManager::WatchIndex(const char *indexfile, int watch_interval_ticks) {
-    // Load on a separate thread, so the game thread doesn't have to do this
-    indexfile_ = indexfile;
-
-    // Remember the last modification time of the file
-    struct stat s;
-    memset(&s, 0, sizeof(s));
-    stat(indexfile_.c_str(), &s);
-    mtime_ = s.st_mtime;
-   
-    // Load the index a first time synchronously
-    map_ = *LoadIndex();
-
-    // Now update asynchronously
-    watch_interval_ticks_ = watch_interval_ticks;
-    watcher_.Start(this, &PackManager::WatcherStart);
-}
-
-void PackManager::WatcherStart(void *pv) {
-    while (!watcher_.IsStopping()) {
-        // Only reload if the file has been modified
-        struct stat s;
-        memset(&s, 0, sizeof(s));
-        stat(indexfile_.c_str(), &s);
-        if (s.st_mtime != mtime_) {
-            mtime_ = s.st_mtime;
-            PackMap *map = LoadIndex();
-            if (map != NULL) {
-                thread_.Post(1, this, new WatcherData(map));
-            }
-        }
-        watcher_.RunLoop(watch_interval_ticks_);
-    }
-}
-
-void PackManager::OnMessage(base::Message *msg) {
-    // Executing on game thread. Accept new map.
-    if (msg->id == 1) {
-        RLOG() << "Importing new index...";
-        WatcherData *data = (WatcherData *)msg->data;
-        map_ = *(data->map_);
-        delete data;
-    }
-}
-
-std::map<dword,PackId> *PackManager::LoadIndex() {
-    // Load the index and return it as a map
-    IndexLoader index;
-    if (!index.InitFromFile(indexfile_.c_str())) {
-        return NULL;
-    }
-    PackMap *map = new PackMap;
-    int c = index.GetCount();
-    for (int i = 0; i < c; i++) {
-        const IndexEntry *entry = index.GetEntry(i);
-        map->insert(PackMap::value_type(entry->packid.id, entry->packid));
-    }
-    return map;
 }
 
 } // namespace wi

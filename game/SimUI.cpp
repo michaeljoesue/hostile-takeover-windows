@@ -1,13 +1,5 @@
 #include "game/ht.h"
-#include "mpshared/netmessage.h"
 #include "game/wistrings.h"
-#include "game/statetracker.h"
-#include "game/stateframe.h"
-#include "game/uploader.h"
-#include "game/serviceurls.h"
-#include "game/chatter.h"
-#include "game/gameform.h"
-#include "base/sigslot.h"
 #include <string>
 
 namespace wi {
@@ -52,117 +44,18 @@ long gcPathScoresCalced = 0;
 bool PtInPolygon(WPoint *awpt, int cwpt, WCoord wx, WCoord wy) secSimUIForm;
 
 //
-// Form used for waiting
-//
-
-WaitForm::WaitForm(char *pszTitle, bool fFullScreen)
-{
-	m_pszTitle = pszTitle;
-	m_fFullScreen = fFullScreen;
-}
-
-bool WaitForm::Init(FormMgr *pfrmm, IniReader *pini, word idf)
-{
-	if (!Form::Init(pfrmm, pini, idf))
-		return false;
-
-	// Size the form to be full screen
-
-	DibBitmap *pbm = m_pfrmm->GetDib();
-	Size siz;
-	pbm->GetSize(&siz);
-
-	// Remember old bounds
-
-	m_rcOrig = m_rc;
-
-	// Set text if passed
-
-	if (m_pszTitle != NULL) {
-		LabelControl *plbl = (LabelControl *)GetControlPtr(kidcTitle);
-		plbl->SetText(m_pszTitle);
-	}
-
-	int xNew = (siz.cx - m_rc.Width()) / 2;
-	int yNew = (siz.cy - m_rc.Height()) / 2;
-
-	if (m_fFullScreen) {
-		// Reposition the controls
-
-		for (int n = 0; n < m_cctl; n++) {
-			Control *pctl = m_apctl[n];
-			Rect rcCtl;
-			pctl->GetRect(&rcCtl);
-			int xNewCtl = rcCtl.left + xNew;
-			int yNewCtl = rcCtl.top + yNew;
-			pctl->SetPosition(xNewCtl, yNewCtl);
-		}
-		Rect rcNew;
-		rcNew.Set(0, 0, siz.cx, siz.cy);
-		SetRect(&rcNew);
-	}
-
-	return true;
-}
-
-void WaitForm::OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd)
-{
-	Form::OnPaintBackground(pbm, pupd);
-
-	DrawBorder(pbm, &m_rcOrig, gcxyBorder, GetColor(kiclrCyanSideFirst), pupd);
-}
-
-// This is a hack so that sigslot.h doesn't need to be included from ht.h.
-
-class SlotHack : public base::has_slots<> {
-public:
-    void Connect(SimUIForm *sui, Chatter *chatter) {
-        if (chatter != NULL) {
-            chatter->SignalOnBlink.connect(this, &SlotHack::OnChatButtonBlink);
-            chatter->SignalOnPlayers.connect(this, &SlotHack::OnPlayersButton);
-        }
-        sui_ = sui;
-        chatter_ = chatter;
-    }
-    void Disconnect() {
-        if (chatter_ != NULL) {
-            chatter_->SignalOnBlink.disconnect(this);
-            chatter_->SignalOnPlayers.disconnect(this);
-        }
-    }
-    void OnChatButtonBlink(bool fOn) {
-        if (sui_ != NULL) {
-            sui_->OnChatButtonBlink(fOn);
-        }
-    }
-    void OnPlayersButton() {
-        if (sui_ != NULL) {
-            sui_->OnPlayersButton();
-        }
-    }
-    SimUIForm *sui_;
-    Chatter *chatter_;
-};
-SlotHack g_slothack;
-
-//
 // SimUIForm implementation
 //
 
 bool SimUIForm::s_fReadyForPaint;
     
-SimUIForm::SimUIForm(word wfRole, dword gameid, Chatter *chatter)
+SimUIForm::SimUIForm()
 {
 	s_fReadyForPaint = false;
 	gfDragSelecting = false;
 	s_cwptSelection = 0;
     
 	m_fTimerAdded = false;
-
-	m_wfRole = wfRole;
-	m_pcmdqServer = NULL;
-	m_pfrmWaitingForAllPlayers = NULL;
-	m_tLastCommunication = 0;
 
 	m_nStateMoveTarget = 0;
 
@@ -172,47 +65,14 @@ SimUIForm::SimUIForm(word wfRole, dword gameid, Chatter *chatter)
 #else
     SetUIType(kuitStylus);
 #endif
-    m_punmrFirst = NULL;
-
-    m_gameid = gameid;
-    m_pchatter = chatter;
-    if (m_pchatter != NULL) {
-        m_pchatter->SetChatTitle("Game Chat");
-    }
-#ifdef TRACKSTATE
-    m_ptracker = new StateTracker(m_gameid);
-    m_fSyncError = false;
-#endif
-
-    g_slothack.Connect(this, chatter);
 }
 
 SimUIForm::~SimUIForm()
 {
-    delete m_pfrmWaitingForAllPlayers;
-    delete m_pfrmLag;
 	if (m_fTimerAdded)
 		gtimm.RemoveTimer(this);
-	if (m_wfRole & kfRoleMultiplayer) {
-		gptra->SetCallback(NULL);
-        gptra->SetGameCallback(NULL);
-	}
-		
-    if (m_pcmdqServer != NULL) {
-        m_pcmdqServer->Exit();
-        delete m_pcmdqServer;
-    }
 
     delete m_ppenh;
-
-#ifdef TRACKSTATE
-    delete m_ptracker;
-#endif
-
-    g_slothack.Disconnect();
-    if (m_pchatter != NULL) {
-        m_pchatter->HideChat();
-    }
 }
 
 void SimUIForm::SetUIType(UIType uit)
@@ -230,89 +90,19 @@ void SimUIForm::SetUIType(UIType uit)
     }
 }
 
-void SimUIForm::OnChatButtonBlink(bool fOn) {
-// Annoying since the button is visible during observe, and you can already
-// see the chat on screen.
-#if 0
-    if (gpplrLocal->GetFlags() & kfPlrObserver) {
-        GetControlPtr(kidcChat)->Show(fOn);
-    }
-#endif
-}
-
-void SimUIForm::OnPlayersButton() {
-    std::string s = GameForm::GetPlayersString();
-    if (m_pchatter != NULL) {
-        m_pchatter->AddChat("", s.c_str(), true);
-    }
-}
-
-static SimUIForm *gpsui;
-
-const long kctStartTimeout = 1500;	// 15 seconds
-
 bool SimUIForm::Init(FormMgr *pfrmm, IniReader *pini, word idf)
 {
-	gpsui = this;
-
-	m_tStartTimeout = HostGetTickCount() + kctStartTimeout;
-
 	// Init move target
 
 	m_nStateMoveTarget = 0;
 	m_aniMoveTarget.Init(g_panidMoveTarget);
 
-	if (m_wfRole & kfRoleMultiplayer) {
-		m_pcmdqServer = new CommandQueue();
-		Assert(m_pcmdqServer != NULL, "out of memory!");
-		if (m_pcmdqServer == NULL)
-			return false;
-		if (!m_pcmdqServer->Init(kcmsgCommandQueueMax)) {
-			return false;
-        }
-
-		// Transport callback
-
-		gptra->SetCallback(this);
-        gptra->SetGameCallback(this);
-
-        // Create a big form to cover everything and show "Waiting for all
-        // players"
-
-		m_pfrmWaitingForAllPlayers = gpmfrmm->LoadForm(gpiniForms, kidfWaiting, new WaitForm("WAITING FOR ALL PLAYERS...", true));
-		if (m_pfrmWaitingForAllPlayers != NULL) {
-			gpmfrmm->DrawFrame(false);
-		}
-	}
-
-    // New multiplayer design: client maintains its own update timer. 
-    // Client messages are sent "just in time" by server, scheduled to be
-    // executed on a given update. Clients know what update to expect the
-    // next message from the server. Every so often the client sends feedback
-    // to the server on latency (time of actual update - time message received)
-    // so that the server can tune when client messages are sent, in real
-    // time. This approach works better over the internet. The previous
-    // approach worked fine over local networks.
-
     gtimm.AddTimer(this, gtGameSpeed);
     m_fTimerAdded = true;
-
-    while (m_punmrFirst != NULL) {
-        UpdateNetMessageRecord *punmrT = m_punmrFirst;
-        m_punmrFirst = punmrT->punmrNext;
-        delete punmrT->punm;
-        delete punmrT;
-    }
 
 	// Let the base Form initialize the controls
 
 	bool fSuccess = Form::Init(pfrmm, pini, idf);
-
-	if (m_wfRole & kfRoleMultiplayer) {
-        m_cUpdatesBlock = 0;
-        m_msUpdatesBlock = 0;
-        SendUpdateResult(0, 0, 0);
-	}
 
 	// Size the rect to the dib
 
@@ -348,25 +138,12 @@ bool SimUIForm::Init(FormMgr *pfrmm, IniReader *pini, word idf)
 	pctlT->GetRect(&rcT);
 	pctlT->SetPosition(sizSim.cx - rcT.Width(), rcT.Height());
 
-    // Chat is at upper right. Hide chat button for now. It only appears
-    // in observer mode.
-
-    pctlT = GetControlPtr(kidcChat);
-    pctlT->GetRect(&rcT);
-    pctlT->SetPosition(sizSim.cx - rcT.Width() - rcT.top, rcT.top);
-    pctlT->Show(false);
-
 	// Alert is at bottom left
 
 	pctlT = GetControlPtr(kidcAlert);
 	Assert(pctlT != NULL);
 	pctlT->GetRect(&rcT);
 	pctlT->SetPosition(0, sizSim.cy - rcT.Height());
-
-    // Reset lag state
-
-    m_pfrmLag = NULL;
-    m_pidLagging = kpidNeutral;
 
 	// Show / hide these controls
 
@@ -382,357 +159,7 @@ bool SimUIForm::Init(FormMgr *pfrmm, IniReader *pini, word idf)
 	return fSuccess;
 }
 
-//
-// IGameCallback implementation
-//
-
-void SimUIForm::OnNetMessage(NetMessage **ppnm)
-{
-#ifdef TRACKSTATE
-    // If there has been a sync error, do not respond to any messages
-    if (m_fSyncError) {
-        return;
-    }
-#endif
-
-    // Setting *ppnm = NULL allows the callee to keep the NetMessage
-    // rather than the caller deleting it
-    NetMessage  *pnm = *ppnm;
-
-	// Track the last time communication was received on this device
-
-	m_tLastCommunication = HostGetTickCount();
-
-	switch (pnm->nmid) {
-	case knmidScPlayerDisconnect:
-        {
-            // This must run at the same point on all clients, since
-            // it sets the kfPlrComputer flag.
-            PlayerDisconnectNetMessage *pdm = (PlayerDisconnectNetMessage*)pnm;
-            OnPlayerDisconnectNotify(pdm->pid, pdm->nReason);
-
-            // Asynchronously, check for game over
-            Event evt;
-            evt.eType = checkGameOverEvent;
-            evt.dw = pdm->pid;
-            gevm.PostEvent(&evt);
-        }
-        break;
-
-	case knmidScLagNotify:
-		// This player is being notified by the server of another player
-        // that is lagging.
-
-		OnLagNotify(((LagNotifyNetMessage *)pnm)->pidLagging,
-                ((LagNotifyNetMessage *)pnm)->cSeconds);
-		break;
-
-	case knmidScUpdate:
-        QueueUpdateMessage((UpdateNetMessage *)*ppnm);
-
-        // Tell the caller to not delete
-        *ppnm = NULL;
-        break;
-
-    case knmidScCheckWin:
-        OnCheckWin(((CheckWinNetMessage *)pnm)->pid);
-        break;
-
-#ifdef TRACKSTATE
-    case knmidScSyncError:
-        ReportSyncError();
-        break;
-#endif
-	}
-}
-
-void SimUIForm::OnReceiveChat(const char *player, const char *chat) {
-    ShowAlert(base::Format::ToString("%s: %s", player, chat));
-    if (m_pchatter != NULL) {
-        m_pchatter->AddChat(player, chat, false);
-    }
-}
-
-void SimUIForm::OnGameDisconnect()
-{
-    HtMessageBox(kfMbWhiteBorder, "Network", 
-            "You've been disconnected from this game. Press OK to continue.");
-
-    Event evt;
-    memset(&evt, 0, sizeof(evt));
-    evt.eType = gameOverEvent;
-    evt.dw = knGoAbortLevel;
-    gevm.PostEvent(&evt);
-}
-
-void SimUIForm::OnStatusUpdate(char *pszStatus)
-{
-    // nothing to do here
-}
-
-void SimUIForm::OnConnectionClose()
-{
-    Event evt;
-    memset(&evt, 0, sizeof(evt));
-    evt.idf = m_idf;
-    evt.eType = connectionCloseEvent;
-    gevm.PostEvent(&evt);
-}
-
-std::string s_message;
-
-void SimUIForm::OnShowMessage(const char *message)
-{
-    s_message = message;
-    Event evt;
-    memset(&evt, 0, sizeof(evt));
-    evt.idf = m_idf;
-    evt.eType = showMessageEvent;
-    gevm.PostEvent(&evt);
-}
-
-bool SimUIForm::OnFilterEvent(Event *pevt) {
-    if (pevt->eType == connectionCloseEvent) {
-        // My connection to the server broke!
-
-        if (m_pchatter != NULL) {
-            m_pchatter->HideChat();
-        }
-        HtMessageBox(kfMbWhiteBorder, "Comm Problem",
-                "Your connection to the server dropped.");
-
-        if ((gpplrLocal->GetFlags() & kfPlrObserver) == 0) {
-            gpplrLocal->ShowObjectives(ksoWinSummary, false, true);
-        }
-
-        Event evt;
-        memset(&evt, 0, sizeof(evt));
-        evt.eType = gameOverEvent;
-        evt.dw = knGoAbortLevel;
-        gevm.PostEvent(&evt);
-        return true;
-    }
-
-    if (pevt->eType == showMessageEvent) {
-        if (m_pchatter != NULL) {
-            m_pchatter->HideChat();
-        }
-        HtMessageBox(kfMbWhiteBorder, "Server Message", s_message.c_str());
-        s_message = "";
-        return true;
-    }
-    return false;
-}
-
-#ifdef TRACKSTATE
-void SimUIForm::ReportSyncError()
-{
-    // A sync error has occured, must remember this so no state changes
-    // from here forward
-    m_fSyncError = true;
-
-    // Remove the game timer
-    if (m_fTimerAdded) {
-        gtimm.RemoveTimer(this);
-        m_fTimerAdded = false;
-    }
-
-    // Alert the user to what is happening
-    HtMessageBox(kfMbWhiteBorder, "Sync Error",
-            "This mission has experienced a sync error and must end. "
-            "Please notify the mission author.");
-    gpmfrmm->DrawFrame(true);
-
-    // Upload the state tracker state
-    base::ByteBuffer *pbb = m_ptracker->ToJson(); 
-    const char *url = base::Format::ToString("%s?gameid=%d&pid=%d",
-            kszSyncErrorUploadUrl, m_gameid, gpplrLocal->GetId());
-    UploadByteBuffer(gphttp, pbb, url);
-
-    // End the game
-    Event evt;
-    memset(&evt, 0, sizeof(evt));
-    evt.eType = gameOverEvent;
-    evt.dw = knGoAbortLevel;
-    gevm.PostEvent(&evt);
-}
-#endif
-
-void SimUIForm::QueueUpdateMessage(UpdateNetMessage *punm) {
-#ifdef TRACKSTATE
-    m_ptracker->ExpireFrames(punm->cUpdatesSync);
-#endif
-
-    // Remember the UpdateNetMessage
-
-    UpdateNetMessageRecord *punmr = new UpdateNetMessageRecord;
-    punmr->msReceived = HostGetMillisecondCount();
-    punmr->punm = punm;
-    punmr->punmrNext = NULL;
-
-    // Put it on the end of the list
-
-    UpdateNetMessageRecord **ppunmr = &m_punmrFirst;
-    while ((*ppunmr) != NULL) {
-        ppunmr = &(*ppunmr)->punmrNext;
-    }
-    *ppunmr = punmr;
-
-    // If the client is blocked waiting for this update, process it
-    // right away.
-
-    bool fUpdateNow = false;
-    if (gsim.GetUpdateCount() + 1 == m_cUpdatesBlock) {
-        fUpdateNow = true;
-    }
-
-    // It's possible the client gets behind. For example, if the client
-    // is blocked on network i/o and then sudden 5 updates come in,
-    // running the timer as normal would take too long for it to catch up with
-    // the server. So, process the commands here.
-
-    if (m_punmrFirst != NULL && m_punmrFirst->punmrNext != NULL) {
-        fUpdateNow = true;
-    }
-
-    // Running the simulation requires running from the event loop,
-    // because of the state set, and state checked, from within
-    // the event loop.
-
-    if (fUpdateNow) {
-        Event evt;
-        evt.eType = runUpdatesNowEvent;
-        evt.idf = m_idf;
-        gevm.PostEvent(&evt);
-    }
-}
-
-void SimUIForm::RunUpdatesNow()
-{
-    // If blocked waiting for an update and there is one, process it
-    // and reset the timer
-
-    if (m_punmrFirst != NULL && gsim.GetUpdateCount() + 1 == m_cUpdatesBlock) {
-        gtimm.RemoveTimer(this);
-        OnTimer(0);
-        gtimm.AddTimer(this, gtGameSpeed);
-        ggame.UpdateTriggers();
-    }
-
-    // If there are more than one updates available, process them to
-    // catch up.
-
-    while (m_punmrFirst != NULL && m_punmrFirst->punmrNext != NULL) {
-        gtimm.RemoveTimer(this);
-        OnTimer(0);
-        gtimm.AddTimer(this, gtGameSpeed);
-        ggame.UpdateTriggers();
-    }
-}
-
-bool SimUIForm::ProcessUpdateMessage(CommandQueue *pcmdq)
-{
-    // This should not happen
-    if (gsim.GetUpdateCount() + 1 > m_cUpdatesBlock) {
-        Trace("Broken!");
-        return false;
-    }
-
-    // Commands are processed at block points. If not at block point yet,
-    // continue the simulation.
-
-    if (gsim.GetUpdateCount() + 1 < m_cUpdatesBlock) {
-        pcmdq->Clear();
-        return true;
-    }
-
-    // At cUpdatesBlock for the first time? If so remember the timestamp
-    // for latency calc purposes
-
-    if (m_msUpdatesBlock == 0) {
-        m_msUpdatesBlock = HostGetMillisecondCount();
-    }
-
-    // No messages to process? Block until they come. Users don't like
-    // blocking since it results in on screen stutter, perceived as lag.
-
-    if (m_punmrFirst == NULL) {
-        Trace("BLOCK!");
-        return false;
-    }
-
-    // Take the next set of commands and queue them up
-
-    UpdateNetMessageRecord *punmr = m_punmrFirst;
-    m_punmrFirst = punmr->punmrNext;
-    UpdateNetMessage *punm = punmr->punm;
-    pcmdq->Clear();
-    for (int i = 0; i < punm->cmsgCommands; i++) {
-        pcmdq->Enqueue(&punm->amsgCommands[i]);
-    }
-
-    // Send the update result with latency info
-    // Don't send if cUpdatesBlock_ == 0. This is a special case
-    // that is handled elsewhere (search for calls to SendUpdatesResult).
-
-    int cmsLatency = (int)(m_msUpdatesBlock - punmr->msReceived);
-
-#ifdef TRACKSTATE
-    dword hash = m_ptracker->GetHash();
-    Trace("GetHash: end update %d", gsim.GetUpdateCount());
-    m_ptracker->SetNextBlock();
-#else
-    dword hash = 0;
-#endif
-
-#if 0
-    // Adjust the timer trigger, without changing the rate. If updates are
-    // coming a little too soon, wait a bit before triggering next. If updates
-    // are a bit old, trigger sooner next time. This maintains "just in time"
-    // update delivery.
-    if (cmsLatency <= 0) {
-        gtimm.BoostTimer(this, 1);
-    }
-    if (cmsLatency >= 200) {
-        gtimm.BoostTimer(this, -1);
-    }
-#endif
-
-    if (m_cUpdatesBlock != 0) {
-        SendUpdateResult(m_cUpdatesBlock, cmsLatency, hash);
-    }
-
-    // This is the next point to block. Ideally the server sends another
-    // UpdateNetMessage before the clients get to this point. This is how
-    // stuttering is reduced, which users perceive as lag.
-
-    m_cUpdatesBlock = punm->cUpdatesBlock;
-    m_msUpdatesBlock = 0;
-
-    delete punm;
-    delete punmr;
-
-    // Ok to update the simulation
-    return true;
-}
-
-void SimUIForm::SendUpdateResult(int cUpdatesBlock, int cmsLatency,
-        dword hash)
-{
-	UpdateResultNetMessage urnm;
-	urnm.ur.cUpdatesBlock = cUpdatesBlock;
-    urnm.ur.hash = hash;
-    urnm.ur.cmsLatency = cmsLatency;
-    gptra->SendNetMessage(&urnm);
-}
-
 void SimUIForm::OnTimer(long tCurrent) {
-#ifdef TRACKSTATE
-    // If there has been a sync error, do nothing
-    if (m_fSyncError) {
-        return;
-    }
-#endif
 
 	if (gfSuspendUpdates && !gfSingleStep) {
 		gevm.SetRedrawFlags(kfRedrawDirty);
@@ -743,59 +170,10 @@ void SimUIForm::OnTimer(long tCurrent) {
 		return;
     }
 
-// TUNE:
-#define kctLocalLag 200
-	if ((m_wfRole & (kfRoleMultiplayer | kfRoleServer)) == kfRoleMultiplayer) {
-		if (m_tLastCommunication != 0) {
-            long tCurrent = HostGetTickCount();
-            if (tCurrent - m_tLastCommunication >= kctLocalLag) {
-                ShowAlert("Network lag");
 
-                // Request redraw. When the client is waiting on the server it
-                // won't redraw unless asked to.
+    // Update (i.e., 'step') the Simulation
 
-                gevm.SetRedrawFlags(kfRedrawDirty);
-            }
-        }
-	}
-
-    // Send queued commands to server whenever there are any
-
-    if ((m_wfRole & (kfRoleMultiplayer | kfRoleServer)) == kfRoleMultiplayer) {
-
-        int cmsg = gcmdq.GetCount();
-        if (cmsg != 0) {
-            int cbcc = sizeof(ClientCommandsNetMessage) +
-                    ((cmsg - 1) * sizeof(Message));
-            ClientCommandsNetMessage *pcc =
-                    (ClientCommandsNetMessage *)new byte[cbcc];
-            pcc->nmid = knmidCsClientCommands;
-            pcc->cb = cbcc;
-            pcc->cmsgCommands = cmsg;
-            memcpy(&pcc->amsgCommands, gcmdq.GetFirst(),
-                    cmsg * sizeof(Message));
-            gptra->SendNetMessage(pcc);
-            delete[] pcc;
-        }
-        gcmdq.Clear();
-    }
-
-    if ((m_wfRole & (kfRoleMultiplayer | kfRoleServer)) == kfRoleMultiplayer) {
-        // Process the next update message
-        if (ProcessUpdateMessage(m_pcmdqServer)) {
-#ifdef TRACKSTATE
-            BeginTrackState();
-#endif
-            gsim.Update(m_pcmdqServer);
-#ifdef TRACKSTATE
-            EndTrackState();
-#endif
-        }
-    } else {
-        // Update (i.e., 'step') the Simulation
-
-        gsim.Update(&gcmdq);
-    }
+    gsim.Update(&gcmdq);
 
     // Update UI
 
@@ -805,294 +183,11 @@ void SimUIForm::OnTimer(long tCurrent) {
     extern void UpdateLog();
     UpdateLog();
 #endif
-
-    // Check to see if something needs to be done with the lag form
-
-    CheckLagForm();
 }
-
-#ifdef TRACKSTATE
-StateFrame *gpframeCurrent;
-
-void SimUIForm::BeginTrackState()
-{
-    long cUpdates = gsim.GetUpdateCount() + 1;
-    StateFrame *frame = m_ptracker->AddFrame(cUpdates);
-    int i = frame->AddCountedValue('SMUI');
-    frame->AddValue('BLCK', (dword)m_cUpdatesBlock, i);
-
-    // Set this so it can be used during gsim.Update()
-    gpframeCurrent = frame;
-}
-
-void SimUIForm::EndTrackState()
-{
-    gsim.TrackState(gpframeCurrent);
-    gpframeCurrent = NULL;
-}
-#endif
 
 bool SimUIForm::EventProc(Event *pevt)
 {
-	switch (pevt->eType) {
-    case runUpdatesNowEvent:
-        RunUpdatesNow();
-        break;
-	}
-
 	return Form::EventProc(pevt);
-}
-
-void SimUIForm::CheckMultiplayerGameOver(Pid pidLeft) {
-    if (!gfMultiplayer) {
-        return;
-    }
-
-    // This should be handled by triggers, but for now it is
-    // hamfistedly hardwired here.
-    //
-    // If transitioning to a single player (or team) then assume this player
-    // has won. This isn't always the right choice, that is why it should
-    // be handled by triggers. But there are a lot of maps made that
-    // don't handle this case, and there is not enough conditions
-    // available currently to handle resigning / leaving the game with
-    // triggers.
-
-    if (gplrm.DetectTransitionToSingleHumanTeam(pidLeft)) {
-
-        // If this player isn't an observer it means they haven't
-        // officially won/lost yet. Let them know the game is over and set
-        // them to be an Observer.
-
-        if ((gpplrLocal->GetFlags() &
-                    (kfPlrObserver | kfPlrSummaryShown)) == 0) {
-            gpplrLocal->ShowObjectives(ksoWinSummary, false, false);
-
-            if (!ggame.AskObserveGame()) {
-                Event evt;
-                memset(&evt, 0, sizeof(evt));
-                evt.eType = gameOverEvent;
-                evt.dw = knGoAbortLevel;
-                gevm.PostEvent(&evt);
-            }
-        } else {
-            // Some other player is victorious. Show alert.
-            // There is only one non-observer, non-computer player
-            // left.
-
-            Player *pplr = gplrm.GetNextHumanPlayer(NULL);
-            if (pplr != NULL) {
-                char szT[100];
-                sprintf(szT, "%s is victorious!", pplr->GetName());
-                ShowAlert(szT);
-                if (m_pchatter != NULL) {
-                    m_pchatter->AddChat("", szT, true);
-                }
-            }
-        }
-    }
-}
-
-void SimUIForm::SetObserving()
-{
-    gpplrLocal->SetObjective("< Observing >");
-    gsim.GetLevel()->GetFogMap()->RevealAll(gpupdSim);
-    GetControlPtr(kidcFps)->Show(false);
-    GetControlPtr(kidcCountdown)->Show(false);
-    GetControlPtr(kidcChat)->Show(true);
-}
-
-void SimUIForm::OnCheckWin(Pid pid) {
-    if (gpplrLocal == NULL || gptra == NULL) {
-        return;
-    }
-
-#if 0
-// Disable challenges for now. It needs to be tested against mission
-// scripting, and it needs to be updated to handle allies. Because challenge
-// is disabled, it means the server believes the first client that says it
-// won. So some clever hacker can cause mayhem.
-
-    // A client has claimed win. In order to be valid, the local player
-    // must be marked either winner (if == this pid) or a loser.
-   
-    bool fValid = true; 
-    if (gpplrLocal->GetId() == pid) {
-        if ((gpplrLocal->GetFlags() & (kfPlrWinner | kfPlrLoser)) !=
-                kfPlrWinner) {
-            fValid = false;
-        }
-    } else {
-        if ((gpplrLocal->GetFlags() & (kfPlrWinner | kfPlrLoser)) !=
-                kfPlrLoser) {
-            fValid = false;
-        }
-    }
-    if (!fValid) {
-        ChallengeWinNetMessage cwnm;
-        gptra->SendNetMessage(&cwnm);
-    }
-#endif
-
-    // Assume this player won for purposes of chat system message
-    Player *pplr = gplrm.GetPlayerFromPid(pid);
-    if (pplr != NULL && m_pchatter != NULL) {
-        m_pchatter->AddChat(NULL, base::Format::ToString(
-                "%s has won this game.", pplr->GetName()), true);
-    }
-}
-
-void SimUIForm::OnPlayerDisconnectNotify(Pid pid, int nReason)
-{
-    // We've been notified by the server of a player disconnecting. Display
-    // alert
-
-	Player *pplr = gplrm.GetPlayerFromPid(pid);
-	if (pplr != NULL) {
-		pplr->SetFlags(pplr->GetFlags() | kfPlrComputer);
-
-        // Set observer flag so that it is possible to identify the observing
-        // players later. Don't set it for the local player, since this
-        // flag is heavily overloaded and used to determine whether to show
-        // win/lose summaries and AskObserve form, at which point it will be
-        // set there. Clearly the win/lose paths need re-writing rather than
-        // patching.
-        if (pplr != gpplrLocal) {
-            pplr->SetFlags(pplr->GetFlags() | kfPlrObserver);
-        }
-
-		char szT[128];
-		char *pszReason = NULL;
-        char *pszChat = NULL;
-		switch (nReason) {
-        case knDisconnectReasonLeftGame:
-            if (!pplr->GetLeftGame()) {
-                pplr->SetLeftGame();
-                pszReason = "left the game";
-                pszChat = ".";
-            }
-            break;
-
-		case knDisconnectReasonResign:
-			pszReason = "resigned";
-            pszChat = ", and is now observing.";
-			break;
-
-		case knDisconnectReasonKilled:
-            pszReason = "kicked by another player";
-            pszChat = ", and left the game.";
-			break;
-
-		case knDisconnectReasonAbnormal:
-			pszReason = "dropped out";
-            pszChat = ", and left the game.";
-			break;
-
-		case knDisconnectReasonNotResponding:
-			pszReason = "disconnected - not responding";
-            pszChat = ", and left the game.";
-			break;
-		}
-
-        if (pszReason != NULL) {
-            sprintf(szT, "%s %s", pplr->GetName(), pszReason);
-            ShowAlert(szT);
-        }
-        if (pszChat != NULL && m_pchatter != NULL) {
-            m_pchatter->AddChat(NULL, base::Format::ToString("%s%s", szT,
-                    pszChat), true);
-        }
-	}
-}
-
-void SimUIForm::OnLagNotify(Pid pidLagging, int cSeconds)
-{
-    // First thing's first, acknowledge this to the server,
-    // so the server knows this client is alive.
-    
-    LagAcknowledgeNetMessage lanm;
-    gptra->SendNetMessage(&lanm);
-
-    // pidLagging is kpidNeutral if there are no laggards,
-    // which causes GetPlayerFromPid() to return NULL.
-
-	Player *pplr = gplrm.GetPlayerFromPid(pidLagging);
-    if (pplr == NULL) {
-        ShowAlert("");
-        if (m_pfrmLag != NULL) {
-            m_pfrmLag->Show(false);
-            delete m_pfrmLag;
-            m_pfrmLag = NULL;
-        }
-        return;
-    }
-
-	// We've been notified by the server of this player lagging. Display alert
-
-    ShowAlert(base::Format::ToString("%s lagging (%ds)", pplr->GetName(),
-            cSeconds));
-
-    // If cSeconds is not 0, hide the form. It only comes up at 0.
-
-    if (cSeconds != 0) {
-        if (m_pfrmLag != NULL) {
-            m_pfrmLag->Show(false);
-            delete m_pfrmLag;
-            m_pfrmLag = NULL;
-        }
-        return;
-    }
-
-    // cSeconds is 0, then show the lag form. First see if it is for a
-    // different player. If so, hide it first.
-
-    if (m_pfrmLag != NULL) {
-        // If same pid is lagging, nothing to do; keep the form up
-
-        if (m_pidLagging == pidLagging) {
-            return;
-        }
-
-        // A different pid is lagging, yet the form is up. Delete the current
-        // one first.
-
-        m_pfrmLag->Show(false);
-        delete m_pfrmLag;
-        m_pfrmLag = NULL;
-    }
-
-    // Show the lagging form, modeless, so that it can be hidden and reshown
-    // at will. Check during update if in EndForm state, and handle
-    // appropriately.
-
-    m_pidLagging = pidLagging;
-    m_pfrmLag = CreateHtMessageBox(kidfMessageBoxQuery, kfMbWhiteBorder,
-            "LAG ALERT",
-            base::Format::ToString(
-"%s is communicating erratically and causing the game to lag. Disconnect %s?",
-            pplr->GetName(), pplr->GetName()));
-    m_pfrmLag->SetFlags(m_pfrmLag->GetFlags() | kfFrmDoModal);
-    gsndm.PlaySfx(ksfxGuiFormShow);
-    m_pfrmLag->Show(true);
-}
-
-void SimUIForm::CheckLagForm()
-{
-    if (m_pfrmLag == NULL || (m_pfrmLag->GetFlags() & kfFrmDoModal) != 0) {
-        return;
-    }
-
-    int nResult = m_pfrmLag->GetResult();
-    m_pfrmLag->Show(false);
-    delete m_pfrmLag;
-    m_pfrmLag = NULL;
-
-    // Send a KillLaggingPlayerNetMessage with the result
-
-    KillLaggingPlayerNetMessage klpnm;
-    klpnm.pid = m_pidLagging;
-    klpnm.fYes = (nResult == kidcOk) ? 1 : 0; 
-    gptra->SendNetMessage(&klpnm);
 }
 
 void SimUIForm::Update()
@@ -1115,11 +210,6 @@ void SimUIForm::Update()
 		m_aniMoveTarget.Advance(1);
 		if (m_aniMoveTarget.GetFlags() & kfAniDone)
 			m_nStateMoveTarget = 2;
-	}
-
-	if (m_pfrmWaitingForAllPlayers != NULL) {
-		delete m_pfrmWaitingForAllPlayers;
-		m_pfrmWaitingForAllPlayers = NULL;
 	}
 
 	// Have the InputUI update its displays (e.g., credits, power)
@@ -1530,16 +620,6 @@ void SimUIForm::FrameComplete()
     Form::FrameComplete();
 }
 
-void SimUIForm::OnControlSelected(word idc) {
-    switch (idc) {
-    case kidcChat:
-        if (m_pchatter != NULL) {
-            m_pchatter->ShowChat();
-        }
-        break;
-    }
-}
-
 // SimUI handles input events which may effect the whole playfield and/or
 // multiple Gobs. It does as much as it can independent of the Gobs but 
 // passes context-specific messages to the Gobs when specialized responses 
@@ -1686,7 +766,7 @@ MobileUnitGob *SimUIForm::SetSelectionTargets(Gid gid, WCoord wxTarget, WCoord w
     Gob *pgobT;   
     for (pgobT = ggobm.GetFirstGob(); pgobT != NULL; pgobT = ggobm.GetNextGob(pgobT)) {   
         if ((pgobT->GetFlags() & (kfGobSelected | kfGobMobileUnit)) == (kfGobSelected | kfGobMobileUnit) &&    
-		        ((gfGodMode && !ggame.IsMultiplayer()) || pgobT->GetSide() == gpplrLocal->GetSide())) {   
+		        ((gfGodMode) || pgobT->GetSide() == gpplrLocal->GetSide())) {   
 
 			// Get selection dimensions
 
@@ -1806,7 +886,7 @@ MobileUnitGob *SimUIForm::SetSelectionTargets(Gid gid, WCoord wxTarget, WCoord w
 	for (pgobT = ggobm.GetFirstGob(); pgobT != NULL; pgobT = ggobm.GetNextGob(pgobT)) {
 		dword ff = pgobT->GetFlags();
 		if ((ff & kfGobSelected) && 
-				((gfGodMode && !ggame.IsMultiplayer()) || pgobT->GetSide() == gpplrLocal->GetSide() || (pgobTarget != NULL && pgobTarget->GetType() == kgtReplicator))) {
+				((gfGodMode) || pgobT->GetSide() == gpplrLocal->GetSide() || (pgobTarget != NULL && pgobTarget->GetType() == kgtReplicator))) {
 
 			// If it's a mobile gob, give it a move command to a scaled coordinate
 
@@ -1836,7 +916,7 @@ MobileUnitGob *SimUIForm::SetSelectionTargets(Gid gid, WCoord wxTarget, WCoord w
  					wyDst = 0;
  				if (wyDst >= cwyMap)
  					wyDst = cwyMap - 1;
-				if (gfGodMode && !ggame.IsMultiplayer())
+				if (gfGodMode)
 					pmunt->ClearAction();
 
 				// Need to clean up the targets.
@@ -2019,23 +1099,12 @@ void SimUIForm::MoveOrAttackOrSelect(Gob *pgobHit, WCoord wxTarget,
 		if (ff & kfMasMove) {
 			MobileUnitGob *pmunt = SetSelectionTargets(kgidNull, wxTarget, wyTarget);
 			if (pmunt != NULL) {
-				// BUGBUG: fix this multiplayer problem (gob lists out of sync)
-#if 0
-				if (!ggame.IsMultiplayer()) {
-					WCoord wxT = WcTrunc(wxTarget) + kwcTileHalf;
-					WCoord wyT = WcTrunc(wyTarget) + kwcTileHalf;
-					CreateAnimGob(wxT, wyT, kfAnmDeleteWhenDone | kfAnmSmokeFireLayer, NULL, g_panidMoveTarget);
-				}
-#else
-				// Single and multi-player friendly move target
-
 				if (m_nStateMoveTarget != 0)
 					m_pfrmm->GetUpdateMap()->InvalidateTile(TcFromWc(m_wxMoveTarget), TcFromWc(m_wyMoveTarget));
 				m_aniMoveTarget.Start(0, 0, 0);
 				m_wxMoveTarget = WcTrunc(wxTarget) + kwcTileHalf;
 				m_wyMoveTarget = WcTrunc(wyTarget) + kwcTileHalf;
 				m_nStateMoveTarget = 1;
-#endif
 				gsndm.PlaySfx(SfxFromCategory(((MobileUnitConsts *)gapuntc[pmunt->GetUnitType()])->sfxcMove));
 			}
 
@@ -2092,7 +1161,7 @@ void SimUIForm::MoveOrAttackOrSelect(Gob *pgobHit, WCoord wxTarget,
 	// God mode is allowed only if gfGodMode is on when playing single player
 
 	bool fGodMode = false;
-	if (gfGodMode && !ggame.IsMultiplayer())
+	if (gfGodMode)
 		fGodMode = true;
 
 	// Selection?
@@ -2157,7 +1226,7 @@ bool SimUIForm::IsSelectionCommand(Gob *pgobHit)
 	// God mode is allowed only if gfGodMode is on when playing single player
 
 	bool fGodMode = false;
-	if (gfGodMode && !ggame.IsMultiplayer())
+	if (gfGodMode)
 		fGodMode = true;
 
 	// Figure out if this is a selection or an attack command:
@@ -2216,7 +1285,7 @@ void SimUIForm::ShowUnitMenu(Gob *pgob) {
     if (pgob != NULL && (pgob->GetFlags() & kfGobUnit) != 0) {
         // Don't popup menu if the player doesn't own the Gob (unless in
         // God mode). God mode is limited for multiplayer games.
-        if ((!gfGodMode || ggame.IsMultiplayer()) && 
+        if ((!gfGodMode) && 
                 pgob->GetSide() != gpplrLocal->GetSide()) {
             return;
         }
@@ -2385,8 +1454,7 @@ bool MiniMapControl::Init(Form *pfrm, IniReader *pini, FindProp *pfind)
 	int x = 0;
 	int y = 0;
 	if (m_cxyBorder != 0) {
-		int iclr = gfMultiplayer ? gaiclrSide[gpplrLocal->GetSide()] : kiclr0CyanSide;
-		Color clrBorder = GetColor(iclr);
+		Color clrBorder = GetColor(kiclr0CyanSide);
 		if (m_wfMm & kfMmVertBorderInside) {
 			m_pbm->Fill(x + m_cxyBorder, y, m_rc.Width() - m_cxyBorder, m_cxyBorder, clrBorder);
 			m_pbm->Fill(x, y, m_cxyBorder, m_rc.Height() - m_cyInputUI + 1, clrBorder);
@@ -2440,8 +1508,7 @@ void MiniMapControl::OnPaint(DibBitmap *pbm)
 		pbm->Blt(m_pbm, &rcSrc, x, y);
 	} else {
 		pbm->Blt(m_pbm, &rcSrc, x + m_cxyBorder, y);
-		int iclr = gfMultiplayer ? gaiclrSide[gpplrLocal->GetSide()] : kiclr0CyanSide;
-		pbm->Fill(x, y, m_cxyBorder, m_rc.Height() - m_cyInputUI + 1, GetColor(iclr));
+		pbm->Fill(x, y, m_cxyBorder, m_rc.Height() - m_cyInputUI + 1, GetColor(kiclr0CyanSide));
 		pbm->Fill(x, y + m_rc.Height() - m_cyInputUI + 1, m_cxyBorder, m_rc.Height(), GetColor(kiclrBlack));
 	}
 

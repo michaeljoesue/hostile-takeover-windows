@@ -4,16 +4,15 @@
 #
 # Run on Ubuntu / Debian or inside WSL on Windows 11:
 #
-#   sudo apt install mingw-w64 cmake make curl python3 zip mono-devel p7zip-full
+#   sudo apt install mingw-w64 make curl python3 zip mono-devel p7zip-full
 #   ./build.sh
 #
-# Downloads SDL2 (MinGW dev package) and builds a static libcurl the first
-# time; later runs reuse them from game/sdl/win/deps/.
+# Downloads SDL2 (MinGW dev package) the first time; later runs reuse it from
+# game/sdl/win/deps/.
 
 set -euo pipefail
 
 SDL2_VERSION=2.30.9
-CURL_VERSION=8.10.1
 ARCH=i686-w64-mingw32          # 32-bit on purpose; see makefile for why
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -30,36 +29,9 @@ if [ ! -f "$SDL2DIR/lib/libSDL2.a" ]; then
     tar -xzf "$DEPS/sdl2.tgz" -C "$DEPS"
 fi
 
-# --- libcurl (static, Schannel TLS, no extra DLLs) --------------------------
-CURLDIR="$DEPS/curl-$ARCH"
-if [ ! -f "$CURLDIR/lib/libcurl.a" ]; then
-    echo "==> Building libcurl $CURL_VERSION"
-    curl -fsSL -o "$DEPS/curl.tgz" \
-        "https://github.com/curl/curl/releases/download/curl-${CURL_VERSION//./_}/curl-$CURL_VERSION.tar.gz"
-    tar -xzf "$DEPS/curl.tgz" -C "$DEPS"
-    cat > "$DEPS/toolchain.cmake" <<EOF
-set(CMAKE_SYSTEM_NAME Windows)
-set(CMAKE_C_COMPILER $ARCH-gcc-posix)
-set(CMAKE_CXX_COMPILER $ARCH-g++-posix)
-set(CMAKE_RC_COMPILER $ARCH-windres)
-set(CMAKE_FIND_ROOT_PATH /usr/$ARCH)
-set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
-set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
-set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
-EOF
-    cmake -S "$DEPS/curl-$CURL_VERSION" -B "$DEPS/curl-build-$ARCH" \
-        -DCMAKE_TOOLCHAIN_FILE="$DEPS/toolchain.cmake" -DCMAKE_BUILD_TYPE=Release \
-        -DBUILD_SHARED_LIBS=OFF -DBUILD_CURL_EXE=OFF -DBUILD_TESTING=OFF \
-        -DCURL_USE_SCHANNEL=ON -DCURL_USE_LIBPSL=OFF -DCURL_USE_LIBSSH2=OFF \
-        -DUSE_LIBIDN2=OFF -DCURL_ZLIB=OFF -DCURL_BROTLI=OFF -DCURL_ZSTD=OFF \
-        -DUSE_NGHTTP2=OFF -DCMAKE_INSTALL_PREFIX="$CURLDIR" > "$DEPS/curl-config.log"
-    cmake --build "$DEPS/curl-build-$ARCH" -j"$(nproc)" > "$DEPS/curl-build.log"
-    cmake --install "$DEPS/curl-build-$ARCH" > /dev/null
-fi
-
 # --- Game -------------------------------------------------------------------
 echo "==> Building HostileTakeover.exe"
-make -C "$HERE" REL=1 ARCH="$ARCH" SDL2DIR="$SDL2DIR" CURLDIR="$CURLDIR" -j"$(nproc)"
+make -C "$HERE" REL=1 ARCH="$ARCH" SDL2DIR="$SDL2DIR" -j"$(nproc)"
 
 # --- Package ----------------------------------------------------------------
 DIST="$HERE/dist/HostileTakeover"

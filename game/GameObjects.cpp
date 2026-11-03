@@ -1,5 +1,4 @@
 #include "game/ht.h"
-#include "game/stateframe.h"
 
 namespace wi {
 
@@ -202,66 +201,6 @@ Gob::~Gob()
 {
 }
 
-#ifdef TRACKSTATE
-
-dword gmpgtQuad[] = {
-    'GNON', // kgtNone 0
-    'GSRI', // kgtShortRangeInfantry 1
-    'GLRI', // kgtLongRangeInfantry 2
-    'GHRC', // kgtHumanResourceCenter 3
-    'GDCL', // kgtSurfaceDecal 4
-    'GSCN', // kgtScenery 5
-    'GANI', // kgtAnimation 6
-    'GREA', // kgtReactor 7
-    'GPRC', // kgtProcessor 8
-    'GSTU', // kgtStructure 9
-    'GUNI', // kgtUnit 10
-    'GMIN', // kgtGalaxMiner 11
-    'GHQR', // kgtHeadquarters 12
-    'GRES', // kgtResearchCenter 13
-    'GVTS', // kgtVehicleTransportStation 14
-    'GRDR', // kgtRadar 15
-    'GLTK', // kgtLightTank 16
-    'GMTK', // kgtMediumTank 17
-    'GGNV', // kgtMachineGunVehicle 18
-    'GRTV', // kgtRocketVehicle 19
-    'GTAK', // kgtTakeoverSpecialist 20
-    'GWAR', // kgtWarehouse 21
-    'GMHQ', // kgtMobileHeadquarters 22
-    'GOVR', // kgtOvermind 23
-    'GTST', // kgtTankShot 24
-    'GRKT', // kgtRocket 25
-    'GMGT', // kgtMachineGunTower 26
-    'GRTR', // kgtRocketTower 27
-    'GSCO', // kgtScorch 28
-    'GSMO', // kgtSmoke 29
-    'GPUF', // kgtPuff 30
-    'GBUL', // kgtBullet 31
-    'GART', // kgtArtillery 32
-    'GARS', // kgtArtilleryShot 33
-    'GAND', // kgtAndy 34
-    'GREP', // kgtReplicator 35
-    'GACT', // kgtActivator 36
-    'GFOX', // kgtFox 37
-    'GANS', // kgtAndyShot 38
-};
-
-void Gob::TrackState(StateFrame *frame) {
-    int i = frame->AddCountedValue(gmpgtQuad[GetType()]);
-    frame->AddValue('ID  ', (dword)m_gid, i);
-    frame->AddValue('WX  ', (dword)m_wx, i);
-    frame->AddValue('WY  ', (dword)m_wy, i);
-    frame->AddValue('GNXT', (dword)m_gidNext, i);
-    frame->AddValue('ST  ', (dword)m_st, i);
-    frame->AddValue('STNX', (dword)m_stNext, i);
-    dword ff = m_ff;
-    ff &= ~(kfGobRedraw | kfGobFlashing | kfGobDrawFlashed |
-            kfGobDebug | kfGobSelected | kfGobVisibleLastFrame |
-            kfGobIncludeFindVisible | kfGobTransitioningToVisible |
-            kfGobAnimationChanged | kfGobLayerSelection | kfGobLayerMask);
-    frame->AddValue('FF  ', ff, i);
-}
-#endif
 
 bool Gob::Invalidate()
 {
@@ -1292,9 +1231,6 @@ GobMgr::GobMgr()
 {
 	m_pgobHead = NULL;
 	m_pgidMap = NULL;
-#ifdef MP_DEBUG_SHAREDMEM
-	m_apgobMaster = NULL;
-#endif
 	m_cpgobActive = 0;
 	m_car = 0;
 	m_cSceneryGobs = 0;
@@ -1641,35 +1577,21 @@ void GobMgr::TrackGobCounts(Gob *pgob, bool fIncrement)
 	// Validate counts so we know of errors
 
 #ifdef DEBUG
-	if (ggame.IsMultiplayer()) {
-		for (Side side = ksideNeutral; side < kcSides; side++) {
-			Player *pplr = gplrm.GetPlayer(side);
-			if (pplr == NULL)
-				continue;
+	int cMuntGobsComputer = gplrm.GetUnitInstanceCountFromMask(kumMobileUnits, kfPlrComputer);
+	Assert(cMuntGobsComputer >= 0 && cMuntGobsComputer <= gcMuntGobsComputerLimitSP);
 
-			int cStructGobs = pplr->GetUnitInstanceCountFromMask(kumStructures);
-			Assert(cStructGobs >= 0 && cStructGobs <= gcStructGobsLimitMP);
+	int cStructGobsComputer = gplrm.GetUnitInstanceCountFromMask(kumStructures, kfPlrComputer);
+	Assert(cStructGobsComputer >= 0 && cStructGobsComputer <= gcStructGobsComputerLimitSP + gcStructGobsComputerDeltaSP);
 
-			int cMuntGobs = pplr->GetUnitInstanceCountFromMask(kumMobileUnits);
-			Assert(cMuntGobs >= 0 && cMuntGobs <= gcMuntGobsLimitMP);
-		}
-	} else {
-		int cMuntGobsComputer = gplrm.GetUnitInstanceCountFromMask(kumMobileUnits, kfPlrComputer);
-		Assert(cMuntGobsComputer >= 0 && cMuntGobsComputer <= gcMuntGobsComputerLimitSP);
+	int cMuntGobsHuman = gplrm.GetUnitInstanceCountFromMask(kumMobileUnits, 0);
+	Assert(cMuntGobsHuman >= 0 && cMuntGobsHuman <= gcMuntGobsHumanLimitSP);
 
-		int cStructGobsComputer = gplrm.GetUnitInstanceCountFromMask(kumStructures, kfPlrComputer);
-		Assert(cStructGobsComputer >= 0 && cStructGobsComputer <= gcStructGobsComputerLimitSP + gcStructGobsComputerDeltaSP);
+	int cStructGobsHuman = gplrm.GetUnitInstanceCountFromMask(kumStructures, 0);
+	Assert(cStructGobsHuman >= 0 && cStructGobsHuman <= gcStructGobsHumanLimitSP + gcStructGobsHumanDeltaSP);
 
-		int cMuntGobsHuman = gplrm.GetUnitInstanceCountFromMask(kumMobileUnits, 0);
-		Assert(cMuntGobsHuman >= 0 && cMuntGobsHuman <= gcMuntGobsHumanLimitSP);
-
-		int cStructGobsHuman = gplrm.GetUnitInstanceCountFromMask(kumStructures, 0);
-		Assert(cStructGobsHuman >= 0 && cStructGobsHuman <= gcStructGobsHumanLimitSP + gcStructGobsHumanDeltaSP);
-
-		Assert(m_cSceneryGobs >= 0 && m_cSceneryGobs <= gcSceneryGobsLimit);
-		Assert(m_cScorchGobs >= 0 && m_cScorchGobs <= gcScorchGobsLimit);
-		Assert(m_cSupportGobs >= 0 && m_cSupportGobs <= gcSupportGobsLimit);
-	}
+	Assert(m_cSceneryGobs >= 0 && m_cSceneryGobs <= gcSceneryGobsLimit);
+	Assert(m_cScorchGobs >= 0 && m_cScorchGobs <= gcScorchGobsLimit);
+	Assert(m_cSupportGobs >= 0 && m_cSupportGobs <= gcSupportGobsLimit);
 #endif
 }
 
@@ -1679,18 +1601,13 @@ bool GobMgr::IsBelowLimit(int nLimit, Player *pplr)
 	case knLimitStruct:
 		{
 			Assert(pplr != NULL);
-			if (!ggame.IsMultiplayer()) {
-				int cQueued = BuilderGob::GetGlobalQueuedCount(pplr, kfUntcStructureBuilder);
-				if (pplr->GetFlags() & kfPlrComputer) {
-					int cStructGobsComputer = gplrm.GetUnitInstanceCountFromMask(kumStructures, kfPlrComputer);
-					return (cStructGobsComputer + cQueued) < gcStructGobsComputerLimitSP + gcStructGobsComputerDeltaSP;
-				} else {
-					int cStructGobsHuman = gplrm.GetUnitInstanceCountFromMask(kumStructures, 0);
-					return (cStructGobsHuman + cQueued) < gcStructGobsHumanLimitSP + gcStructGobsHumanDeltaSP;
-				}
+			int cQueued = BuilderGob::GetGlobalQueuedCount(pplr, kfUntcStructureBuilder);
+			if (pplr->GetFlags() & kfPlrComputer) {
+				int cStructGobsComputer = gplrm.GetUnitInstanceCountFromMask(kumStructures, kfPlrComputer);
+				return (cStructGobsComputer + cQueued) < gcStructGobsComputerLimitSP + gcStructGobsComputerDeltaSP;
 			} else {
-				int cQueued = BuilderGob::GetQueuedCount(pplr, kfUntcStructureBuilder);
-				return (pplr->GetUnitInstanceCountFromMask(kumStructures) + cQueued) < gcStructGobsLimitMP;
+				int cStructGobsHuman = gplrm.GetUnitInstanceCountFromMask(kumStructures, 0);
+				return (cStructGobsHuman + cQueued) < gcStructGobsHumanLimitSP + gcStructGobsHumanDeltaSP;
 			}
 		}
 		break;
@@ -1698,18 +1615,13 @@ bool GobMgr::IsBelowLimit(int nLimit, Player *pplr)
 	case knLimitMobileUnit:
 		{
 			Assert(pplr != NULL);
-			if (!ggame.IsMultiplayer()) {
-				int cQueued = BuilderGob::GetGlobalQueuedCount(pplr, kfUntcMobileUnitBuilder);
-				if (pplr->GetFlags() & kfPlrComputer) {
-					int cMuntGobsComputer = gplrm.GetUnitInstanceCountFromMask(kumMobileUnits, kfPlrComputer);
-					return (cMuntGobsComputer + cQueued) < gcMuntGobsComputerLimitSP;
-				} else {
-					int cMuntGobsHuman = gplrm.GetUnitInstanceCountFromMask(kumMobileUnits, 0);
-					return (cMuntGobsHuman + cQueued) < gcMuntGobsHumanLimitSP;
-				}
+			int cQueued = BuilderGob::GetGlobalQueuedCount(pplr, kfUntcMobileUnitBuilder);
+			if (pplr->GetFlags() & kfPlrComputer) {
+				int cMuntGobsComputer = gplrm.GetUnitInstanceCountFromMask(kumMobileUnits, kfPlrComputer);
+				return (cMuntGobsComputer + cQueued) < gcMuntGobsComputerLimitSP;
 			} else {
-				int cQueued = BuilderGob::GetQueuedCount(pplr, kfUntcMobileUnitBuilder);
-                return (pplr->GetUnitInstanceCountFromMask(kumMobileUnits) + cQueued) < gcMuntGobsLimitMP;
+				int cMuntGobsHuman = gplrm.GetUnitInstanceCountFromMask(kumMobileUnits, 0);
+				return (cMuntGobsHuman + cQueued) < gcMuntGobsHumanLimitSP;
 			}
 		}
 		break;

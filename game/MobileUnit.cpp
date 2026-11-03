@@ -183,12 +183,10 @@ void MobileUnitGob::Deactivate()
 		Assert(IsTileReserved(m_txDst, m_tyDst));
 		ReserveTile(m_txDst, m_tyDst, false);
 	} else {
-#ifndef MP_DEBUG_SHAREDMEM
 // DWM: We always hit it when a Processor containing a Bullpup is destroyed.
 // We should fix that but in the meantime I need to release a DEBUG build
 // that won't trip up on this case so I'm commenting it out for now.
 //		Assert(IsTileReserved(TcFromWc(m_wx), TcFromWc(m_wy)));
-#endif
 		ReserveTile(TcFromWc(m_wx), TcFromWc(m_wy), false);
 	}
 	UnitGob::Deactivate();
@@ -3014,35 +3012,5 @@ UnitGob *MobileUnitGob::FindValidTargetInArea(int nArea)
 	}
 }
 
-#ifdef MP_DEBUG_SHAREDMEM
-void MobileUnitGob::MPValidate()
-{
-	MPValidateGobMember(MobileUnitGob, m_dir);
-	MPValidateGobMember(MobileUnitGob, m_dirNext);
-	MPValidateGobMember(MobileUnitGob, m_gidTarget);
-	MPValidateGobMember(MobileUnitGob, m_tLastFire);
-	MPValidateGobMember(MobileUnitGob, m_msgPending);
-	MPValidateGobMember(MobileUnitGob, m_msgAction);
-	MPValidateGobMember(MobileUnitGob, m_cCountdown);
-	MPValidateGobMember(MobileUnitGob, m_cMoveStepsRemaining);
-	MPValidateGobMember(MobileUnitGob, m_tptChaseInitial);
-	MPValidateGobMember(MobileUnitGob, m_mua);
-	MPValidateGobMember(MobileUnitGob, m_muaPending);
-	MPValidateGobMember(MobileUnitGob, m_wfMunt);
-	MPValidateGobMember(MobileUnitGob, m_stPending);
-	MPValidateGobMember(MobileUnitGob, m_cupdLastHitOrNearbyAllyHit);
-	MPValidateGobMember(MobileUnitGob, m_wxDst);
-	MPValidateGobMember(MobileUnitGob, m_wyDst);
-	MPValidateGobMember(MobileUnitGob, m_txDst);
-	MPValidateGobMember(MobileUnitGob, m_tyDst);
-	MPValidateGobMember(MobileUnitGob, m_wptTarget);
-	MPValidateGobMember(MobileUnitGob, m_nSeqMoveAside);
-	MPValidateGobMember(MobileUnitGob, m_itptPath);
-	MPValidateGobMember(MobileUnitGob, m_wptTargetCenter);
-	MPValidateGobMember(MobileUnitGob, m_tcTargetRadius);
-	MPValidateGobMember(MobileUnitGob, m_wcMoveDistPerUpdate);
-	UnitGob::MPValidate();
-}
-#endif
 
 } // namespace wi

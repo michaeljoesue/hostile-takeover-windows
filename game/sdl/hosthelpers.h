@@ -3,7 +3,6 @@
 
 #include <stdarg.h>
 #include "game/ht.h"
-#include "game/chatcontroller.h"
 
 #ifdef __ANDROID__
 #include <jni.h>
@@ -29,7 +28,6 @@ class FormMgr;
 class HostHelpers
 {
 public:
-    static void OpenUrl(const char *pszUrl);
     static void Log(const char *pszFormat, ...);
     static void Log(const char *pszFormat, va_list va);
     static void MessageBox(const char *pszFormat, va_list va);
@@ -42,16 +40,9 @@ public:
     static void SetFormMgrs(FormMgr *pfrmmSimUI, FormMgr *pfrmmInput);
     static DibBitmap *CreateFrontDib(int cx, int cy, int nDegreeOrientation);
     static void SetPalette(Palette *ppal);
-    static const char *GetUdid();
-    static void InitiateAsk(const char *title, int max, const char *def,
-            int keyboard, bool secure);
-    static void GetAskString(char *psz, int cb);
-    static IChatController *GetChatController();
-    static void InitiateWebView(const char *title, const char *url);
     static bool IsExiting();
     static void GameThreadStart(void *pv);
     static void DisplayInitComplete();
-    static const char *GetPlatformString();
 
     // TODO(darrinm): unused?
     static int main(int argc, char **argv);

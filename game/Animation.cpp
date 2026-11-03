@@ -321,15 +321,5 @@ long Animation::GetRemainingStripTime()
 	return c * kctUpdate;
 }
 
-#ifdef MP_DEBUG_SHAREDMEM
-void Animation::MPValidate(Animation *paniRemote)
-{
-	MPValidateMember(Animation, m_nStrip, paniRemote);
-	MPValidateMember(Animation, m_nFrame, paniRemote);
-	MPValidateMember(Animation, m_wf, paniRemote);
-	MPValidateMember(Animation, m_cCountdown, paniRemote);
-	MPValidateMember(Animation, m_cDelay, paniRemote);
-}
-#endif
 
 } // namespace wi

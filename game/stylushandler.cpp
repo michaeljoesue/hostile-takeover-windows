@@ -122,7 +122,7 @@ void SimUIForm::StylusHandler::OnPenUp(Event *pevt)
         if (gsim.HitTest(&enm, wxTarget, wyTarget, kfGobActive | kfGobUnit,
                 &pgobHit) && pgobHit != NULL) {
             bool fOwn = pgobHit->GetSide() == gpplrLocal->GetSide() ||
-                    (gfGodMode && !ggame.IsMultiplayer());
+                    (gfGodMode);
             bool fIntoReplicator = pgobHit->GetType() == kgtReplicator &&
                     m_psui->HasSelectedUnits();
             if (fOwn && !fIntoReplicator) {
@@ -300,7 +300,7 @@ void SimUIForm::StylusHandler::OnPenHold(Event *pevt)
 	// Don't popup menu if the player doesn't own the Gob (unless in God mode)
 	// God mode is limited for multiplayer games.
 
-	if ((!gfGodMode || ggame.IsMultiplayer()) && 
+	if ((!gfGodMode) && 
 			pgobHit->GetSide() != gpplrLocal->GetSide()) {
 		return;
     }

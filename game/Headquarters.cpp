@@ -479,7 +479,7 @@ void StructureBuildForm::OnControlSelected(word idc)
 		return;
 
 	case kidcHelp:
-		Help("buildings", !ggame.IsMultiplayer());
+		Help("buildings", true);
 		break;
 
 	case kidcList:

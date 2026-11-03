@@ -1,6 +1,5 @@
 #include "game/ht.h"
-#include "game/httppackmanager.h"
-#include "game/httppackinfomanager.h"
+#include "game/packs.h"
 #include "yajl/wrapper/jsontypes.h"
 
 namespace wi {

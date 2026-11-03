@@ -1,5 +1,4 @@
 #include "game/ht.h"
-#include "game/stateframe.h"
 
 namespace wi {
 
@@ -177,13 +176,6 @@ void StateMachineMgr::RouteMessage(Message *pmsg)
 	extern int gcMessagesPerUpdate;
 	gcMessagesPerUpdate++;
 
-#ifdef TRACKSTATE
-    // Track that this message has been sent
-    extern StateFrame *gpframeCurrent;
-    if (gpframeCurrent != NULL) {
-        TrackState(gpframeCurrent, pmsg);
-    }
-#endif
 
 	StateMachine *psm = GetStateMachine(pmsg->smidReceiver);
 
@@ -336,137 +328,6 @@ bool StateMachineMgr::StoreDelayedMessage(Message *pmsg)
 	return true;
 }
 
-#ifdef TRACKSTATE
-
-dword gmpmidQuad[] = {
-	'MRNL', // kmidReservedNull,
-	'MREN', // kmidReservedEnter,
-	'MREX', // kmidReservedExit,
-	'MRUP', // kmidReservedUpdate,
-	'MHIT', // kmidHit,
-	'MNAH', // kmidNearbyAllyHit,
-	'MDEL', // kmidDelete,
-	'MENB', // kmidEnemyNearby,
-	'MPLH', // kmidPowerLowHigh,
-	'MMWN', // kmidMoveWaitingNearby,
-	'MBUP', // kmidBeingUpgraded,
-	'MUPC', // kmidUpgradeComplete,
-	'MMVC', // kmidMoveCommand,
-	'MATC', // kmidAttackCommand,
-	'MANC', // kmidAnimationComplete,
-	'MBOC', // kmidBuildOtherCommand,
-	'MABO', // kmidAbortBuildOtherCommand,
-	'MBDC', // kmidBuildComplete,
-	'MFRC', // kmidFireComplete,
-	'MSSM', // kmidSpawnSmoke,
-	'MSDC', // kmidSelfDestructCommand,
-	'MREC', // kmidRepairCommand,
-	'MUPC', // kmidUpgradeCommand,
-	'MAUC', // kmidAbortUpgradeCommand,
-	'MTFC', // kmidTransformCommand,
-	'MDLC', // kmidDeliverCommand,
-	'MGXD', // kmidGalaxiteDelivery,
-	'MMIC', // kmidMineCommand,
-	'MMAC', // kmidMoveAction,
-	'MAAC', // kmidAttackAction,
-	'MGUA', // kmidGuardAction,
-	'MGVA', // kmidGuardVicinityAction,
-	'MGAA', // kmidGuardAreaAction,
-	'MHEA', // kmidHuntEnemiesAction,
-	'MFIR', // kmidFire,
-	'MHET', // kmidHeal,
-	'MSFX', // kmidPlaySfx,
-    'PDIS', // kmidPlayerDisconnect,
-};
-
-void StateMachineMgr::TrackState(StateFrame *frame, Message *pmsg) {
-    int i = frame->AddCountedValue(gmpmidQuad[pmsg->mid]);
-    frame->AddValue('SMIS', (dword)pmsg->smidSender, i);
-    frame->AddValue('SMIR', (dword)pmsg->smidReceiver, i);
-
-    switch (pmsg->mid) {
-    case kmidHit:
-        frame->AddValue('GIDA', (dword)pmsg->Hit.gidAssailant, i);
-        frame->AddValue('SIDA', (dword)pmsg->Hit.sideAssailant, i);
-        frame->AddValue('NDAM', (dword)pmsg->Hit.nDamage, i);
-        break;
-
-    case kmidPlaySfx:
-        // Output 0 so it is always the same, because some units that
-        // send kmidPlaySfx select the sfx using SfxFromCategory, which
-        // uses a random # generator that is not in sync with MP.
-        // bug causing this.
-        //frame->AddValue('SFX ', (dword)pmsg->PlaySfx.sfx, i);
-        frame->AddValue('SFX ', 0, i);
-        break;
-
-    case kmidEnemyNearby:
-        frame->AddValue('ENNB', (dword)pmsg->EnemyNearby.gidEnemy, i);
-        break;
-
-    case kmidMoveCommand:
-        frame->AddValue('GIDT', (dword)pmsg->MoveCommand.gidTarget, i);
-        frame->AddValue('TRWX', (dword)pmsg->MoveCommand.wptTarget.wx, i);
-        frame->AddValue('TRWY', (dword)pmsg->MoveCommand.wptTarget.wy, i);
-        frame->AddValue('TCWX', (dword)pmsg->MoveCommand.wptTargetCenter.wx, i);
-        frame->AddValue('TCWY', (dword)pmsg->MoveCommand.wptTargetCenter.wy, i);
-        frame->AddValue('TCRA', (dword)pmsg->MoveCommand.tcTargetRadius, i);
-        frame->AddValue('MDPU', (dword)pmsg->MoveCommand.wcMoveDistPerUpdate,
-                i);
-        break;
-
-    case kmidAttackCommand:
-        frame->AddValue('GIDT', (dword)pmsg->AttackCommand.gidTarget, i);
-        frame->AddValue('TRWX', (dword)pmsg->AttackCommand.wptTarget.wx, i);
-        frame->AddValue('TRWY', (dword)pmsg->AttackCommand.wptTarget.wy, i);
-        frame->AddValue('TCWX', (dword)pmsg->AttackCommand.wptTargetCenter.wx,
-                i);
-        frame->AddValue('TCWY', (dword)pmsg->AttackCommand.wptTargetCenter.wy,
-                i);
-        frame->AddValue('TCRA', (dword)pmsg->AttackCommand.tcTargetRadius, i);
-        frame->AddValue('MDPU', (dword)pmsg->AttackCommand.wcMoveDistPerUpdate,
-                i);
-        break;
-
-    case kmidUpgradeCommand:
-        frame->AddValue('WFUP', (dword)pmsg->UpgradeCommand.wfUpgrade, i);
-        break;
-
-    case kmidBuildOtherCommand:
-        frame->AddValue('UNTT', (dword)pmsg->BuildOtherCommand.ut, i);
-        frame->AddValue('WPWX', (dword)pmsg->BuildOtherCommand.wpt.wx, i);
-        frame->AddValue('WPWY', (dword)pmsg->BuildOtherCommand.wpt.wy, i);
-        break;
-
-    case kmidAbortBuildOtherCommand:
-        frame->AddValue('UNTT', (dword)pmsg->AbortBuildOtherCommand.ut, i);
-        break;
-
-    case kmidDeliverCommand:
-        frame->AddValue('GTAR', (dword)pmsg->DeliverCommand.gidTarget, i);
-        break;
-
-    case kmidMineCommand:
-        frame->AddValue('GTAR', (dword)pmsg->MineCommand.gidTarget, i);
-        frame->AddValue('TRWX', (dword)pmsg->MineCommand.wptTarget.wx, i);
-        frame->AddValue('TRWY', (dword)pmsg->MineCommand.wptTarget.wy, i);
-        break;
-
-    case kmidGuardAreaAction:
-        frame->AddValue('AREA', (dword)pmsg->GuardAreaCommand.nArea, i);
-        break;
-
-    case kmidHuntEnemiesAction:
-        frame->AddValue('UMSK', (dword)pmsg->HuntEnemiesCommand.um, i);
-        break;
-
-    case kmidPlayerDisconnect:
-        frame->AddValue('PID ', (dword)pmsg->PlayerDisconnect.pid, i);
-        frame->AddValue('REAS', (dword)pmsg->PlayerDisconnect.nReason, i);
-        break;
-    }
-}
-#endif
 
 #if defined(DEBUG_HELPERS)
 

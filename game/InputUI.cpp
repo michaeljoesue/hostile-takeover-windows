@@ -1,6 +1,4 @@
 #include "game/ht.h"
-#include "game/chatter.h"
-#include "mpshared/netmessage.h"
 
 namespace wi {
 
@@ -11,10 +9,9 @@ extern bool gfSingleStep;
 // InputUIForm implementation
 //
 
-InputUIForm::InputUIForm(Chatter *chatter)
+InputUIForm::InputUIForm()
 {
 	m_fTimerAdded = false;
-    m_pchatter = chatter;
 }
 
 InputUIForm::~InputUIForm()
@@ -161,8 +158,7 @@ void InputUIForm::OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd)
 
 	rcT.bottom = rcT.top + 1;
 
-	int iclr = gfMultiplayer ? gaiclrSide[gpplrLocal->GetSide()] : kiclr0CyanSide;
-	FillHelper(pbm, pupd, &rcT, GetColor(iclr));
+	FillHelper(pbm, pupd, &rcT, GetColor(kiclr0CyanSide));
 }
 
 bool InputUIForm::EventProc(Event *pevt)
@@ -278,11 +274,9 @@ void InputUIForm::OnControlSelected(word idc)
 #endif
 
 	case kidcCreditsLabel:
-		if (!gfMultiplayer)
-			gsim.Pause(true);
+		gsim.Pause(true);
 		gpplrLocal->ShowObjectives(ksoObjectives);
-		if (!gfMultiplayer)
-			gsim.Pause(false);
+		gsim.Pause(false);
 		break;
 	}
 }
@@ -349,29 +343,7 @@ void InputUIForm::InGameMenu()
     pfrm->GetControlPtr(kidcExitGame)->Show(false);
 #endif
 
-	if (gfMultiplayer) {
-		pfrm->GetControlPtr(kidcSaveGame)->Show(false);
-		pfrm->GetControlPtr(kidcLoadGame)->Show(false);
-		pfrm->GetControlPtr(kidcRestartMission)->Show(false);
-		pfrm->GetControlPtr(kidcHelp)->Show(false);
-
-		// Hack
-
-		ButtonControl *pbtn = (ButtonControl *)pfrm->GetControlPtr(kidcAbortMission);
-		pbtn->SetText((gpplrLocal->GetFlags() & kfPlrObserver) ? (char *)"STOP OBSERVING" : (char *)"RESIGN");
-
-		word aidcFormat[] = { kidcObjectives, kidcSaveGame, kidcLoadGame, kidcRestartMission, kidcAbortMission, kidcOptions, kidcChat, kidcExitGame, kidcHelp };
-		FormatButtons(pfrm, aidcFormat, ARRAYSIZE(aidcFormat), kidcObjectives, kidcOptions);
-
-        // Hiding this here ensures kidcChat is spaced below the rest of the
-        // buttons.
-        pfrm->GetControlPtr(kidcOptions)->Show(false);
-	} else {
-        pfrm->GetControlPtr(kidcChat)->Show(false);
-    }
-
-	if (!gfMultiplayer)
-		gsim.Pause(true);
+	gsim.Pause(true);
 	int idc;
 	pfrm->DoModal(&idc);
 	delete pfrm;
@@ -404,22 +376,14 @@ void InputUIForm::InGameMenu()
 		case kidcAbortMission:
 		case kidcRestartMission:
 			{
-				if (gfMultiplayer) {
-					if (!ggame.AskResignGame())
-						break;
-				}
-
 				if ((gpplrLocal->GetFlags() & kfPlrObserver) == 0) {
                     // HACK: only ksoWinSummary has the fields necessary to
                     // support the fAborting flag
-					gpplrLocal->ShowObjectives(
-                            gfMultiplayer ? ksoLoseSummary : ksoWinSummary,
-                            false, gfMultiplayer ? false : true);
+					gpplrLocal->ShowObjectives(ksoWinSummary,
+                            false, true);
                 }
 
-				if (!gfMultiplayer
-                        || (gpplrLocal->GetFlags() & kfPlrObserver) != 0
-                        || !ggame.AskObserveGame()) {
+				{
 					Event evt;
 					memset(&evt, 0, sizeof(evt));
 					evt.eType = gameOverEvent;
@@ -440,11 +404,6 @@ void InputUIForm::InGameMenu()
 
 		case kidcExitGame:
 			{
-				if (gfMultiplayer) {
-					if (!ggame.AskResignGame())
-						break;
-				}
-
 				Event evt;
 				memset(&evt, 0, sizeof(evt));
 				evt.eType = gameOverEvent;
@@ -458,17 +417,10 @@ void InputUIForm::InGameMenu()
 		case kidcObjectives:
 			gpplrLocal->ShowObjectives(ksoObjectives);
 			break;
-
-        case kidcChat:
-            if (m_pchatter != NULL) {
-                m_pchatter->ShowChat();
-            }
-            break;
 		}
 	}
 
-	if (!gfMultiplayer)
-		gsim.Pause(false);
+	gsim.Pause(false);
 }
 
 void InputUIForm::TestOptions()
@@ -476,11 +428,9 @@ void InputUIForm::TestOptions()
 	// Invoke modal test options form
 
 	Form *pfrm = gpmfrmm->LoadForm(gpiniForms, kidfTestOptions, new TestOptionsForm());
-	if (!gfMultiplayer)
-		gsim.Pause(true);
+	gsim.Pause(true);
 	pfrm->DoModal();
-	if (!gfMultiplayer)
-		gsim.Pause(false);
+	gsim.Pause(false);
 	delete pfrm;
 }
 

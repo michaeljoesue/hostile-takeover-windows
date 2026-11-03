@@ -16,7 +16,7 @@ HOW TO PLAY
    (SmartScreen). This appears for any program that isn't signed by a
    company. Click "More info", then "Run anyway".
 
-3. Choose PLAY > SINGLE PLAYER > M0: Introduction to start the story.
+3. Choose PLAY > M0: Introduction to start the story.
 
 
 CONTROLS
@@ -87,8 +87,11 @@ NOTES
 - No installation, no extra DLLs, nothing written to the registry.
   To uninstall, delete the folder (and %APPDATA%\HostileTakeover if you
   also want to remove your saves and installed mission packs).
-- Online features (multiplayer, leaderboard, downloading add-on mission
-  packs) depend on the original game servers and may not work.
+- Single player only. The online features (multiplayer, chat,
+  leaderboard, forums link, downloading add-on mission packs) have been
+  removed because the original game servers no longer exist. Install
+  add-on mission packs with the editor in the Editor folder (Game >
+  Install Mission Pack in Game); they appear under PLAY > Add-On.
 
 
 LICENSE

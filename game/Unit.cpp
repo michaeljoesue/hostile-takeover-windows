@@ -1359,19 +1359,5 @@ bool UnitMenu::OnHitTest(Event *pevt)
 	return true;
 }
 
-#ifdef MP_DEBUG_SHAREDMEM
-void UnitGob::MPValidate()
-{
-//  Warehouse sets animation state during draw
-//	m_ani.MPValidate((Animation *)(((byte *)MPGetGobPtr(m_gid)) + OFFSETOF(UnitGob, m_ani)));
-	MPValidateGobMember(UnitGob, m_agidEnemyNearby);
-	MPValidateGobMember(UnitGob, m_fxHealth);
-	MPValidateGobMember(UnitGob, m_cupdLastHitNotify);
-//  gpplrLocal specific
-//	MPValidateGobMember(UnitGob, m_cDamageCountdown);
-//	MPValidateGobMember(UnitGob, m_wfUnit);
-	MPValidateGobMember(UnitGob, m_unvl);
-}
-#endif
 
 } // namespace wi

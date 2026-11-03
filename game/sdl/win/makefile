@@ -3,7 +3,7 @@
 # Cross-compile from Linux/WSL:   make REL=1
 # Native on Windows with MSYS2:   make REL=1 CROSS=   (inside the MINGW32 shell)
 #
-# Needs SDL2 (mingw dev package) and a static libcurl. Point SDL2DIR / CURLDIR at them.
+# Needs SDL2 (mingw dev package). Point SDL2DIR at it.
 #
 # NOTE: the game is built as a 32-bit (i686) Windows program on purpose. The
 # code base dates from 32-bit Palm/Windows CE days and in many places assumes
@@ -28,19 +28,18 @@ WINDRES = windres
 endif
 
 SDL2DIR ?= ../../../../deps/SDL2-2.30.9/$(ARCH)
-CURLDIR ?= ../../../../deps/curl-win32
 
 CPPFLAGS += -w -fpermissive -fno-delete-null-pointer-checks -fno-strict-aliasing -fwrapv -Wno-write-strings -fsigned-char \
 -I../../../base -I../../../mpshared -I../../../inc \
--I$(SDL2DIR)/include -I$(SDL2DIR)/include/SDL2 -I$(CURLDIR)/include \
+-I$(SDL2DIR)/include -I$(SDL2DIR)/include/SDL2 \
 -I../../../ -I../../ -I../ \
--DSDL -DMULTIPLAYER -DTRACKSTATE -DCURL_STATICLIB \
+-DSDL \
 -DWIN32_LEAN_AND_MEAN -DNOMINMAX -D_WIN32_WINNT=0x0601
 
 LDFLAGS = -static -static-libgcc -static-libstdc++ -mwindows \
--L$(SDL2DIR)/lib -L$(CURLDIR)/lib \
--lmingw32 -lSDL2main -lSDL2 -lcurl \
--lws2_32 -lwldap32 -lcrypt32 -lbcrypt -lsecur32 -liphlpapi -lnormaliz \
+-L$(SDL2DIR)/lib \
+-lmingw32 -lSDL2main -lSDL2 \
+-lws2_32 \
 -lshlwapi -lshell32 -lole32 -lwinmm -limm32 -lversion -lsetupapi -loleaut32 -luuid -lgdi32 -luser32
 
 ifeq ($(REL),1)

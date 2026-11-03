@@ -6,7 +6,6 @@
 	LABEL=kidcFps (74 0 12 0) "FPS" kifntShadow right
 	LABEL=kidcObjective (0 9 0 0) "" kifntShadow
 	LABEL=kidcCountdown (132 9 27 0) "" kifntShadow right
-    BUTTON=kidcChat (128 2 40 12) "Chat" kifntShadow
 
 [kidfContinueGame]
 	FORM=(0 0 120 60) kidcOk
@@ -35,24 +34,13 @@
 	FORM=(0 0 240 160) kidcCancel center
 	FORMBACKCOLOR=kiclrFormBackground
 	BITMAP=0 (28 7 0 0) title.rbm
-	BUTTON=kidcPlay (65 59 110 14) "PLAY" kifntButton
-	BUTTON=kidcLeaderboard (65 76 110 14) "LEADERBOARD" kifntButton
+	BUTTON=kidcPlay (65 76 110 14) "PLAY" kifntButton
 	BUTTON=kidcLoadSavedGame (65 93 110 14) "LOAD SAVED GAME" kifntButton
 	BUTTON=kidcBuyMe (65 93 110 14) "PURCHASE" kifntButton
-	BUTTON=kidcDownloadMissions (65 110 110 14) "ADD-ON MISSION PACKS" kifntButton
-	BUTTON=kidcSetupGame (65 127 39 14) "OPTIONS" kifntButton
-	BUTTON=kidcHelp (105 127 30 14) "HELP" kifntButton
-	BUTTON=kidcForums (136 127 39 14) "FORUMS" kifntButton
+	BUTTON=kidcSetupGame (65 110 54 14) "OPTIONS" kifntButton
+	BUTTON=kidcHelp (121 110 54 14) "HELP" kifntButton
 	BITMAP=0 (52 148 0 0) copyright.rbm
 	LABEL=kidcVersion (239 148 0 12) "" kifntShadow right
-
-[kidfPlay]
-	FORM=(0 0 240 160) kidcCancel center
-	FORMBACKCOLOR=kiclrFormBackground
-	LABEL=0 (2 6 236 0) "PLAY GAME" kifntTitle center
-	BUTTON=kidcPlaySinglePlayer (65 42 110 14) "SINGLE PLAYER" kifntButton
-	BUTTON=kidcPlayMultiPlayer (65 59 110 14) "MULTIPLAYER" kifntButton
-	BUTTON=kidcCancel (130 140 40 14) "BACK" kifntButton
 
 [kidfDeleteMissionPack]
 	FORM=(0 0 160 160) kidcCancel center
@@ -142,112 +130,6 @@
 	BUTTON=kidcCancel (60 140 40 12) "CANCEL" kifntButton
 	BUTTON=kidcDefault (107 140 40 12) "DEFAULT" kifntButton
 
-[kidfLogin]
-	FORM=(0 0 240 160) kidcCancel center
-	FORMBACKCOLOR=kiclrFormBackground
-	LABEL=0 (0 6 240 0) "MULTIPLAYER LOGIN" kifntTitle center
-	LABEL=kidcForums (42 28 52 0) "Enter Player Name and Password:" kifntShadow
-	LABEL=kidcPlayerNameLabel (42 56 52 0) "Player Name:" kifntShadow
-	EDIT=kidcPlayerName (88 56 90 0) "" kifntShadow
-	BUTTON=kidcPlayerNamePanel (180 51 18 12) "..." kifntButton
-	LABEL=kidcPasswordLabel (42 84 52 0) "Password:" kifntShadow
-	EDIT=kidcPassword (88 84 90 0) "" kifntShadow
-	BUTTON=kidcPasswordPanel (180 79 18 12) "..." kifntButton
-	CHECKBOX=kidcAnonymous (42 112 57 0) "Login Anonymously" kifntShadow
-	BUTTON=kidcLogin (10 140 36 12) "LOGIN" kifntButton
-	BUTTON=kidcRegister (51 140 48 12) "REGISTER" kifntButton
-	BUTTON=kidcUpdateAccount (104 140 80 12) "UPDATE ACCOUNT" kifntButton
-	BUTTON=kidcCancel (189 140 40 12) "CANCEL" kifntButton
-
-[kidfLobby]
-	FORM=(0 0 240 160) kidcCancel center
-	FORMBACKCOLOR=kiclrFormBackground
-	LABEL=0 (0 6 240 0) "MULTIPLAYER LOBBY" kifntTitle center
-	LABEL=kidcPlayerNameLabel (2 18 52 0) "Player name:" kifntShadow
-    LABEL=kidcPlayerName (48 18 190 0) "" kifntShadow
-    LABEL=kidcLurkerCount (238 18 0 0) "" kifntShadow right
-	LIST=kidcRoomList (2 34 236 103) kifntShadow
-	BUTTON=kidcJoinRoom (15 140 48 12) "JOIN ROOM" kifntButton
-	BUTTON=kidcNewRoom (68 140 59 12) "CREATE ROOM" kifntButton
-    BUTTON=kidcSignOut (132 140 48 12) "SIGN OUT" kifntButton
-	BUTTON=kidcCancel (185 140 40 12) "BACK" kifntButton
-
-[kidfCreateRoom]
-	FORM=(0 0 240 160) kidcCancel center
-	FORMBACKCOLOR=kiclrFormBackground
-	LABEL=0 (0 6 240 0) "CREATE ROOM" kifntTitle center
-	LABEL=0 (42 28 52 0) "Enter Room Name:" kifntShadow
-	LABEL=kidcRoomNameLabel (42 56 52 0) "Room Name:" kifntShadow
-	EDIT=kidcRoomName (88 56 90 0) "" kifntShadow
-	BUTTON=kidcRoomNamePanel (180 51 18 12) "..." kifntButton
-	LABEL=kidcPasswordLabel (42 84 52 0) "Password:" kifntShadow
-	EDIT=kidcPassword (88 84 90 0) "" kifntShadow
-	BUTTON=kidcPasswordPanel (180 79 18 12) "..." kifntButton
-	CHECKBOX=kidcPrivate (42 112 57 0) "Private" kifntShadow
-	BUTTON=kidcOk (75 140 40 12) "OK" kifntButton
-	BUTTON=kidcCancel (125 140 40 12) "CANCEL" kifntButton
-
-[kidfRoom]
-	FORM=(0 0 240 160) kidcCancel center
-	FORMBACKCOLOR=kiclrFormBackground
-	LABEL=0 (0 6 240 0) "GAME ROOM" kifntTitle center
-    LABEL=kidcRoomName (2 18 236 0) "" kifntShadow
-    LABEL=kidcNoGames (2 76 236 0) "No games in this room. To create one, press Create Game." kifntShadow center
-	LIST=kidcGameList (2 34 236 103) kifntShadow
-	BUTTON=kidcJoinGame (11 140 48 12) "JOIN GAME" kifntButton
-	BUTTON=kidcNewGame (69 140 59 12) "CREATE GAME" kifntButton
-    BUTTON=kidcChat (138 140 40 12) "CHAT" kifntButton
-	BUTTON=kidcCancel (188 140 40 12) "BACK" kifntButton
-
-[kidfCreateGame]
-	FORM=(0 0 160 160) kidcCancel center
-	FORMBACKCOLOR=kiclrFormBackground
-	LABEL=0 (31 6 99 0) "HOST MULTIPLAYER GAME" kifntTitle center
-	LABEL=kidcGameNameLabel (2 18 46 0) "Game Name:" kifntShadow
-	EDIT=kidcGameName (50 18 88 0) "<unimplemented>" kifntShadow
-	BUTTON=kidcGameNamePanel (140 13 18 12) "..." kifntButton
-	LABEL=0 (2 30 50 0) "Game Speed:" kifntShadow
-	SLIDER=kidcGameSpeed (50 30 88 8)
-	LABEL=kidcGameSpeedLabel (140 30 17 0) "0" kifntShadow right
-	LABEL=0 (2 42 18 0) "Choose a map to play on:" kifntShadow
-	LIST=kidcMapList (2 52 156 76) kifntShadow
-	BUTTON=kidcOk (17 140 60 12) "CREATE GAME" kifntButton
-	BUTTON=kidcCancel (93 140 50 12) "CANCEL" kifntButton
-
-[kidfCreateGameWide]
-	FORM=(0 0 240 160) kidcCancel center
-	FORMBACKCOLOR=kiclrFormBackground
-	LABEL=0 (0 6 240 0) "CREATE MULTIPLAYER GAME" kifntTitle center
-	LABEL=0 (42 18 50 0) "Game Speed:" kifntShadow
-	SLIDER=kidcGameSpeed (90 18 88 8)
-	LABEL=kidcGameSpeedLabel (180 18 17 0) "0" kifntShadow right
-	RADIOBUTTONBAR=kidcCategories (0 32 0 0) "Challenge|Add-On" kifntShadow
-	LIST=kidcChallengeList (2 47 236 79) kifntShadow
-	LIST=kidcAddOnList (2 47 236 79) kifntShadow
-	LABEL=kidcMissionPackInfo (2 127 236 12) "" kifntShadow
-	LABEL=kidcAddOnMessage (2 114 236 0) "Install Add-On Mission Packs from the Main Menu" kifntShadow center
-	BUTTON=kidcOk (35 141 60 12) "CREATE GAME" kifntButton
-    BUTTON=kidcChat(105 141 40 12) "CHAT" kifntButton
-	BUTTON=kidcCancel (155 141 50 12) "CANCEL" kifntButton
-
-[kidfGameStart]
-	FORM=(0 0 240 160) kidcCancel center
-	FORMBACKCOLOR=kiclrFormBackground
-	LABEL=0 (74 6 91 0) "WAIT FOR JOINING PLAYERS" kifntTitle center
-	LABEL=0 (42 18 23 0) "Game:" kifntShadow
-	LABEL=kidcGameName (84 18 10 0) "Acquiring game details..." kifntShadow
-	LABEL=0 (42 29 18 0) "Map:" kifntShadow
-	LABEL=kidcMapName (84 29 10 0) "" kifntShadow
-	LABEL=0 (42 40 37 0) "# players:" kifntShadow
-	LABEL=kidcNumPlayers (84 40 10 0) "" kifntShadow
-	LABEL=0 (122 40 37 0) "Game Speed:" kifntShadow
-	LABEL=kidcGameSpeedLabel (172 40 37 0) "" kifntShadow
-	LABEL=0 (104 66 32 0) "PLAYERS" kifntTitle center
-	LIST=kidcPlayerList (52 76 136 57) kifntShadow
-	BUTTON=kidcOk (40 140 50 12) "READY" kifntButton
-    BUTTON=kidcChat (100 140 40 12) "CHAT" kifntButton
-	BUTTON=kidcCancel (150 140 50 12) "CANCEL" kifntButton
-
 [kidfPickLevel]
 	FORM=(0 0 160 160) kidcCancel center
 	FORMBACKCOLOR=kiclrFormBackground
@@ -267,57 +149,9 @@
 	LIST=kidcChallengeList (2 33 236 93) kifntShadow
 	LIST=kidcAddOnList (2 33 236 93) kifntShadow
 	LABEL=kidcMissionPackInfo (2 127 236 12) "" kifntShadow
-	LABEL=kidcAddOnMessage (2 114 236 0) "Install Add-On Mission Packs from the Main Menu" kifntShadow center
+	LABEL=kidcAddOnMessage (2 114 236 0) "Install mission packs with the Mission Editor (M.exe)" kifntShadow center
 	BUTTON=kidcOk (71 141 40 12) "PLAY" kifntButton
 	BUTTON=kidcCancel (126 141 40 12) "BACK" kifntButton
-
-[kidfAddOnSingleMulti]
-	FORM=(0 0 240 160) kidcCancel center
-	FORMBACKCOLOR=kiclrFormBackground
-	LABEL=0 (2 6 236 0) "ADD-ON MISSION PACKS" kifntTitle center
-	BUTTON=kidcPlaySinglePlayer (55 42 120 14) "SINGLE PLAYER MISSION PACKS" kifntButton
-	BUTTON=kidcPlayMultiPlayer (55 59 120 14) "MULTIPLAYER MISSION PACKS" kifntButton
-	BUTTON=kidcCancel (130 140 40 14) "BACK" kifntButton
-
-[kidfDownloadMissionPackWide]
-	FORM=(0 0 240 160) kidcCancel center
-	FORMBACKCOLOR=kiclrFormBackground
-	LABEL=0 (0 6 240 0) "DOWNLOAD ADD-ON MISSION PACKS" kifntTitle center
-	LIST=kidcMissionPackList (2 24 236 86) kifntShadow
-	LABEL=kidcStatus (0 16 0 0) "+" kifntShadow
-	LABEL=kidcTitle (0 16 0 0) "Title" kifntShadow
-	LABEL=kidcNumPlayers (0 16 0 0) "# Players" kifntShadow
-	LABEL=kidcNumMissions (0 16 0 0) "# Missions" kifntShadow
-	LABEL=kidcMissionPackInfo (2 112 236 25) "" kifntShadow multiline clipvert
-	BUTTON=kidcOk (40 141 55 12) "DOWNLOAD" kifntButton
-	BUTTON=kidcDiscuss (103 141 48 12) "DISCUSS" kifntButton
-	BUTTON=kidcCancel (159 141 40 12) "DONE" kifntButton
-
-[kidfChooseServer]
-	FORM=(0 0 240 160) kidcCancel center
-	FORMBACKCOLOR=kiclrFormBackground
-	LABEL=0 (0 6 240 0) "CHOOSE SERVER" kifntTitle center
-	LABEL=kidcServerName (0 20 0 0) "Name" kifntShadow
-	LABEL=kidcServerLocation (0 20 0 0) "Location" kifntShadow
-	LABEL=kidcServerStatus (0 20  0 0) "Status" kifntShadow
-	LABEL=kidcNumPlayers (0 20 0 0) "# Players" kifntShadow
-	LIST=kidcServerList (2 32 236 111) kifntShadow
-	BUTTON=kidcOk (40 141 50 12) "CONNECT" kifntButton
-	BUTTON=kidcRefresh (100 141 50 12) "REFRESH" kifntButton
-	BUTTON=kidcCancel (160 141 40 12) "BACK" kifntButton
-
-[kidfPickTransport]
-	FORM=(0 0 160 160) kidcCancel center
-	FORMBACKCOLOR=kiclrFormBackground
-	LABEL=0 (28 6 104 0) "CHOOSE A TRANSPORT" kifntTitle center
-	BUTTON=kidcTransport1 (30 34 100 14) "TRANSPORT 1" kifntButton
-	BUTTON=kidcTransport2 (30 51 100 14) "TRANSPORT 2" kifntButton
-	BUTTON=kidcTransport3 (30 68 100 14) "TRANSPORT 3" kifntButton
-	BUTTON=kidcTransport4 (30 85 100 14) "TRANSPORT 4" kifntButton
-	BUTTON=kidcTransport5 (30 102 100 14) "TRANSPORT 5" kifntButton
-	BUTTON=kidcTransport6 (30 119 100 14) "TRANSPORT 6" kifntButton
-	LABEL=kidcNoTransportsAvailable (10 73 140 0) "No supported communication methods are available." kifntShadow center multiline
-	BUTTON=kidcCancel (90 140 40 12) "BACK" kifntButton
 
 [kidfInGameMenu]
 	FORM=(0 0 160 160) kidcCancel center
@@ -329,7 +163,6 @@
 	BUTTON=kidcLoadGame (30 70 100 14) "LOAD GAME" kifntButton
 	BUTTON=kidcRestartMission (30 87 100 14) "RESTART MISSION" kifntButton
 	BUTTON=kidcAbortMission (30 104 100 14) "ABORT MISSION" kifntButton
-	BUTTON=kidcChat (30 121 100 14) "CHAT" kifntButton
 	BUTTON=kidcExitGame (30 121 100 14) "EXIT WARFARE" kifntButton
 	BUTTON=kidcHelp (30 138 48 14) "HELP" kifntButton
 	BUTTON=kidcCancel (82 138 48 14) "BACK" kifntButton
@@ -638,14 +471,6 @@
 	BUTTON=kidcOk (10 32 54 12) "Yes" kifntButton
 	BUTTON=kidcCancel (74 32 54 12) "No" kifntButton
 
-[kidfDownloadBox]
-	FORM=(0 0 190 70) kidcOk center topmost
-	LABEL=kidcTitle (61 2 18 0) "Download Mission Pack" kifntTitle center
-	LABEL=kidcMessage (6 15 178 8) "Message" kifntShadow center multiline
-	LABEL=kidcStatus (6 33 178 8) "Status" kifntShadow center multiline
-	BUTTON=kidcOk (36 52 54 12) "OK" kifntButton
-	BUTTON=kidcPlay (100 52 54 12) "PLAY" kifntButton
-
 [kidfBluetoothPatchQuery]
 	FORM=(0 0 140 50) kidcOk center
 	LABEL=kidcTitle (61 2 18 0) "Title" kifntTitle center
@@ -786,97 +611,3 @@
 [kidfLoading]
 	FORM=(0 0 80 25) kidcCancel center
 	LABEL=kidcTitle (0 9 80 0) "LOADING..." kifntTitle center
-
-[kidfWaiting]
-	FORM=(0 0 150 25) kidcCancel center topmost
-	FORMBACKCOLOR=kiclrBlack
-	LABEL=kidcTitle (0 9 150 0) "" kifntTitle center
-
-[kidfMultiplayerWinSummary]
-	FORM=(0 0 160 160) kidcCancel center
-	FORMBACKCOLOR=kiclrFormBackground
-	LABEL=kidcMissionTitle (62 6 35 0) "" kifntTitle center
-	LABEL=0 (62 14 35 0) "PERFORMANCE REVIEW" kifntTitle center
-	LABEL=kidcObjectiveText1 (4 25 0 0) "" kifntShadow
-	LABEL=kidcObjectiveStatus1 (155 25 0 0) "" kifntShadow right
-	LABEL=kidcObjectiveText2 (4 34 0 0) "" kifntShadow
-	LABEL=kidcObjectiveStatus2 (155 34 0 0) "" kifntShadow right
-	LABEL=kidcObjectiveText3 (4 43 0 0) "" kifntShadow
-	LABEL=kidcObjectiveStatus3 (155 43 0 0) "" kifntShadow right
-	LABEL=kidcObjectiveText4 (4 52 0 0) "" kifntShadow
-	LABEL=kidcObjectiveStatus4 (155 52 0 0) "" kifntShadow right
-	LABEL=kidcMissionResult (80 63 0 0) "YOU WIN!" kifntTitle center
-	LABEL=kidcPage2 (4 74 0 0) "Enemy units destroyed" kifntShadow
-	LABEL=kidcMobileUnitsKilled (155 74 0 0) "" kifntShadow right
-	LABEL=kidcPage2 (4 83 0 0) "Enemy buildings destroyed" kifntShadow
-	LABEL=kidcStructuresKilled (155 83 0 0) "" kifntShadow right
-	LABEL=kidcPage2 (4 92 0 0) "Friendly units lost" kifntShadow
-	LABEL=kidcMobileUnitsLost (155 92 0 0) "" kifntShadow right
-	LABEL=kidcPage2 (4 101 0 0) "Friendly buildings lost" kifntShadow
-	LABEL=kidcStructuresLost (155 101 0 0) "" kifntShadow right
-	LABEL=kidcPage2 (4 110 0 0) "Credits acquired / spent" kifntShadow
-	LABEL=kidcCreditsAction (155 110 0 0) "" kifntShadow right
-	LABEL=kidcPage2 (4 119 0 0) "Elapsed time" kifntShadow
-	LABEL=kidcGameTime (155 119 0 0) "" kifntShadow right
-	BUTTON=kidcCancel (80 140 40 14) "OK" kifntButton center
-
-[kidfMultiplayerLoseSummary]
-	FORM=(0 0 160 160) kidcCancel center
-	FORMBACKCOLOR=kiclrFormBackground
-	LABEL=kidcMissionTitle (62 6 35 0) "" kifntTitle center
-	LABEL=0 (62 14 35 0) "PERFORMANCE REVIEW" kifntTitle center
-	LABEL=kidcObjectiveText1 (4 25 0 0) "" kifntShadow
-	LABEL=kidcObjectiveStatus1 (155 25 0 0) "" kifntShadow right
-	LABEL=kidcObjectiveText2 (4 34 0 0) "" kifntShadow
-	LABEL=kidcObjectiveStatus2 (155 34 0 0) "" kifntShadow right
-	LABEL=kidcObjectiveText3 (4 43 0 0) "" kifntShadow
-	LABEL=kidcObjectiveStatus3 (155 43 0 0) "" kifntShadow right
-	LABEL=kidcObjectiveText4 (4 52 0 0) "" kifntShadow
-	LABEL=kidcObjectiveStatus4 (155 52 0 0) "" kifntShadow right
-	LABEL=0 (80 63 0 0) "YOU LOSE!" kifntTitle center
-	LABEL=kidcPage2 (4 74 0 0) "Enemy units destroyed" kifntShadow
-	LABEL=kidcMobileUnitsKilled (155 74 0 0) "" kifntShadow right
-	LABEL=kidcPage2 (4 83 0 0) "Enemy buildings destroyed" kifntShadow
-	LABEL=kidcStructuresKilled (155 83 0 0) "" kifntShadow right
-	LABEL=kidcPage2 (4 92 0 0) "Friendly units lost" kifntShadow
-	LABEL=kidcMobileUnitsLost (155 92 0 0) "" kifntShadow right
-	LABEL=kidcPage2 (4 101 0 0) "Friendly buildings lost" kifntShadow
-	LABEL=kidcStructuresLost (155 101 0 0) "" kifntShadow right
-	LABEL=kidcPage2 (4 110 0 0) "Credits acquired / spent" kifntShadow
-	LABEL=kidcCreditsAction (155 110 0 0) "" kifntShadow right
-	LABEL=kidcPage2 (4 119 0 0) "Elapsed time" kifntShadow
-	LABEL=kidcGameTime (155 119 0 0) "" kifntShadow right
-	BUTTON=kidcCancel (80 140 40 14) "OK" kifntButton center
-
-[kidfMultiplayerObjectives]
-	FORM=(0 0 160 160) kidcCancel center
-	FORMBACKCOLOR=kiclrFormBackground
-	LABEL=kidcMissionTitle (62 6 35 0) "" kifntTitle center
-	LABEL=0 (62 14 35 0) "OBJECTIVES" kifntTitle center
-	LABEL=kidcObjectiveText1 (4 25 0 0) "" kifntShadow
-	LABEL=kidcObjectiveStatus1 (155 25 0 0) "" kifntShadow right
-	LABEL=kidcObjectiveText2 (4 34 0 0) "" kifntShadow
-	LABEL=kidcObjectiveStatus2 (155 34 0 0) "" kifntShadow right
-	LABEL=kidcObjectiveText3 (4 43 0 0) "" kifntShadow
-	LABEL=kidcObjectiveStatus3 (155 43 0 0) "" kifntShadow right
-	LABEL=kidcObjectiveText4 (4 52 0 0) "" kifntShadow
-	LABEL=kidcObjectiveStatus4 (155 52 0 0) "" kifntShadow right
-	LABEL=kidcPage1 (80 63 0 0) "BRIEFING" kifntTitle center
-	LABEL=kidcPage2 (80 63 0 0) "STATISTICS" kifntTitle center
-	LABEL=kidcObjectiveInfo (4 74 152 69) "" kifntShadow left multiline
-	LABEL=kidcPage2 (4 74 0 0) "Enemy units destroyed" kifntShadow
-	LABEL=kidcMobileUnitsKilled (155 74 0 0) "" kifntShadow right
-	LABEL=kidcPage2 (4 83 0 0) "Enemy buildings destroyed" kifntShadow
-	LABEL=kidcStructuresKilled (155 83 0 0) "" kifntShadow right
-	LABEL=kidcPage2 (4 92 0 0) "Friendly units lost" kifntShadow
-	LABEL=kidcMobileUnitsLost (155 92 0 0) "" kifntShadow right
-	LABEL=kidcPage2 (4 101 0 0) "Friendly buildings lost" kifntShadow
-	LABEL=kidcStructuresLost (155 101 0 0) "" kifntShadow right
-	LABEL=kidcPage2 (4 110 0 0) "Credits acquired / spent" kifntShadow
-	LABEL=kidcCreditsAction (155 110 0 0) "" kifntShadow right
-	LABEL=kidcPage2 (4 119 0 0) "Elapsed time" kifntShadow
-	LABEL=kidcGameTime (155 119 0 0) "" kifntShadow right
-	BUTTON=kidcStatistics (50 140 60 14) "STATISTICS" kifntButton center
-	BUTTON=kidcInfo (50 140 60 14) "BRIEFING" kifntButton center
-	BUTTON=kidcCancel (120 140 40 14) "OK" kifntButton center
-

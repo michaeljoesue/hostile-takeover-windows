@@ -19,7 +19,7 @@
 //   Restore Original Missions      Puts back the game data file that shipped.
 //   Game Location...               Chooses HostileTakeover.exe.
 //
-// Installed packs go where the game looks for downloaded packs:
+// Installed packs go where the game looks for mission packs:
 // %APPDATA%\HostileTakeover\MissionPacks\<id>-<md5>, with a small JSON file of
 // the same name in MissionPackInfos holding the pack's title. If the game is
 // in portable mode (portable.txt next to the exe) they go in its UserData
@@ -433,8 +433,8 @@ public class GameMenu {
         }
         if (lvld.MaxPlayers > 1) {
             MessageBox.Show(m_frmMain, "This is a multiplayer level (" + lvld.MaxPlayers +
-                    " players). Play Level in Game runs single player levels.\n\n" +
-                    "To try it, use Install Mission Pack in Game and pick it from the game's multiplayer missions.",
+                    " players). Play Level in Game runs single player levels, and this version of the game\n" +
+                    "doesn't play multiplayer levels.",
                     "Play Level in Game");
             return;
         }
@@ -493,8 +493,8 @@ public class GameMenu {
         }
 
         DialogResult dr = MessageBox.Show(m_frmMain, "\"" + strTitle.Trim() + "\" is installed.\n\n" +
-                "In the game choose Play, then Single Player (or Multiplayer for multiplayer levels), " +
-                "then the Add-On tab.\n\nStart the game now?", "Mission pack installed",
+                "In the game choose Play, then the Add-On tab. Multiplayer levels in the pack are kept " +
+                "but aren't playable.\n\nStart the game now?", "Mission pack installed",
                 MessageBoxButtons.YesNo, MessageBoxIcon.Information);
         if (dr == DialogResult.Yes)
             LaunchGame("");

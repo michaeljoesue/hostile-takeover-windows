@@ -1,39 +1,7 @@
 #include "game/ht.h"
-#include "game/lobby.h"
-#include "game/serviceurls.h"
 #include "base/misc.h"
 
 namespace wi {
-
-// A simple form handler for the main menu, for buttons that want to
-// be processed without ending the modal form loop.
-
-class MainMenuForm : public ShellForm
-{
-public:
-    virtual void OnControlSelected(word idc) {
-        // Catch this here so the form doesn't get re-created (with associated
-        // sound effect).
-        if (idc == kidcLeaderboard) {
-            LoginHandler handler;
-            std::string d = base::StringEncoder::QueryEncode(gszDeviceId);
-            std::string o(base::StringEncoder::QueryEncode(HostGetPlatformString()));
-            const char *url; 
-            if (strlen(handler.StatsUsername()) == 0) {
-                url = base::Format::ToString("%s?d=%s&o=%s", kszLeaderboardUrl,
-                        d.c_str(), o.c_str());
-            } else {
-                std::string q = base::StringEncoder::QueryEncode(
-                        handler.StatsUsername());
-                url = base::Format::ToString("%s?p=%s&d=%s&o=%s", kszLeaderboardUrl,
-                        q.c_str(), d.c_str(), o.c_str());
-            }
-            HostInitiateWebView("Hostile Takeover Statistics", url);
-            return;
-        }
-        ShellForm::OnControlSelected(idc);
-    }
-};
 
 Shell gshl;
 Shell::Shell()
@@ -184,11 +152,10 @@ void Shell::Launch(bool fLoadReinitializeSave, MissionIdentifier *pmiid)
             return;
         }
 
-        // Show startup form (new single player, new multi player, load saved
-        // game, etc)
+        // Show startup form (play, load saved game, options, etc)
 
 		ShellForm *pfrm = (ShellForm *)gpmfrmm->LoadForm(gpiniForms,
-                kidfStartup, new MainMenuForm());
+                kidfStartup, new ShellForm());
 		Assert(pfrm != NULL);
 		if (pfrm == NULL)
 			return;
@@ -232,7 +199,7 @@ void Shell::Launch(bool fLoadReinitializeSave, MissionIdentifier *pmiid)
 
         switch (idc) {
         case kidcPlay:
-            if (DoPlay()) {
+            if (PlaySinglePlayer(NULL)) {
                 return;
             }
             continue;
@@ -245,10 +212,6 @@ void Shell::Launch(bool fLoadReinitializeSave, MissionIdentifier *pmiid)
 			DoModalGameOptionsForm(m_ppal, false);
             continue;
 	
-        case kidcForums:
-            HostOpenUrl(kszForumUrl);
-            continue;
-
 		case kidcHelp:
 			Help();
 			continue;
@@ -278,12 +241,6 @@ void Shell::Launch(bool fLoadReinitializeSave, MissionIdentifier *pmiid)
             }
 			break;
 
-		case kidcPlayMultiPlayer:
-            if (PlayMultiplayer(NULL)) {
-                return;
-            }
-			break;
-
 		case kidcLoadSavedGame:
 			{
 				Stream *pstm = PickLoadGameStream();
@@ -302,99 +259,10 @@ void Shell::Launch(bool fLoadReinitializeSave, MissionIdentifier *pmiid)
 			}
 			break;
 
-        case kidcDownloadMissions:
-            DownloadMissionPack();
-            break;
-
 		case kidcExitGame:
 			return;
 		}
 	}
-}
-
-bool Shell::DoPlay()
-{
-    while (true) {
-        ShellForm *pfrm = (ShellForm *)gpmfrmm->LoadForm(gpiniForms,
-                kidfPlay, new ShellForm());
-        if (pfrm == NULL) {
-            return kidcCancel;
-        }
-        int idc;
-        pfrm->DoModal(&idc);
-        delete pfrm;
-
-        if (gevm.IsAppStopping()) {
-            return true;
-        }
-
-        if (idc == kidcCancel) {
-            return false;
-        }
-
-#ifdef BETA_TIMEOUT
-        if (!CheckBetaTimeout()) {
-            continue;
-        }
-#endif
-
-        if (idc == kidcPlaySinglePlayer) {
-			if (PlaySinglePlayer(NULL)) {
-                return true;
-            }
-        }
-
-        if (idc == kidcPlayMultiPlayer) {
-            if (PlayMultiplayer(NULL)) {
-                return true;
-            }
-        }
-    }
-}
-
-void Shell::DownloadMissionPack()
-{
-    // Show the download form. True is returned if the user wants to
-    // play the first mission in the pack identified by packid.
-
-    PackId packid;
-    if (!ShowDownloadMissionPackForm(&packid)) {
-        return;
-    }
-
-    // The downloaded a pack identified by packid, and wants to play it.
-    // Find the first mission and determine if it's single or multi
-    // player. Then, launch the appropriate Play form with this info.
-    // It will show, with the appropriate mission highlighted.
-
-    MissionList *pml = CreateMissionList(&packid, kmltAll);
-    if (pml == NULL) {
-        return;
-    }
-    if (pml->GetCount() == 0) {
-        delete pml;
-        return;
-    }
-    MissionDescription md;
-    pml->GetMissionDescription(0, &md);
-
-    // Show the appropriate form. This will cause the first mission from
-    // this pack to be highlighted.
- 
-    if (pml->IsMultiplayerMissionType(md.mt)) {
-        PlayMultiplayer(&packid);
-    } else {
-        PlaySinglePlayer(&packid);
-    }
-	
-    delete pml;
-}
-
-bool Shell::PlayMultiplayer(const PackId *ppackid)
-{
-    Lobby lobby;
-    dword result = lobby.Shell(ppackid);
-    return result == knShellResultAppStop;
 }
 
 bool Shell::PlaySinglePlayer(const PackId *ppackid)

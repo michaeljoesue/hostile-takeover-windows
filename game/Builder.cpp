@@ -227,7 +227,7 @@ void BuilderGob::DefUpdate()
 	// God can build things instantly and for free
 
 	bool fBuild = false;
-	if (gfGodMode && !ggame.IsMultiplayer()) {
+	if (gfGodMode) {
 		fBuild = true;
 		WaitingForCredits(false);
 	} else {
@@ -711,7 +711,7 @@ void MobileUnitBuildForm::OnControlSelected(word idc)
 		return;
 //CRM
 	case kidcHelp:
-		Help(m_idf == kidfBuildInfantry ? "personnel" : "vehicles", !ggame.IsMultiplayer());
+		Help(m_idf == kidfBuildInfantry ? "personnel" : "vehicles", true);
 		break;
 
 	case kidcOrder:

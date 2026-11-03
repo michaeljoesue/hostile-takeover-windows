@@ -1,7 +1,7 @@
 #include "game/ht.h"
 #include "base/format.h"
 #include "yajl/wrapper/jsontypes.h"
-#include "game/httppackinfomanager.h"
+#include "game/packs.h"
 #include "game/completemanager.h"
 
 namespace wi {

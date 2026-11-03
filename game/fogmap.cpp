@@ -557,9 +557,6 @@ int FogMap::GetGalaxite(TCoord tx, TCoord ty)
 	byte *pb = &m_pbMap[(ty * m_ctxMap) + tx];
 	int nGx = (*pb & kbfGalaxiteMask) >> kcGalaxiteShift;
 
-#ifdef MP_DEBUG
-//	MpTrace("GetGalaxite:%d,%d amount %d", tx, ty, nGx);
-#endif
 
 	return nGx;
 }
@@ -586,9 +583,6 @@ bool FogMap::DecGalaxite(TCoord tx, TCoord ty)
 	byte *pb = &m_pbMap[(ty * m_ctxMap) + tx];
 	byte bNew = s_abGxDec[(*pb & kbfGalaxiteMask) >> kcGalaxiteShift] << kcGalaxiteShift;
 	*pb = (*pb & ~kbfGalaxiteMask) | bNew;
-#ifdef MP_DEBUG
-//	MpTrace("DecGalaxite:%d,%d now %d", tx, ty, bNew >> kcGalaxiteShift);
-#endif
 
 	// Cause this tile to redraw
 

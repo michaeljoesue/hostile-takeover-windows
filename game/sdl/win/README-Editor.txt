@@ -21,9 +21,10 @@ M has a Game menu that connects it to Hostile Takeover:
 
   Install Mission Pack in Game...
       Puts all the levels you have open into a mission pack with the title
-      and author you choose. In the game it appears under Play > Single
-      Player (or Multiplayer) > Add-On as "<title> by <author>". Installing
-      again with the same title replaces it.
+      and author you choose. In the game it appears under Play > Add-On as
+      "<title> by <author>". Installing again with the same title replaces
+      it. The game only plays single player levels; multiplayer levels in a
+      pack are kept but not listed.
 
   Remove Mission Pack from Game...
       Lists the mission packs installed in the game and removes the one you
@@ -31,7 +32,8 @@ M has a Game menu that connects it to Hostile Takeover:
 
   Open Built-in Mission...
       Opens the game's own missions: story (S_*), challenge (C_*) and
-      multiplayer (M_*). They live in AuthorKit\data.
+      multiplayer (M_*). They live in AuthorKit\data. The multiplayer maps
+      can be opened and edited, but the game doesn't play them.
 
   Rebuild Built-in Missions
       After changing built-in missions, this rebuilds the game's data so the
@@ -54,8 +56,7 @@ put; growing a map adds empty space to the right and bottom, which you can
 then paint. You can also type the size into the level's Bounds property.
 
 On maps bigger than 64 tiles the in-game minimap shows one pixel per tile,
-so it stays about the size players are used to. Big maps have been tested in
-single player; multiplayer on them hasn't been tried.
+so it stays about the size players are used to.
 
 
 THE CRIMSON SIDE

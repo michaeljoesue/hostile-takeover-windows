@@ -1,5 +1,4 @@
 #include "ht.h"
-#include "mpshared/netmessage.h"
 
 namespace wi {
 
@@ -225,14 +224,6 @@ bool GameOptionsForm::Init(FormMgr *pfrmm, IniReader *pini, word idf)
 
 	if (ggame.GetModeMatchCount() == 1)
 		GetControlPtr(kidcDisplayOptions)->Show(false);
-
-	// Multiplayer changes
-
-	if (gfMultiplayer) {
-		GetControlPtr(kidcInGameOptions)->Show(false);
-		GetControlPtr(kidcPerformanceOptions)->Show(false);
-		GetControlPtr(kidcDisplayOptions)->Show(false);
-	}
 
 	// Can't delete mission packs from here on Palm because they may have been bundle-bit copied
 	// from card to internal ram; deleting them here and then exiting causes the launcher to crash
@@ -965,11 +956,6 @@ void TestOptionsForm::OnControlSelected(word idc)
 
 	case kidcLockStep:
 		gfLockStep = !gfLockStep;
-#ifdef MP_DEBUG_SHAREDMEM
-		extern bool gfMPServer;
-		if (gfMPServer)
-			gpsmw->fDetectSyncErrors = gfLockStep;
-#endif
 		break;
 
     case kidcStylusUI:

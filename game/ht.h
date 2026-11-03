@@ -10,7 +10,6 @@ namespace wi {
 
 #ifdef DEBUG
 #define INCL_TRACE
-#define MP_DEBUG	// Multiplayer debugging
 #endif
 
 // Build types
@@ -42,15 +41,8 @@ namespace wi {
 //#define INCL_MEMTRACE
 
 #if defined(WIN) && !defined(CE)
-//#define MP_DEBUG_SHAREDMEM
 #define DEBUG_HELPERS
 #endif
-#endif
-
-// MP stress
-
-#if !defined(PIL) && !defined(CE) && !defined(IPHONE) && !defined(SDL)
-#define MP_STRESS
 #endif
 
 // Enable stress testing
@@ -115,15 +107,12 @@ class CommandQueueViewer;
 #include "mpshared/ini.h"
 #include "mpshared/decompress.h"
 #include "game/missionlist.h"
-#include "mpshared/netmessage.h"
 #include "game/dragrect.h"
 #include "base/thread.h"
 //#include "yajl/wrapper/jsontypes.h"
 
 namespace wi {
 
-class StateFrame;
-class StateTracker;
 class RefMap;
 
 typedef void *FileHandle;	// hf
@@ -342,143 +331,9 @@ protected:
 };
 DibBitmap *CreateDibBitmap(byte *pb, int cx, int cy) secDibBitmap;
 
-// Network stuff
-
-class ITransportCallback;
-class IRoomCallback;
-class ILobbyCallback;
-class NetMessage;
-class Transport;
-
-const int kcbTransportName = 100;
-
-enum TransportType {
-	ktratBluetoothPAN,
-	ktratBluetoothSer,
-	ktratIR,
-	ktratIP,
-	ktratX,
-};
-
-const dword knTransportOpenResultSuccess = 0;
-const dword knTransportOpenResultFail = 1;
-const dword knTransportOpenResultNoNetwork = 2;
-const dword knTransportOpenResultCantConnect = 3;
-const dword knTransportOpenResultNotResponding = 4;
-const dword knTransportOpenResultProtocolMismatch = 5;
-const dword knTransportOpenResultServerFull = 6;
-
-struct TransportDescription // trad
-{
-	TransportType trat;
-	char szName[kcbTransportName];
-	dword (*pfnOpen)(TransportDescription *ptrad, Transport **pptra);
-	dword dwTransportSpecific;
-};
-
 struct DeleteRecord {
 	DeleteRecord *pdrNext;
 	bool fDeleted;
-};
-
-#define knWaitStrConnectToHost 1
-#define knWaitStrClientDisconnecting 2
-#define knWaitStrDisconnectingClients 3
-#define knWaitStrDisconnectingClient 4
-#define knWaitStrClosingTransport 5
-#define knWaitStrBeginGameSearch 6
-#define knWaitStrAdvertisingGame 7
-
-const int kcbBluetoothMtuMin = 100;	// something >= our largest message but less than BT_L2CAP_MTU (672)
-const int kctradMax = 10;
-
-class Event;
-class IGameCallback;
-class Transport // tra
-{
-public:
-    Transport();
-	virtual ~Transport() {}
-	virtual dword Open() = 0;
-	virtual void Close() = 0;
-    virtual bool IsClosed() = 0;
-    virtual dword Login(const char *username, const char *token) = 0;
-    virtual dword SignOut() = 0;
-    virtual const char *GetAnonymousUsername() = 0;
-    virtual dword JoinLobby(ILobbyCallback *plcb) = 0;
-    virtual bool LeaveLobby() = 0;
-    virtual dword CreateRoom(const char *roomname, const char *password,
-            dword *roomid) = 0;
-    virtual dword CanJoinRoom(dword roomid, const char *password) = 0;
-    virtual dword JoinRoom(dword roomid, const char *password,
-            IRoomCallback *prcb) = 0;
-    virtual bool SendChat(const char *chat) = 0;
-	virtual dword CreateGame(GameParams *params, PackId *ppackidUpgrade,
-            dword *gameid) = 0;
-    virtual dword CanJoinGame(dword gameid) = 0;
-    virtual void LeaveRoom(dword hint) = 0;
-    virtual dword JoinGame(dword gameid, dword roomid) = 0;
-    virtual bool SendNetMessage(NetMessage *pnm) = 0;
-    virtual void LeaveGame() = 0;
-    virtual void OnEvent(Event *pevt) = 0;
-    virtual void UpdateAllies(Side side, SideMask sidmAllies) = 0;
-    virtual void DisconnectSharedAccounts() = 0;
-	virtual ITransportCallback *SetCallback(ITransportCallback *ptcb);
-    virtual ITransportCallback *GetCallback();
-	virtual IGameCallback *SetGameCallback(IGameCallback *pgcb);
-	virtual IGameCallback *GetGameCallback();
-
-protected:
-    ITransportCallback *m_ptcb;
-    ILobbyCallback *m_plcb;
-    IRoomCallback *m_prcb;
-    IGameCallback *m_pgcb;
-};
-
-class TransportMgr // tram
-{
-public:
-	virtual int GetTransportDescriptions(TransportDescription *atrad, int ctradMax);
-};
-extern TransportMgr gtram;
-
-class IGameCallback {
-public:
-    virtual void OnReceiveChat(const char *player, const char *chat) = 0;
-    virtual void OnNetMessage(NetMessage **ppnm) = 0;
-    virtual void OnGameDisconnect() = 0;
-};
-
-class IRoomCallback {
-public:
-    virtual void OnAddGame(const char *player, dword gameid,
-            const GameParams& params, dword minplayers, dword maxplayers,
-            const char *title, dword ctotal) = 0;
-    virtual void OnRemoveGame(dword gameid, dword ctotal) = 0;
-    virtual void OnGameInProgress(dword gameid) = 0;
-    virtual void OnGamePlayerNames(dword gameid, dword cnames,
-            const PlayerName *anames) = 0;
-    virtual void OnAddPlayer(const char *player) = 0;
-    virtual void OnRemovePlayer(dword hint, const char *player) = 0;
-    virtual void OnReceiveChat(const char *player, const char *chat) = 0;
-    virtual void OnStatusComplete() = 0;
-};
-
-class ILobbyCallback {
-public:
-    virtual void OnLurkerCount(dword count) = 0;
-    virtual void OnAddRoom(const char *name, dword roomid, bool priv,
-            dword cPlayers, dword cGames) = 0;
-    virtual void OnRemoveRoom(dword roomid) = 0;
-    virtual void OnUpdateRoom(dword roomid, dword cPlayers, dword cGames) = 0;
-    virtual void OnReceiveChat(const char *player, const char *chat) = 0;
-};
-
-class ITransportCallback {
-public:
-	virtual void OnStatusUpdate(char *pszStatus) = 0;
-    virtual void OnConnectionClose() = 0;
-    virtual void OnShowMessage(const char *message) = 0;
 };
 
 // Timer support
@@ -721,14 +576,6 @@ class UnitGroup;
 
 const StateMachineId ksmidNull = (word)-1;
 
-#ifdef MP_DEBUG_SHAREDMEM
-extern Side gsideCurrent;
-extern Gid ggidCurrent;
-extern long gcupdCurrent;
-extern GobType ggtCurrent;
-extern bool gfInsideUpdate;
-#endif
-extern bool gfMultiplayer;
 extern bool gfLockStep;
 
 #ifdef DEBUG_HELPERS
@@ -754,14 +601,6 @@ public:
 	}
 
 	bool Decrement() {
-		if (gfMultiplayer) {
-            // Can't gracefully support update intervals in the multiplayer
-            // version due to synchronization issues caused by differing
-            // client-side state such as visibility and gpplrLocal conditionals
-
-			return true;
-		}
-
 		if (m_cSkip <= 0) {
 			m_cSkip = 0x7fff;
 			m_cDecrementsLast = m_cDecrements;
@@ -1559,9 +1398,6 @@ public:
 		return m_cty;
 	}
 
-#ifdef MP_DEBUG
-	dword GetChecksum() secTerrainMap;
-#endif
 
 private:
 	PathHead *AddPathHead(word wScoreKnown, word wScore, int cSteps, word offHead, int txNew, int tyNew) secTerrainMap;
@@ -1692,9 +1528,6 @@ public:
 	bool Start(const char *pszStripName, word wf = 0) secAnimation;
 	bool LoadState(Stream *pstm) secAnimation;
 	bool SaveState(Stream *pstm) secAnimation;
-#ifdef MP_DEBUG_SHAREDMEM
-	void MPValidate(Animation *paniRemote);
-#endif
 
 	void Stop() {
 		m_wf |= kfAniDone;
@@ -2165,13 +1998,7 @@ protected:
     }
 
 	UpdateInterval m_unvl;
-#ifdef MP_STRESS
-public:
-#endif
 	State m_st;
-#ifdef MP_STRESS
-protected:
-#endif
 	State m_stNext;
 	bool m_fForceStateChange;
 #ifdef DEBUG_HELPERS
@@ -2219,9 +2046,6 @@ private:
 	friend class DelayedMessageViewer;
 #endif
 
-#ifdef TRACKSTATE
-    void TrackState(StateFrame *frame, Message *pmsg);
-#endif 
 };
 
 const int kcmsgCommandQueueMax = 300;
@@ -2301,8 +2125,6 @@ struct ModeMatch
 	int nSizeData;
 };
 
-#define kfGameRoleServer 2
-#define kfGameMultiplayer 4
 #define kfGameInitFonts 0x10
 #define kfGameInitBitmap 0x20
 #define kfGameInitDone 0x40
@@ -2310,7 +2132,6 @@ struct ModeMatch
 class MultiFormMgr;
 class InputUIForm;
 class Form;
-class Chatter;
 struct PreferencesV100;
 struct PreferencesV101;
 class Game // game
@@ -2322,8 +2143,7 @@ public:
 	bool Init(int imm) secGame;
 	void Exit() secGame;
 	void Shell() secGame;
-	int RunSimulation(Stream *pstm, char *pszLevel, word wfRole, dword gameid,
-            Chatter *chatter);
+	int RunSimulation(Stream *pstm, char *pszLevel);
 	bool FilterEvent(Event *pevt) secGame;
 	void GetPlayfieldSize(Size *psiz) secGame;
 	void RequestModeChange(int imm) secGame;
@@ -2336,7 +2156,6 @@ public:
 	int PlayLevel(MissionIdentifier *pmiid, Stream *pstmSavedGame = NULL,
             int nRank = 0) secGame;
 	int PlaySavedGame(Stream *pstm) secGame;
-	bool IsMultiplayer() secGame;
 	void SetGameSpeed(int t) secGame;
 	void SavePreferences() secGame;
 	bool SaveReinitializeGame() secGame;
@@ -2347,8 +2166,6 @@ public:
 	void CalcUnitCountDeltas(Level *plvl) secGame;
 	bool IsVersionCompatibleWithExe(int nVersionCompareShip, int nVersionCompareMajor, char chVersionCompareMinor, bool fUpwardCompatOK) secGame;
 	void ParseVersion(char *pszVersion, int *pnShipVersion, int *pnMajorVersion, char *pchMinorVersion) secGame;
-	bool AskResignGame(bool fTellHost = true) secGame;
-	bool AskObserveGame() secGame;
 	bool CheckDatabaseVersion(const char *pszDir, char *pszPdb,
             bool fUpwardCompatOK) secGame;
     void GamePause(bool fpause);
@@ -2383,10 +2200,6 @@ public:
         m_fSkipSaveReinitialize = true;
     }
 
-    dword GetGameId() {
-        return m_gameid;
-    }
-
     void ScheduleUpdateTriggers();
     void UpdateTriggers();
 
@@ -2403,14 +2216,12 @@ private:
 	void AddModeMatches(int nDepthData, int nSizeData, int nDepthOrGreater, int cxWidthOrGreater) secGame;
 	bool LoadGameData() secGame;
 	bool InitCoordMappingTables() secGame;
-	bool InitSimulation(Stream *pstm, char *pszLevel, word wfRole,
-            dword gameid, Chatter *chatter);
+	bool InitSimulation(Stream *pstm, char *pszLevel);
 	void ExitSimulation() secGame;
 	ddword IsDataPresent(int cBpp) secGame;
 	bool InitMemMgr() secGame;
 	bool InitMultiFormMgr() secGame;
 
-    dword m_gameid;
 	int m_cmm;
 	int m_cmmAlloc;
 	ModeMatch *m_amm;
@@ -2450,12 +2261,9 @@ public:
 	void SetPalette() secShell;
 
 private:
-    bool DoPlay();
 	bool PlayChallengeLevel(bool fStory = false) secShell;
 	bool BeginNewGame() secShell;
 	bool PlaySinglePlayer(const PackId *ppackid) secShell;
-	bool PlayMultiplayer(const PackId *ppackid) secShell;
-    void DownloadMissionPack() secShell;
 
 	FileMap m_fmapPalette;
 	FileMap m_fmapShadowMap;
@@ -3602,7 +3410,7 @@ private:
 class InputUIForm : public Form, public Timer
 {
 public:
-	InputUIForm(Chatter *chatter) secInputUIForm;
+	InputUIForm() secInputUIForm;
 	~InputUIForm() secInputUIForm;
 	void Update() secInputUIForm;
 
@@ -3619,7 +3427,6 @@ public:
 	virtual void OnTimer(long tCurrent) secInputUIForm;
 
 private:
-    Chatter *m_pchatter;
 	bool m_fTimerAdded;
 
 	void InGameMenu() secInputUIForm;
@@ -3633,12 +3440,6 @@ const int kfMasShowMenu = 8;
 
 // SimUIForm
 
-struct UpdateNetMessageRecord { // unmr
-    long msReceived;
-    UpdateNetMessage *punm;
-    UpdateNetMessageRecord *punmrNext;
-};
-
 class CommandQueue;
 class MobileUnitGob;
 class UnitMenu;
@@ -3648,13 +3449,12 @@ enum UIType { kuitFinger, kuitStylus };
 const dword kfPhFinger1Down = 0x8000;
 const dword kfPhFinger2Down = 0x4000;
 
-class SimUIForm : public Form, public Timer, IGameCallback, ITransportCallback
+class SimUIForm : public Form, public Timer
 {
 public:
-	SimUIForm(word wfRole, dword gameid, Chatter *chatter);
+	SimUIForm();
 	virtual ~SimUIForm() secSimUIForm;
 	void Update() secSimUIForm;
-	void SendUpdateResult(int cUpdatesBlock, int cmsLatency, dword hash);
 	void CalcLevelSpecificConstants() secSimUIForm;
 	void InvalidateDragSelection() secSimUIForm;
     Gob *HitTestGob(int x, int y, bool fFinger, WCoord *pwx, WCoord *pwy,
@@ -3668,12 +3468,6 @@ public:
     bool IsSelectionCommand(Gob *pgobHit);
 	void ClearSelection() secSimUIForm;
     void SetUIType(UIType uit);
-    void CheckMultiplayerGameOver(Pid pid);
-    void SetObserving();
-
-	word GetRole() {
-		return m_wfRole;
-	}
 
     class PenHandler {
     public:
@@ -3692,7 +3486,6 @@ public:
 	// Form methods
 
 	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf) secSimUIForm;
-    virtual bool OnFilterEvent(Event *pevt);
 	virtual bool OnPenEvent(Event *pevt) secSimUIForm;
 	virtual void OnUpdateMapInvalidate(UpdateMap *pupd, Rect *prcOpaque) secSimUIForm;
 	virtual void OnPaint(DibBitmap *pbm) secSimUIForm;
@@ -3701,20 +3494,14 @@ public:
 	virtual void ScrollInvalidate(UpdateMap *pupd) secSimUIForm;
 	virtual bool EventProc(Event *pevt) secSimUIForm;
     virtual void FrameComplete() secSimUIForm;
-	virtual void OnControlSelected(word idc);
     
 	// Timer methods
 
 	virtual void OnTimer(long tCurrent) secSimUIForm;
 
-    void OnChatButtonBlink(bool fOn);
-    void OnPlayersButton();
 
 private:
-    UpdateNetMessageRecord *m_punmrFirst;
     PenHandler *m_ppenh;
-    dword m_gameid;
-    Chatter *m_pchatter;
 
     class StylusHandler : public PenHandler {
     public:
@@ -3795,62 +3582,18 @@ private:
 
 	MobileUnitGob *SetSelectionTargets(Gid gid, WCoord wxTarget,
             WCoord wyTarget) secSimUIForm;
-	void OnLagNotify(Pid pidLagging, int cSeconds) secSimUIForm;
-	void ReportLaggingPlayer(Player *pplrBehind) secSimUIForm;
-	void ShowKillLaggyPlayerForm(Pid pidLaggy) secSimUIForm;
-	void TrackLocalLag() secSimUIForm;
-    void QueueUpdateMessage(UpdateNetMessage *punm);
-    bool ProcessUpdateMessage(CommandQueue *pcmdq);
-    void RunUpdatesNow();
-    void CheckLagForm();
-	void OnPlayerDisconnectNotify(Pid pid, int nReason);
-    void OnCheckWin(Pid pid);
-
-    // IGameCallback
-    void OnReceiveChat(const char *player, const char *chat);
-    void OnNetMessage(NetMessage **ppnm);
-    void OnGameDisconnect();
-
-    // ITransportCallback
-	void OnStatusUpdate(char *pszStatus);
-    void OnConnectionClose();
-    void OnShowMessage(const char *message);
-
 	static bool s_fReadyForPaint;
     
 	bool m_fTimerAdded;
 #ifdef STATS_DISPLAY
 	bool m_fShowStats;
 #endif
-	word m_wfRole;
-    CommandQueue *m_pcmdqServer;
-	Form *m_pfrmWaitingForAllPlayers;
-	long m_tLastCommunication;
-	long m_tStartTimeout;
 	Animation m_aniMoveTarget;
 	WCoord m_wxMoveTarget;
 	WCoord m_wyMoveTarget;
 	int m_nStateMoveTarget;
-    int m_cUpdatesBlock;
-    long m_msUpdatesBlock;
-    DialogForm *m_pfrmLag;
-    Pid m_pidLagging;
 
-#ifdef TRACKSTATE
-    void ReportSyncError();
-    void BeginTrackState();
-    void EndTrackState();
-    StateTracker *m_ptracker;
-    bool m_fSyncError;
-#endif
 };
-
-// Role defaults to single player client unless these flags are specified
-// It is possible to be the creator, but not the server, when connecting to a dedicated game server
-
-const word kfRoleMultiplayer = 0x0001; // client of a multiplayer game
-const word kfRoleServer = 0x0002; // server of a multiplayer game
-const word kfRoleCreator = 0x0004; // creator of a multiplayer game
 
 // Pick a level form
 
@@ -5317,12 +5060,8 @@ public:
 	virtual long GetTickCount() secSimulation;
 	virtual void AddTimer(Timer *ptmr, long ct) secSimulation; //stub
 
-#ifdef TRACKSTATE
-    void TrackState(StateFrame *frame);
-#endif
 
 private:
-    void HandlePlayerDisconnect(Message *pmsg);
 
 	Level *m_plvl;
 	WCoord m_wxView, m_wyView;
@@ -5580,13 +5319,6 @@ public:
 	void SetFormalObjectiveInfo(char *pszInfo) secPlayer;
 	int ShowObjectives(int so, bool fForceInfoDisplay = false, bool fAborting = false) secObjectives;
 	void ModifyNeedCreditsCount(int cDelta)secPlayer;
-	bool IsBehind(int cUpdates) secPlayer;
-    void SetLeftGame() {
-        m_fLeftGame = true;
-    }
-    bool GetLeftGame() {
-        return m_fLeftGame;
-    }
 	char *GetFormalObjectiveText(int iObjective) {
 		return m_aszFormalObjectiveText[iObjective];
 	}
@@ -5788,24 +5520,7 @@ public:
 		m_wfHandicap = wf;
 	}
 
-	// Only valid for server-side Player proxies
 
-	long GetUpdateCount() {
-		return m_cUpdates;
-	}
-
-	void SetUpdateCount(int cUpdates) {
-		m_cUpdates = cUpdates;
-	}
-
-	bool IsLagging(long cUpdates) secPlayer;
-	int GetLagState() secPlayer;
-	void SetLagState(int nLagState) secPlayer;
-	int GetLagTimeout() secPlayer;
-
-#ifdef TRACKSTATE
-    void TrackState(StateFrame *frame);
-#endif
 
 private:
 	word m_wfUpgrades;
@@ -5840,19 +5555,7 @@ private:
 	int m_cUpdatesRepairLast;
 	word m_cStructsNeedCredits;
 	word m_wfHandicap;
-	int m_cUpdates;	// only valid for server-side Player proxies
-	int m_nLagState;
-	long m_tLagStart;
-	long m_tLastLag;
-    bool m_fLeftGame;
-
-#ifdef DETECT_SYNC_ERRORS
-public:
-	UpdateResult m_ur;
-#endif
 };
-
-class PlayersUpdateNetMessage;
 
 class PlayerMgr // plrm
 {
@@ -5860,7 +5563,6 @@ public:
 	PlayerMgr() secPlayer;
 	~PlayerMgr() secPlayer;
 	void Reset() secPlayer;
-	void Init(PlayersUpdateNetMessage *ppunm) secPlayer;
 	bool Init(char *pszLevel) secPlayer;
 	bool LoadState(Stream *pstm) secPlayer;
 	bool SaveState(Stream *pstm) secPlayer;
@@ -5885,21 +5587,11 @@ public:
 
 	Player* GetNextPlayer(Player *pplr) secPlayer;
 	Player* GetNextHumanPlayer(Player *pplr) secPlayer;
-    Player* GetNextObservingPlayer(Player *pplr) secPlayer;
-    const char *GetCreatorName();
 
 	int GetPlayerCount() secPlayer;
-	bool DetectTransitionToSingleHumanTeam(Pid pidLeft) secPlayer;
 	int GetUnitInstanceCountFromMask(UnitMask um, word wfPlr) secPlayer;
-    void SendWinStats();
-
-#ifdef TRACKSTATE
-    void TrackState(StateFrame *frame);
-#endif
 
 protected:
-    int GetHumanTeamCount(bool fExtra, Pid pidExtra);
-
 	Player *m_aplr;
 };
 
@@ -5999,9 +5691,6 @@ public:
 	virtual void OnMenuItemSelected(int id) secGob;
 #if defined(WIN) && defined(DEBUG)
 	virtual void ToString(char *psz);
-#endif
-#ifdef TRACKSTATE
-    virtual void TrackState(StateFrame *frame);
 #endif
 
 	// StateMachine methods
@@ -6192,9 +5881,6 @@ private:
 	int m_cScorchGobs;
 	int m_cSupportGobs;
 
-#ifdef MP_DEBUG_SHAREDMEM
-public:
-#endif
 	Gob **m_apgobMaster;
 };
 extern GobMgr ggobm;
@@ -6354,8 +6040,8 @@ struct GobConsts { // gobc
 	GobType gt;
 };
 
-#define GetUnitCostMin() (gfMultiplayer ? gnUnitCostMPMin : gnUnitCostMin)
-#define GetUnitCostMax() (gfMultiplayer ? gnUnitCostMPMax : gnUnitCostMax)
+#define GetUnitCostMin() gnUnitCostMin
+#define GetUnitCostMax() gnUnitCostMax
 
 #define kfUntcNotifyEnemyNearby	0x0001	// wants to be notified of nearby mobile enemies
 #define kfUntcNotifyPowerLowHigh 0x0002 // bld is power sensitive, needs notifications
@@ -6396,22 +6082,22 @@ struct UnitConsts : public GobConsts { // untc
 	char *szDescription;
 
 	int GetCost() {
-		return gfMultiplayer ? nCostMP : nCost;
+		return nCost;
 	}
 	fix GetArmorStrength() {
-		return gfMultiplayer ? fxArmorStrengthMP : fxArmorStrength;
+		return fxArmorStrength;
 	}
 	int GetTimeToBuild() {
-		return gfMultiplayer ? cupdTimeToBuildMP : cupdTimeToBuild;
+		return cupdTimeToBuild;
 	}
 	int GetInfantryDamage() {
-		return gfMultiplayer ? nInfantryDamageMP : nInfantryDamage;
+		return nInfantryDamage;
 	}
 	int GetVehicleDamage() {
-		return gfMultiplayer ? nVehicleDamageMP : nVehicleDamage;
+		return nVehicleDamage;
 	}
 	int GetStructureDamage() {
-		return gfMultiplayer ? nStructureDamageMP : nStructureDamage;
+		return nStructureDamage;
 	}
 };
 
@@ -6457,7 +6143,7 @@ struct MobileUnitConsts : public UnitConsts { // muntc
 	int *anIdleStripIndices;
 
 	WCoord GetMoveDistPerUpdate() {
-		return gfMultiplayer ? wcMoveDistPerUpdateMP : wcMoveDistPerUpdate;
+		return wcMoveDistPerUpdate;
 	}
 };
 
@@ -6510,9 +6196,6 @@ public:
     virtual void GetAnimationBounds(Rect *prc, bool fBase) secUnitGob;
     virtual void DrawAnimation(DibBitmap *pbm, int x, int y) secUnitGob;
     virtual AnimSprite *CreateHilightSprite(); secUnitGob;
-#ifdef MP_DEBUG_SHAREDMEM
-	virtual void MPValidate() secUnitGob;
-#endif
 	void NotifyNearbyAlliesOfHit(Gid gidAssailant) secUnitGob;
 	void ShowDamageIndicator() secUnitGob;
 	void ClearDamageIndicator() secUnitGob;
@@ -6773,9 +6456,6 @@ public:
 	bool IsMoveWaiting() {
 		return (m_wfMunt & kfMuntMoveWait) != 0;
 	}
-#ifdef MP_DEBUG_SHAREDMEM
-	virtual void MPValidate() secUnitGob;
-#endif
 
 	// UnitGob overrides
 
@@ -6996,9 +6676,6 @@ protected:
  	int m_nCostRemainder;
 	TPoint m_tptRally;
 
-#ifdef MP_STRESS
-public:
-#endif
 	BuildQueue m_bq;
 };
 
@@ -7234,9 +6911,6 @@ public:
 	virtual void Deactivate() secMiner;
 	virtual void SetTarget(Gid gid, WCoord wxTarget = 0, WCoord wyTarget = 0, WCoord wxCenter = 0, WCoord wyCenter = 0, TCoord tcRadius = 0, WCoord wcMoveDistPerUpdate = 0) secMiner;
 
-#ifdef MP_DEBUG_SHAREDMEM
-	virtual void MPValidate() secMiner;
-#endif
 
 	// MobileUnitGob overrides
 
@@ -7262,9 +6936,6 @@ private:
 	bool m_fMinerUnderAttack;
 	static AnimationData *s_panidVacuum;
 	bool m_fAttemptingToDeliver;
-#ifdef MP_STRESS
-public:
-#endif
 	bool m_fHidden;
 };
 
@@ -7485,36 +7156,6 @@ private:
     bool m_fPassOnInput;
 };
 
-class WaitForm : public Form
-{
-public:
-	WaitForm(char *pszTitle, bool fFullScreen = false) secForm;
-
-	// Form overrides
-
-	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf) secForm;
-	virtual void OnPaintBackground(DibBitmap *pbm, UpdateMap *pupd) secForm;
-
-private:
-	dword m_ctWaitPopup;
-	char *m_pszTitle;
-	bool m_fFullScreen;
-	Rect m_rcOrig;
-};
-
-class TransportWaitingUI
-{
-public:
-	TransportWaitingUI(int nWaitStr, bool fShow = true) secComm;
-	TransportWaitingUI(char *psz, bool fShow = true) secComm;
-	~TransportWaitingUI() secComm;
-	void Show() secComm;
-	void Hide() secComm;
-
-private:
-	Form *m_pfrm;
-	char *m_psz;
-};
 
 class RadarGob : public StructGob // rdr
 {
@@ -8459,18 +8100,6 @@ const word kfMbWhiteBorder = 0x0001;
 const word kfMbClearDib = 0x0002;
 const word kfMbKeepTimersEnabled = 0x0004;
 
-// For Wc14Transport.dll to utilize external functionality
-
-struct TransportHost
-{
-	void *(*New)(int size);
-	void (*Delete)(void *pv);
-	void (*strncpyz)(char *pszDst, const char *pszSrc, int cb);
-	void (*Status)(const char *psz);
-	bool (*HtMessageBox)(unsigned short wf, const char *pszTitle, const char *pszFormat, ...);
-	TimerMgr *ptimm;
-};
-
 // Globals
 
 extern byte grvlp[];
@@ -8509,10 +8138,6 @@ extern int gcxTile;
 extern int gcyTile;
 extern int gcxyBorder;
 extern char gszPlayerName[kcbPlayerName];
-extern char gszUsername[kcbPlayerName];
-extern char gszPassword[kcbPlayerName];
-extern char gszToken[kcbTokenMax];
-extern bool gfAnonymous;
 extern bool gfDrawUpdateRects;
 extern bool gfAutosave;
 extern DibBitmap *gpbmClip;
@@ -8528,9 +8153,8 @@ extern int gnSatMultiplier;
 extern int gnLumOffset;
 extern int gnDemoRank;
 extern double gnScrollSpeed;
-extern char gszAskURL[512];
-extern char gszDeviceId[34];
 extern int gtGameSpeed;
+extern int gatGameSpeeds[15];
 extern AnimationData *g_panidMoveTarget;
 extern UpdateMap *gpupdSim;
 extern Color *gaclrFixed;
@@ -8594,11 +8218,6 @@ extern int gcScorchGobsLimit;
 extern int gcSupportGobsLimit;
 extern bool gfGrayscale;
 extern bool gfDemo;
-extern Transport *gptra;
-#ifdef MP_STRESS
-extern bool gfMPStress;
-extern int gnMPPos;
-#endif
 extern char *gpszDataDir;
 extern bool gfIgnoreBluetoothWarning;
 
@@ -8648,8 +8267,6 @@ int GetFancyTextExtent(Font *pfntDefault, char *psz, int cch = 0) secLabelContro
 Direction CalcDir(int dx, int dy) secGob;
 Direction16 CalcDir16(int dx, int dy) secGob;
 bool FormDragger(Form *pfrm, Event *pevt) secForm;
-bool HostMultiplayerGame() secMultiplayer;
-bool JoinOrHostMultiplayerGame(const PackId *ppackid) secMultiplayer;
 Direction TurnToward(Direction dirTo, Direction dirFrom) secMisc;
 int CalcCreditsShare(Player *pplr) secStructures;
 void DrawTileMap(byte **ppbMap, int ctx, int cty, byte *pbDst, int cbDstStride, int cxLeftTile, int cyTopTile, int cxRightTile, int cyBottomTile, int ctxInside, int ctyInside, int cxTile, int cyTile) secTileMap;
@@ -8672,13 +8289,6 @@ SideMask GetSideMaskFromCaSideMask(Side sideCur, word wfCaSideMask) secTrigger;
 int GetPlayersListFromCaSideMask(Side sideCur, word wfMask, Player **applr) secTrigger;
 void Ecom(int nCharFrom, int nCharTo, char *pszMessage, int nBackground, bool fMore) secEcom;
 bool DoModalGameOptionsForm(Palette *ppal, bool fInGame) secGameOptionsForm;
-bool ShowDownloadMissionPackForm(PackId *ppackid);
-bool DownloadMissionPack(const PackId *ppackid, const char *pszTitle,
-        bool fPlayButton);
-bool DownloadMissionPackFromURL(const char *pszURL, PackId *ppackid,
-        bool *play);
-bool AskInstallMissionPack(const PackId *ppackid, const char *pszUITitle,
-        const char *pszPackTitle);
 bool IsTileFree(TCoord tx, TCoord ty, byte bf = kbfStructure, Gob **ppgob = NULL) secMisc;
 void ShowAlert(int id) secAlertControl;
 void ShowAlert(const char *psz) secAlertControl;
@@ -8694,7 +8304,6 @@ void AddPointToLassoSelection(WPoint wpt) secSimUIForm;
 void ExpandVars(char *pszSrc, char *pszBuff, int cbBuff) secMisc;
 void GetRankTitle(char *psz, int cb) secMisc;
 void DoRegisterNowForm() secShell;
-bool PickTransport(Transport **pptra) secMultiplayer;
 void FormatButtons(Form *pfrm, word *aidc, int cidc, int idcRef, int idcRefNext) secGameOptionsForm;
 bool DoInputPanelForm(char **ppszChars, int cRows, const char *pszLabel,
         const char *pszEdit, char *pszOut, int cbOut,
@@ -8705,29 +8314,6 @@ bool PtInPolygon(WPoint *awpt, int cwpt, WCoord wx, WCoord wy);
 void AddPointToLassoSelection(WPoint wpt);
 //const char *GetString(const json::JsonMap *map, const char *key);
 
-#ifdef MP_DEBUG_SHAREDMEM
-void MPInitSharedMemoryWindow(bool fServer);
-void MPExitSharedMemoryWindow(bool fServer);
-void MPUpdateState();
-void MPValidateState();
-Gob *MPGetGobPtr(Gid gid);
-void MPCopyMem(void *pvTo, void *pvFrom, int cb);
-void MPValidateMemory(void *pvRemote, void *pvLocal, int cb);
-void MPValidateMember2(void *pvLocal, void *pvRemote, int cbThis, int cbOffsetMem, int cbMem);
-#define MPValidateMember(c, m, pr) MPValidateMember2(this, pr, sizeof(c), OFFSETOF(c, m), sizeof(m))
-#define MPValidateGobMember(c, m) MPValidateMember(c, m, MPGetGobPtr(GetId()))
-
-struct SharedMemWindow
-{
-	bool fDetectSyncErrors;
-	DWORD pidProcess;
-	Gob *apgobMaster[kcpgobMax + 1];
-};
-
-extern SharedMemWindow gsmw;
-extern HANDLE ghSharedMem;
-extern SharedMemWindow *gpsmw;
-#endif
 
 // Misc runtime stuff
 
@@ -8810,7 +8396,6 @@ extern bool gfArmPresent;
 
 bool HostInit();
 void HostExit();
-void HostOpenUrl(const char *pszUrl);
 bool HostGetEvent(Event *pevt, long ctWait = -1) secHost;
 void HostServiceGetEvent() secHost;
 void HostOutputDebugString(char *pszFormat, ...) secHost;
@@ -8837,19 +8422,6 @@ base::Thread& HostGetGameThread();
 base::Thread *HostGetGameThreadPointer();
 void HostAppStop();
 
-const int knKeyboardAskDefault = 0;
-const int knKeyboardAskURL = 1;
-
-void HostInitiateAsk(const char *title, int max, const char *def,
-        int keyboard = knKeyboardAskDefault, bool secure = false);
-void HostGetAskString(char *psz, int cb);
-
-class IChatController;
-IChatController *HostGetChatController();
-
-void HostInitiateWebView(const char *title, const char *url);
-const char *HostGenerateDeviceId();
-const char *HostGetPlatformString();
 
 // Date
 
@@ -8953,12 +8525,7 @@ bool HostDeleteSaveGame(char *psz, int nGame) secLoadSave;
 
 // Debug stuff
 
-#if defined(MP_DEBUG) && defined(INCL_TRACE)
-#define MpTrace ::wi::HostOutputDebugString
-//#define MpTrace(fmt, args...) LOG() << base::Log::Format(fmt, ## args)
-#else
 #define MpTrace 1 ? (void)0 : ::wi::HostOutputDebugString
-#endif
 
 #ifdef INCL_TRACE
 #define Trace ::wi::HostOutputDebugString
@@ -8976,34 +8543,6 @@ void Status(const char *psz) secMisc;
 #ifdef DEBUG_HELPERS
 void InitDebugHelpers();
 void ExitDebugHelpers();
-#endif
-
-#if 0 
-// Don't need this now that we discovered CE's COREDLL takes care of this.
-// However, if we ever build a Windows desktop version of Wc14Transport.dll
-// we will want to do this.
-
-// Transport DLLs must call back to the WI .exe for memory management
-// This allows us to continue our practice of having the Transport and
-// its Connections perform 'new' operations and leave it to the rest
-// of the game to 'delete' them.
-
-#if defined(CE) && defined(DLL)
-extern TransportHost *gptrah;
-
-inline void* operator new(size_t size)
-{
-	if (size == 0) 
-		size = 1;
-	return gptrah->New(size);
-}
-
-inline void operator delete(void* ptr)
-{
-	if (ptr != NULL) 
-		gptrah->Delete(ptr);
-}
-#endif
 #endif
 
 } // namespace wi

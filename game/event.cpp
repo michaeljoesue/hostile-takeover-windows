@@ -36,15 +36,6 @@ bool EventMgr::GetEvent(Event *pevt, long ctWait, bool fCheckPaints)
 	Assert(_CrtCheckMemory());
 #endif
 
-	// Only needed for Tapwave bluetooth
-
-#ifdef PIL
-	if (gfTapwave && gptra != NULL) {
-		extern void HostTrackServiceCallsPerGetEvent();
-		HostTrackServiceCallsPerGetEvent();
-	}
-#endif
-
 	// Force stopping once we've started. Retain modifiers to the appStopEvent if there are any
 
 	if (m_fAppStopping) {

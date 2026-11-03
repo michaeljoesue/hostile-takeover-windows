@@ -1,18 +1,8 @@
 #include "game/ht.h"
 #include "game/wistrings.h"
-#include "mpshared/netmessage.h"
-#include "game/httppackmanager.h"
+#include "game/packs.h"
 #include "game/completemanager.h"
-#include "game/chatter.h"
 #include "base/format.h"
-
-#if 0
-//temp
-#include "base/bytebuffer.h"
-#include "game/serviceurls.h"
-#include "game/uploader.h"
-#include "game/httpservice.h"
-#endif
 
 namespace wi {
 
@@ -49,11 +39,14 @@ int gnSatMultiplier = 0;
 int gnLumOffset = 0;
 int gnDemoRank = 0;
 double gnScrollSpeed = 1.0;
-char gszAskURL[512];
-char gszDeviceId[34];
 Stream *gpstmSavedGame;
 UpdateMap *gpupdSim;
 int gtGameSpeed = kcmsUpdate / 10;	// 80 ms/frame or 12.5 FPS (1000/80)
+
+// The game speeds the Options form slider and the speed keys choose from
+int gatGameSpeeds[15] = {
+    64, 48, 32, 24, 16, 12, 10, 8, 7, 6, 5, 4, 3, 2, 1
+};
 Color *gaclrFixed;
 bool gfClearFog;
 word gwfPerfOptions = kfPerfAll;
@@ -69,7 +62,6 @@ int gcMuntGobsLimitMP;
 int gcSceneryGobsLimit;
 int gcScorchGobsLimit;
 int gcSupportGobsLimit;
-bool gfMultiplayer;
 bool gfIgnoreBluetoothWarning;
 SpriteManager *gpsprm;
 
@@ -174,38 +166,6 @@ void GameMain(char *pszCmds)
 				return;
 			gfPlayPack = base::Format::ToDword(szId, 16, &gdwPlayPack);
 
-#if defined(MP_STRESS) && !defined(PIL) && !defined(CE) && !defined(IPHONE)
-		// -mp-spawn <count>
-		// TODO: -mp-spawn <client|server> side arg_string
-
-		} else if (strcmp(szT, "-mp-spawn") == 0) {
-			int cSpawn;
-			c = IniScanf(&pszCmds[nchAbs], "%d %+", &cSpawn, &nchRel);
-			nchAbs += nchRel;
-			if (c != 2)
-				return;
-
-			for (int nSpawn = 0; nSpawn < cSpawn; nSpawn++) {
-				char szModule[MAX_PATH];
-				GetModuleFileName(NULL, szModule, sizeof(szModule) - 1);
-				char szCmdLine[MAX_PATH];
-				sprintf(szCmdLine, "%s -mp-start %d", szModule, nSpawn + 1);
-				WinExec(szCmdLine, SW_SHOW);
-			}
-
-		// -mp-start <pos>
-		// TODO: -mp-start <client|server> side arg_string
-
-		} else if (strcmp(szT, "-mp-start") == 0) {
-			int nSpawn;
-			c = IniScanf(&pszCmds[nchAbs], "%d %+", &nSpawn, &nchRel);
-			nchAbs += nchRel;
-			if (c != 2)
-				return;
-
-			gfMPStress = true;
-			gnMPPos = nSpawn;
-#endif
 		}
 	}
 
@@ -222,18 +182,6 @@ void GameMain(char *pszCmds)
 			ggame.Exit();
 			return;
 		}
-
-#if 0
-//for testing sync error uploading
-        //temp
-        base::ByteBuffer *bb = new base::ByteBuffer();
-        bb->WriteString("hello world");
-        const char *url = base::Format::ToString("%s?gameid=1&pid=2",
-                kszSyncErrorUploadUrl);
-        UploadByteBuffer(gphttp, bb, url);
-        ggame.Exit();
-        return;
-#endif
 
 		MissionIdentifier miidPlay;
 		if (gfPlayPack) {
@@ -294,7 +242,6 @@ Game::Game()
 	m_szNextLevel[0] = 0;
     m_fSkipSaveReinitialize = false;
     m_fUpdateTriggers = false;
-    m_gameid = 0;
 }
 
 Game::~Game()
@@ -324,18 +271,12 @@ bool Game::Init(int imm)
 	gnHueOffset = gprefsInit.nHueOffset;
 	gnSatMultiplier = gprefsInit.nSatMultiplier;
 	gnLumOffset = gprefsInit.nLumOffset;
-    strncpyz(gszUsername, gprefsInit.szUsername, sizeof(gszUsername));
-    strncpyz(gszPassword, gprefsInit.szPassword, sizeof(gszPassword));
-    strncpyz(gszToken, gprefsInit.szToken, sizeof(gszToken));
-    gfAnonymous = (gprefsInit.fAnonymous != 0);
 	gwfPerfOptions = gprefsInit.wfPerfOptions;
 	gwfHandicap = gprefsInit.wfHandicap;
 	gkey = gprefsInit.key;
 	gnDemoRank = gprefsInit.nDemoRank;
     gnScrollSpeed = gprefsInit.nScrollSpeed;
 	gfIgnoreBluetoothWarning = (gprefsInit.wfPrefs & kfPrefIgnoreBluetoothWarning) ? true : false;
-    strncpyz(gszAskURL, gprefsInit.szAskURL, sizeof(gszAskURL));
-    strncpyz(gszDeviceId, gprefsInit.szDeviceId, sizeof(gszDeviceId));
 
 	// Temp buffer used for several things, including decompression, TBitmap compiling.
 
@@ -1542,7 +1483,7 @@ int Game::PlayLevel(MissionIdentifier *pmiid, Stream *pstmSavedGame, int nRank)
 			SetRandomSeed(0x29a);
         }
 #else
-		SetRandomSeed(gfMultiplayer ? gtimm.GetTickCount() : 0x29a);
+		SetRandomSeed(0x29a);
 #endif
         // Mount the pdb with the mission pack
 
@@ -1574,7 +1515,7 @@ int Game::PlayLevel(MissionIdentifier *pmiid, Stream *pstmSavedGame, int nRank)
         // Play the level until the player loses, exits, or advances to the
         // next level
 
-        nGo = RunSimulation(pstmSavedGame, m_miid.szLvlFilename, 0, 0, NULL);
+        nGo = RunSimulation(pstmSavedGame, m_miid.szLvlFilename);
 
         // Only use the saved game stream the first time through. Any
         // restarts start from the beginning of the level.
@@ -1649,8 +1590,7 @@ int Game::PlayLevel(MissionIdentifier *pmiid, Stream *pstmSavedGame, int nRank)
 
 // RunSimulation will Close and delete the passed-in Stream before returning
 
-int Game::RunSimulation(Stream *pstm, char *pszLevel, word wfRole,
-        dword gameid, Chatter *chatter)
+int Game::RunSimulation(Stream *pstm, char *pszLevel)
 {
 	DialogForm *pfrm = (DialogForm *)gpmfrmm->LoadForm(gpiniForms, kidfLoading, new DialogForm());
 	if (pfrm != NULL) {
@@ -1660,25 +1600,8 @@ int Game::RunSimulation(Stream *pstm, char *pszLevel, word wfRole,
 		gpmfrmm->DrawFrame(false);
 	}
 
-	// Retain whether or not this is a multiplayer game. Inquiring minds will 
-	// want to know later.
-
-	m_wf &= ~(kfGameMultiplayer | kfGameRoleServer);
-	if (wfRole & kfRoleMultiplayer) {
-		m_wf |= kfGameMultiplayer;
-		gfMultiplayer = true;
-
-		// Pvars shouldn't carry into multiplayer games.
-
-		m_dictPvars.Clear();
-	} else {
-		gfMultiplayer = false;
-	}
-	if (wfRole & kfRoleServer)
-		m_wf |= kfGameRoleServer;
-
 	gsndm.WaitSilence();
-	bool fSuccess = InitSimulation(pstm, pszLevel, wfRole, gameid, chatter);
+	bool fSuccess = InitSimulation(pstm, pszLevel);
 
 	if (pstm != NULL) {
 		if (!pstm->IsSuccess())
@@ -1691,7 +1614,6 @@ int Game::RunSimulation(Stream *pstm, char *pszLevel, word wfRole,
 	delete pfrm;
 
 	if (!fSuccess) {
-		gfMultiplayer = false;
 		return knGoInitFailure;
 	}
 
@@ -1720,12 +1642,6 @@ int Game::RunSimulation(Stream *pstm, char *pszLevel, word wfRole,
 			continue;
 
 		if (evt.eType == appStopEvent) {
-			// Warn about multiplayer if the player pressed the home button
-
-			if (m_wf & kfGameMultiplayer) {
-				if (!AskResignGame())
-					continue;
-			}
 			if (evt.dw != knAppExit)
 				SaveReinitializeGame();
 			nGo = knGoAppStop;
@@ -1742,98 +1658,14 @@ int Game::RunSimulation(Stream *pstm, char *pszLevel, word wfRole,
 
 	ExitSimulation();
 
-    // Eat potential cancel mode messages that due to MP exit ordering got
-    // posted after gameOverEvent
+    // Eat potential cancel mode messages that got posted after gameOverEvent
 
 	if (gevm.PeekEvent(&evt, 0)) {
 		if (evt.eType == cancelModeEvent)
 			gevm.GetEvent(&evt, 0);
 	}
 
-	// Assume not multiplayer anymore
-
-	gfMultiplayer = false;
-	m_wf &= ~(kfGameMultiplayer | kfGameRoleServer);
-
 	return nGo;
-}
-
-bool Game::AskResignGame(bool fTellHost)
-{
-	bool fAppStopping = gevm.IsAppStopping();
-    bool fAsk = true;
-#if defined(IPHONE) || defined(__IPHONEOS__) || defined (__ANDROID__)
-    // When an iPhone or Android game exits, it exits without the opportunity to
-    // confirm with the user. So if iPhone and the app is stopping, just
-    // resign.
-    if (fAppStopping) {
-        fAsk = false;
-    }
-#endif
-
-	Assert(m_wf & kfGameMultiplayer);
-
-    if (fAsk) {
-        // If app stopping is set
-
-        if (fAppStopping) {
-            gevm.ClearAppStopping();
-        }
-
-        // Ask user
-
-        char sz[128];
-        if (m_wf & kfGameRoleServer) {
-            gpstrtbl->GetString(kidsExitHost, sz, sizeof(sz));
-        } else {
-            gpstrtbl->GetString(kidsExitClient, sz, sizeof(sz));
-        }
-
-        // If the user wants to keep going, return with "app stopping" cleared
-
-        if (!HtMessageBox(kidfMessageBoxQuery, kfMbWhiteBorder | kfMbKeepTimersEnabled, "Warning", sz))
-            return false;
-
-        // If app stopping set it again
-
-        if (fAppStopping) {
-            gevm.SetAppStopping();
-        }
-    }
-
-	if (fTellHost && gptra != NULL) {
-		// Tell host
-
-		PlayerResignNetMessage prng;
-		prng.pid = gpplrLocal->GetId();
-        gptra->SendNetMessage(&prng);
-	}
-	return true;
-}
-
-bool Game::AskObserveGame()
-{
-	bool fYes = false;
-	gpplrLocal->SetFlags(gpplrLocal->GetFlags() | kfPlrObserver);
-
-	SimUIForm *psui = ggame.GetSimUIForm();
-	psui->ClearSelection();
-
-	if (!gevm.IsAppStopping()) {
-		if (psui->GetRole() & kfRoleServer) {
-			fYes = HtMessageBox(kidfMessageBoxQuery, kfMbKeepTimersEnabled | kfMbWhiteBorder, 
-				"GAME OVER", "Do you want to continue as an observer? Since this device hosting, answering no will stop the game.");
-		} else {
-			fYes = HtMessageBox(kidfMessageBoxQuery, kfMbKeepTimersEnabled | kfMbWhiteBorder, 
-				"GAME OVER", "Do you want to continue as an observer?");
-		}
-
-		if (fYes) {
-            psui->SetObserving();
-		}
-	}
-
-	return fYes;
 }
 
 bool Game::SaveReinitializeGame()
@@ -1841,11 +1673,6 @@ bool Game::SaveReinitializeGame()
     if (m_fSkipSaveReinitialize) {
         return false;
     }
-
-	// We don't save "reinitialize" games when playing multiplayer
-
-	if (gfMultiplayer)
-		return false;
 
 	Status("** Saving Game for Return **");
 	Stream *pstm = HostNewSaveGameStream(knGameReinitializeSave, "Reinitialize");
@@ -1858,14 +1685,11 @@ bool Game::SaveReinitializeGame()
 	return false;
 }
 
-bool Game::InitSimulation(Stream *pstm, char *pszLevel, word wfRole,
-        dword gameid, Chatter *chatter) {
+bool Game::InitSimulation(Stream *pstm, char *pszLevel) {
 
 	// Perform one-time Simulation initialization. This might seem like a 
 	// strange place to do it but the goal is to put off the expensive stuff
 	// it does so it doesn't slow game launch time.
-
-    m_gameid = gameid;
 
 	if (m_fSimUninitialized) {
 		Status("Simulation Init (one-time)...");
@@ -1903,7 +1727,7 @@ bool Game::InitSimulation(Stream *pstm, char *pszLevel, word wfRole,
 
 	// Load the sim UI form
 
-	m_pfrmSimUI = (SimUIForm *)gpfrmmSim->LoadForm(gpiniForms, kidfSimUI, new SimUIForm(wfRole, gameid, chatter));
+	m_pfrmSimUI = (SimUIForm *)gpfrmmSim->LoadForm(gpiniForms, kidfSimUI, new SimUIForm());
 	if (m_pfrmSimUI == NULL) {
 		Assert("LoadForm(SimUIForm) failed");
 		gsim.PerLevelExit();
@@ -1914,7 +1738,7 @@ bool Game::InitSimulation(Stream *pstm, char *pszLevel, word wfRole,
 
 	// Load the input UI form
 
-	m_pfrmInputUI = (InputUIForm *)gpfrmmInput->LoadForm(gpiniForms, kidfInputUI, new InputUIForm(chatter));
+	m_pfrmInputUI = (InputUIForm *)gpfrmmInput->LoadForm(gpiniForms, kidfInputUI, new InputUIForm());
 	if (m_pfrmInputUI == NULL) {
 		Assert("LoadForm(InputUIForm) failed");
 		delete m_pfrmSimUI;
@@ -1960,8 +1784,7 @@ bool Game::InitSimulation(Stream *pstm, char *pszLevel, word wfRole,
 	// MissionLoaded trigger will go off and pop up an ecom, reposition the
 	// view, etc.
 
-	if ((wfRole & kfRoleMultiplayer) == 0)
-		m_pfrmSimUI->OnTimer(0);
+	m_pfrmSimUI->OnTimer(0);
 
 	// Clear the screen so the ugly palette change isn't apparent
 
@@ -2142,8 +1965,7 @@ void Game::ScheduleUpdateTriggers() {
 }
 
 void Game::UpdateTriggers() {
-    // Always run triggers this way, so that trigger execution is in sync
-    // with multiplayer updates. This also allows triggers to go into modal
+    // Always run triggers this way. This allows triggers to go into modal
     // loops, while the simulation continues (with special care).
 
     if (m_fUpdateTriggers) {
@@ -2164,12 +1986,6 @@ bool Game::FilterEvent(Event *pevt)
     UpdateTriggers();
 
 	switch (pevt->eType) {
-    case checkGameOverEvent:
-        if (m_pfrmSimUI != NULL) {
-            m_pfrmSimUI->CheckMultiplayerGameOver((Pid)pevt->dw);
-        }
-        break;
-        
 	case gamePaintEvent:
 		// Keep track of # of paints for fps stat
 
@@ -2186,26 +2002,6 @@ bool Game::FilterEvent(Event *pevt)
 
 		Suspend();
 		return true;
-
-    case transportEvent:
-        if (gptra != NULL) {
-            gptra->OnEvent(pevt);
-        }
-        return true;
-
-    case mpEndMissionWinEvent:
-        EndMissionAction::OnMPEndMissionActionEvent(knWinLoseTypeWin,
-                pevt->dw);
-        break;
-
-    case mpEndMissionLoseEvent:
-        EndMissionAction::OnMPEndMissionActionEvent(knWinLoseTypeLose,
-                pevt->dw);
-        break;
-
-    case mpShowObjectivesEvent:
-        ShowObjectivesAction::OnMPShowObjectivesEvent(pevt->dw);
-        break;
 
     case disableSoundEvent:
         gsndm.SaveStateAndClear();
@@ -2433,11 +2229,6 @@ char *Game::GetNextLevel()
 	return m_szNextLevel;
 }
 
-bool Game::IsMultiplayer()
-{ 
-	return (m_wf & kfGameMultiplayer) != 0; 
-}
-
 void Game::SetGameSpeed(int t)
 {
 	gtGameSpeed = t;
@@ -2467,7 +2258,6 @@ void Game::LoadPreferences()
 		memset(&gprefsInit, 0, sizeof(gprefsInit));
 		Date date;
 		HostGetCurrentDate(&date);
-        gprefsInit.fAnonymous = 0;
 		gprefsInit.nYearLastRun = date.nYear;
 		gprefsInit.nMonthLastRun = date.nMonth;
 		gprefsInit.nDayLastRun = date.nDay;
@@ -2479,8 +2269,6 @@ void Game::LoadPreferences()
 		gprefsInit.nScale = -1;
 #endif
         gprefsInit.nScrollSpeed = 1.0;
-        strncpyz(gprefsInit.szAskURL, "http://", sizeof(gprefsInit.szAskURL));
-        strncpyz(gprefsInit.szDeviceId, HostGenerateDeviceId(), sizeof(gprefsInit.szDeviceId));
 	}
 }
 
@@ -2497,7 +2285,6 @@ bool Game::LoadPreferences2()
             return false;
         if (!LoadPreferencesV100((PreferencesV100 *)&prefs))
             return false;
-        strncpyz(gprefsInit.szDeviceId, HostGenerateDeviceId(), sizeof(gprefsInit.szDeviceId));
         return true;
 
 	case knVersionPreferencesV101:
@@ -2590,10 +2377,12 @@ void Game::SavePreferences()
 
 	prefs.prefv.dwVersion = BigDword(knVersionPreferences);
 	prefs.prefv.cbSize = BigDword(sizeof(prefs));
-    strncpyz(prefs.szUsername, gszUsername, sizeof(prefs.szUsername));
-    strncpyz(prefs.szPassword, gszPassword, sizeof(prefs.szPassword));
-    strncpyz(prefs.szToken, gszToken, sizeof(prefs.szToken));
-    prefs.fAnonymous = gfAnonymous ? BigWord(1) : 0;
+    // The online account fields are kept (empty) so the preferences file
+    // layout doesn't change.
+    memset(prefs.szUsername, 0, sizeof(prefs.szUsername));
+    memset(prefs.szPassword, 0, sizeof(prefs.szPassword));
+    memset(prefs.szToken, 0, sizeof(prefs.szToken));
+    prefs.fAnonymous = 0;
 	Date date;
 	HostGetCurrentDate(&date);
 	prefs.nYearLastRun = BigWord(date.nYear);
@@ -2611,8 +2400,8 @@ void Game::SavePreferences()
 	prefs.wfHandicap = BigWord(gwfHandicap);
 	prefs.nDemoRank = BigWord(gnDemoRank);
     prefs.nScrollSpeed = gnScrollSpeed;
-    strncpyz(prefs.szAskURL, gszAskURL, sizeof(prefs.szAskURL));
-    strncpyz(prefs.szDeviceId, gszDeviceId, sizeof(prefs.szDeviceId));
+    memset(prefs.szAskURL, 0, sizeof(prefs.szAskURL));
+    memset(prefs.szDeviceId, 0, sizeof(prefs.szDeviceId));
 
 	if (gpdisp == NULL || m_immBest == -1) {
 		prefs.cxModeBest = 0;
@@ -2728,8 +2517,7 @@ bool Game::SetVar(const char *pszName, const char *pszValue)
 }
 
 void Game::GamePause(bool fpause) {
-    if (!gfMultiplayer)
-        gsim.Pause(fpause);
+    gsim.Pause(fpause);
 }
 
 } // namespace wi

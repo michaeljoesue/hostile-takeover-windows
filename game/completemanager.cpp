@@ -1,7 +1,7 @@
 #include "game/completemanager.h"
 #include "mpshared/misc.h"
 #include "base/format.h"
-#include "game/httppackmanager.h"
+#include "game/packs.h"
 #include <sys/types.h>
 #include <dirent.h>
 #include <errno.h>
