@@ -3366,11 +3366,6 @@ class CommandQueue;
 class MobileUnitGob;
 class UnitMenu;
 
-enum UIType { kuitFinger, kuitStylus };
-
-const dword kfPhFinger1Down = 0x8000;
-const dword kfPhFinger2Down = 0x4000;
-
 class SimUIForm : public Form, public Timer
 {
 public:
@@ -3389,7 +3384,6 @@ public:
     void SelectSameUnitTypes(Gob *pgob, bool fSfx);
     bool IsSelectionCommand(Gob *pgobHit);
 	void ClearSelection() secSimUIForm;
-    void SetUIType(UIType uit);
 
     class PenHandler {
     public:
@@ -3442,64 +3436,6 @@ private:
         void OnPenDrag(Event *pevt);
         void OnPenHold(Event *pevt);
         void CancelModes();
-    };
-
-    class FingerHandler : public PenHandler {
-    public:
-        FingerHandler(SimUIForm *psui);
-        ~FingerHandler();
-        virtual bool OnPenEvent(Event *pevt, bool fScrollOnly);
-        virtual void OnPaint(DibBitmap *pbm);
-        virtual void CheckScroll();
-        virtual dword GetFlags() { return m_ff; }
-        virtual void SetFlags(dword ff) { m_ff = ff; }
-    private:
-        void OnPenDown(Event *pevt, bool fScrollOnly);
-        void OnPenDown2(Event *pevt, bool fScrollOnly);
-        void OnPenUp(Event *pevt, bool fScrollOnly);
-        void OnPenUp2(Event *pevt, bool fScrollOnly);
-        void OnPenMove(Event *pevt);
-        void OnPenMove2(Event *pevt);
-        void OnPenHold(Event *pevt);
-        void UnhilightGob();
-        void EnterNone();
-        void EnterHilight(Gob *pgob);
-        bool CheckSelect(Event *pevt);
-        void EnterSelect(Event *pevt);
-        void UpdateSelect(Event *pevt);
-        bool CheckDragged(Event *pevt, int wcDrag);
-        void EnterDrag(Event *pevt);
-        void UpdateDrag(Event *pevt);
-        void ShowUnitMenu(Gob *pgob);
-        void ShowUnitTitle(Gob *pgob);
-        void SetSelection();
-        bool IsQuickUp(Event *pevt);
-
-        SimUIForm *m_psui;
-        int m_xDownLast, m_yDownLast;
-        WCoord m_wxTarget, m_wyTarget;
-        bool m_fHitSurrounding;
-        Gid m_gidHitLast;
-        Gid m_gidHilight;
-        long m_tDoubleTap;
-        int m_xDoubleTapDownLast, m_yDoubleTapDownLast;
-        bool m_fTimerSet;
-        bool m_fShowUnitMenu;
-        UnitMenu *m_pfrmUnitTitle;
-        dword m_ff;
-        SelectionSprite *m_pselspr;
-        dword m_maskA, m_maskB;
-        int m_x1, m_y1;
-        int m_x2, m_y2;
-        Vec2d m_vOffsetA, m_vOffsetB;
-        int m_xDrag, m_yDrag;
-        WCoord m_wxViewDrag, m_wyViewDrag;
-        long m_tDown;
-
-        enum State {
-            FHS_NONE, FHS_HILIGHT, FHS_SELECT, FHS_DRAG
-        };
-        State m_state;
     };
 
 	MobileUnitGob *SetSelectionTargets(Gid gid, WCoord wxTarget,

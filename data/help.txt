@@ -1,21 +1,21 @@
+<H1>HOSTILE TAKEOVER</H1>
+
+<BR>
 <H1>TABLE OF CONTENTS</H1>
 <BR>
 <H2><A HREF="#background">Story Background</A><BR>
 <BR>
 <A HREF="#gettingstarted">Getting Started</A><BR>
-   <A HREF="#playstory">Begin New Game </A><BR>
-   <A HREF="#playchallenge">Playing a Challenge Mission</A><BR>
-   <A HREF="#selectstory">Selecting a Story Mission </A><BR>
-   <A HREF="#changeoptions">Changing the Game Options</A><BR>
-<BR>
-<A HREF="#gameoptions">Options</A><BR>
-   <A HREF="#OptionsGame">Game </A><BR>
-   <A HREF="#OptionsSound">Sound</A><BR>
-   <A HREF="#OptionsPerf">Performance</A><BR>
-   <A HREF="#OptionsColor">Color</A><BR>
-   <A HREF="#OptionsDisplay">Display</A><BR>
+   <A HREF="#playsolo">Play Game</A><BR>
+   <A HREF="#loadsingleplayer">Loading a Saved Game</A><BR>
+   <A HREF="#addonmissionpacks">Add-On Mission Packs</A><BR>
+   <A HREF="#gameoptions">Options</A><BR>
 <BR>
 <A HREF="#howtoplay">Game Play Controls</A><BR>
+   <A HREF="#scrollmap">Scrolling the Map</A><BR>
+   <A HREF="#multiselect">Selecting Multiple Units</A><BR>
+   <A HREF="#powerselect">Power Select</A><BR>
+   <A HREF="#clearselection">Clearing Selection</A><BR>
    <A HREF="#menu">Menu</A><BR>
    <A HREF="#indicators">Useful Indicators</A><BR>
    <A HREF="#minimap">The Mini Map</A><BR>
@@ -23,12 +23,11 @@
 <BR>
 <A HREF="#gameMenu">In Game Menu</A><BR>
    <A HREF="#stateobjectives">State Objectives</A><BR>
-   <A HREF="#IGMOptions">Options</A><BR>
+   <A HREF="#gameoptions">Options</A><BR>
    <A HREF="#savegame">Saving Your Game</A><BR>
    <A HREF="#loadsingleplayer">Loading a Saved Game</A><BR>
    <A HREF="#restartmission">Restart Mission</A><BR>
    <A HREF="#abortmission">Abort Mission</A><BR>
-   <A HREF="#exitgame">Exit Game</A><BR>
 <BR>
 <A HREF="#personnel">Personnel</A><BR>
    <A HREF="#security">Security Guard</A><BR>
@@ -57,11 +56,6 @@
    <A HREF="#rockettower">Rocket Tower</A><BR>
    <A HREF="#upgrades">Research Upgrades</A><BR>
 <BR>
-<A HREF="#advanced">Advanced Features</A><BR>
-   <A HREF="#graffitiscroll">Graffiti Scroll</A><BR>
-   <A HREF="#buttonscroll">Button Scroll</A><BR>
-   <A HREF="#multiselect">Selecting Multiple Units</A><BR>
-<BR>
 <A HREF="#Tips">Tips</A><BR>
    <A HREF="#buildingOpts">Building Options</A><BR>
    <A HREF="#Transform">Transforming your Headquarters</A><BR>
@@ -70,6 +64,7 @@
    <A HREF="#tapecom">Speed Ecom Display </A><BR>
    <A HREF="#appswitch">Switching Applications</A><BR>
 <BR>
+<A HREF="#authoring">Authoring Add-On Mission Packs</A><BR>
 <A HREF="#credits">Credits</A>
 </H2>
 <HR>
@@ -78,45 +73,37 @@
 Six weeks ago an ACME owned, unmanned probe en route to the star Tau Ceti reported back that an unexplored planet, Icarus, contained 'massive' Galaxite deposits. ACME has dispatched a colony ship to the location. On board are Gordon Fox, Mining Base Commander, Jana Perez, a Senior Research Scientist, her fiance, Andy Whitmore, a Mining Operations Trainee, and Arthur Olstrom, a Sr. Mining Executive; it includes the equipment and people necessary to exploit and defend their claim. If ACME can successfully claim Icarus it may well become the richest and most powerful mega corporation of them all!</H2>
 <HR>
 <A NAME="gettingstarted"><H1>GETTING STARTED </H1></A>
-<H2>To begin a new game, or continue after completing the sampler mission and registering, refer to <A HREF="#playstory">Begin New Game</A>.  Once you begin, if you switch away to another program using a device button, turn off your device, or you select "Exit Game" from the In Game <A HREF="#menu">Menu</A>, your current place in the game will be preserved. If a mission ends in failure you will have an option to retry that mission. If you wish to preserve incremental progress within a mission, you can <A HREF="#savegame">save</A> the game at any time. Choosing Abort at the end of a mission will abort your game.</H2>
+<H2>When you begin the game, you will be presented with a number of options. Choose <A HREF="#playsolo">Play</A> to begin. New players will likely wish to <A HREF="#newgame">begin the story</A> missions from the beginning. <A HREF="#loadsingleplayer">Load Saved Game</A> allows you to resume any previously saved game.</H2>
 <HR>
-<A NAME="playstory"><H1>BEGIN NEW GAME </H1></A>
-<H2>This launches you into Mission 1, a training mission which is an excellent place to start. You'll learn how to create buildings, build units and move your forces around. However, there are some features that are not covered in the training mission and are helpful to know ahead of time. Refer to <A HREF="#advanced">Advanced Features</A> for more information. As you finish each mission you will be taken to the next mission in the adventures of Andy, Jana, Olstrom and Fox. Watch your rank increase with each successfully completed mission.</H2>
+<A NAME="newgame"><H1>BEGINNING A NEW GAME </H1></A>
+<H2>To start the story missions from the beginning, select <A HREF="#playsolo">Play</A>, then select the first mission in the list, Story Mission "M0: Introduction". This is a training mission which is an excellent place to start. You'll learn how to create buildings, build units and move your forces around. However, there are some features that are not covered in the training mission and are helpful to know ahead of time. Refer to <A HREF="#Tips">Tips</A> for more information. As you finish each mission you will be taken to the next mission in the adventures of Andy, Jana, Olstrom and Fox. Watch your rank increase with each successfully completed mission.</H2>
 <HR>
-<A NAME="playchallenge"><H1>PLAYING A CHALLENGE MISSION </H1></A>
-<H2>If you would like to play a challenge mission tap "Play Mission" on the Main Menu. From the Play Mission Menu select "Play Challenge Mission" and you are presented with a list of missions to choose from. Tap on a mission to highlight it and then tap the "Play" button.</H2>
+<A NAME="playsolo"><H1>PLAY GAME </H1></A>
+<H2>To play a single player mission, choose Play. This will show you a list of the story, challenge, and add-on single player missions installed your device, and allow you to play any one of them. New players are encouraged to <A HREF="#newgame">begin the story</A> missions by playing Story Mission "M0: Introduction". The story missions start out LOCKED. Missions unlock as you play through the game. Challenge missions are fun, challenging single missions, that come with the game. Any single player missions installed as <A HREF="#addonmissionpacks">Add-on Mission Packs</A> also appear here. To scroll the list, flick the list with your finger. Once you begin a mission, if you switch away to another program, your current game will be auto-saved. If a mission ends in failure you will have an option to retry that mission. If you wish to preserve incremental progress within a mission, you can <A HREF="#savegame">save</A> the game at any time. Choosing Abort at the end of a mission will abort your game.</H2>
 <HR>
-<A NAME="selectstory"><H1>SELECTING A STORY MISSION </H1></A>
-<H2>To maximize replayability, you can re-play individual story missions. From the Main Menu select "Play Mission". Then from the Play Mission Menu select "Play Story Mission". You can select any of the fourteen story missions. Note: if you launch the story missions in this way rather than playing through the game from the beginning, you will not be able to attain the top rank possible in the game. To start as a trainee and complete as a CEO you should use the <A HREF="#playstory">Begin New Game</A> option on the Main Menu.</H2>
-<HR>
-<A NAME="changeoptions"><H1>CHANGING THE GAME OPTIONS </H1></A>
-<H2>If you would like to adjust the audio, display, or game settings tap on the <A HREF="#gameoptions">Options</A> button in the Main Menu.  Options are also accessible from the In Game <A HREF="#menu">Menu</A>.
-</H2>
+<A NAME="addonmissionpacks"><H1>ADD-ON MISSION PACKS </H1></A>
+<H2>A mission pack is a collection of one or more missions. Mission packs are made with the Mission Editor (M.exe) that comes with the game: open or create your missions there and choose Install Mission Pack in Game. Installed single player missions are listed under Play, in the Add-On section of the mission list. To remove a mission pack, use Remove Mission Pack from Game in the Mission Editor, or Delete Mission Pack in Options. Multiplayer missions are not playable in this version of the game.</H2>
 <HR>
 <A NAME="gameoptions"><H1>OPTIONS</H1></A>
-<HR>
-<A NAME="OptionsGame"><H1>GAME</H1></A>
-<H2>You can adjust the game speed by adjusting the slider to the right for faster game play and to the left for a slower game play. Once the game is playing as fast as the device allows, increasing the game speed will not have an effect.<BR>
-You can check the Lasso Selection box to change the way you select multiple units, from tapping and dragging a square containing the units you would like to select, to freehand drawing a loop around the units you would like to select.<BR>
+<H2>Adjust the game speed by adjusting the slider to the right for faster game play and to the left for a slower game play. Once the game is playing as fast as the device allows, increasing the game speed will not have an effect.<BR>
 There are three difficulty settings for the game. This setting can be changed at any time and will take effect immediately. <BR>
-Tapping the Default button will restore all three settings: game speed, lasso selection and difficulty, to their default values.</H2>
-<HR>
-<A NAME="OptionsSound"><H1>SOUND</H1></A>
-<H2>Moving the volume slider to the right will increase the audio volume, moving it to the left will decrease the audio volume.<BR>
-You can mute all game sound by selecting the Mute checkbox.</H2>
-<HR>
-<A NAME="OptionsPerf"><H1>PERFORMANCE</H1></A>
-<H2>For very low-end Palm devices, performance of the game can be improved by turning off some graphics options. By default these are all on.</H2>
-<HR>
-<A NAME="OptionsColor"><H1>COLOR</H1></A>
-<H2>On some devices the game will benefit from adjustments to the Hue, Saturation and Brightness. We have included default settings for several devices. Select this option from the In Game <A HREF="#menu">Menu</A> to see the Hostile Takeover background and units as you make adjustments. There are two different types of terrain: grass and desert. Experimentation may be required.<BR>
-Selecting the Default button will return all three values to their default setting.</H2>
-<HR>
-<A NAME="OptionsDisplay"><H1>DISPLAY</H1></A>
-<H2>Some devices can display multiple screen resolutions. Some devices are capable of displaying in a landscape mode. If your device is capable of more than one display configuration you will have multiple choices here. These will be formatted as follows: horizontal-pixels x vertical-pixels, color if your device can do color, high or low resolution as suits your device and then degrees of rotation from the default display orientation if your device supports it.
-</H2>
+Moving the scroll speed slider to the right will increase the rate the map scrolls when you move your finger.<BR>
+Tapping the Default button will restore these settings to their default values.</H2>
 <HR>
 <A NAME="howtoplay"><H1>GAME PLAY CONTROLS </H1></A>
+<H2>The best way to learn the game play controls is to play <A HREF="#newgame">M0: Introduction</A>, which will introduce the game play elements to you as you play. Briefly, to move a unit, tap on the unit, then tap on the destination. To move multiple units, multi-select the units then tap on the destination. To multi-select, touch two fingers on the map to get a selection rectangle. Drag one or two corners to move and size the rectangle around the units you wish to select. To attack, select your desired units, then tap on the enemy unit you wish to attack.</H2>
+<HR>
+<A NAME="scrollmap"><H1>SCROLLING THE MAP </H1></A>
+<H2>To scroll the map, simply tap down on the map with your finger, and drag it in the direction you wish. If you wish, from <A HREF="#gameoptions">Options</A> you can adjust how fast the map scrolls when you move your finger.</H2>
+<HR>
+<A NAME="multiselect"><H1>SELECTING MULTIPLE UNITS </H1></A>
+<H2>You can select multiple units at once by using multi-touch. Touch any two fingers onto the map to get a selection rectangle. Any units inside of this rectangle will get selected, and any outside will be deselected. Drag any two corners to move, size, or rotate the selection rectangle. Drag any one corner to make it larger in one direction.</H2>
+<HR>
+<A NAME="powerselect"><H1>POWER SELECT </H1></A>
+<H2>Often in battle you will need to quickly select units. Double tap on a unit will multi-select all units of that same type that are on-screen!</H2>
+<HR>
+<A NAME="clearselection"><H1>CLEARING SELECTION </H1></A>
+<H2>To clear the unit selection, touch an empty part of the map with two fingers.</H2>
 <HR>
 <A NAME="menu"><H1>MENU </H1></A>
 <H2>While playing Hostile Takeover you can access the <A HREF="#gameMenu">In Game Menu</A> by tapping on the "Menu" button in the bottom-left corner of the display. The game will pause while you are looking at the In Game Menu. Selecting Back will return you to gameplay.</H2>
@@ -127,7 +114,7 @@ Selecting the Default button will return all three values to their default setti
 <H2>To the right of the Credit Indicator is your Power Indicator. It shows your current power supply in bars and your current demand with small triangles above and below the bars. The power symbol will flash when your power is too low. On color devices the bars will be green when you have plenty of power, yellow when you have just enough power and red when your power is too low.</H2>
 <HR>
 <A NAME="minimap"><H1>MINI MAP </H1></A>
-<H2>In the lower right-hand corner of your screen is a satellite overview of the nearby region. There is a square inside that shows which part of the region is currently displayed on your device. Use your stylus to tap and drag that rectangle to change your view.</H2>
+<H2>In the lower right-hand corner of your screen is a satellite overview of the nearby region. There is a square inside that shows which part of the region is currently displayed on your device. Use your finger to tap and drag that rectangle to scroll the map. The most convenient way to <A HREF="#scrollmap">scroll the map</A> however, is to place your finger directly on the map, and move it. The scroll speed can be changed from <A HREF="#gameoptions">Game Options</A>.</H2>
 <HR>
 <A NAME="gameicons"><H1>GAME ICONS </H1></A>
 <H2>POP UP MENU ICONS<BR>
@@ -149,9 +136,6 @@ White X: Select the white x to cancel construction of the building.<BR>
 <A NAME="stateobjectives"><H1>STATE OBJECTIVES </H1></A>
 <H2>You can review your mission objectives at any time by selecting State Objectives from the In Game <A HREF="#menu">Menu</A> The Statistics button will show you your current statistics and promotion level. The elapsed time shown is in game time, if you have altered the game speed this will differ from real time. You can more quickly access the objectives screen by tapping the <A HREF="#indicators">Credit Indicator</A> visible while playing the game.</H2>
 <HR>
-<A NAME="IGMOptions"><H1>OPTIONS </H1></A>
-<H2>This will take you to the <A HREF="#gameoptions">game options</A>.</H2>
-<HR>
 <A NAME="savegame"><H1>SAVING YOUR GAME </H1></A>
 <H2>While playing you can save your progress from the In Game <A HREF="#menu">Menu</A> by tapping on the "Save Game" button. Select the slot where you would like to save your game and then tap the "Save" button.</H2>
 <HR>
@@ -163,10 +147,6 @@ White X: Select the white x to cancel construction of the building.<BR>
 <HR>
 <A NAME="abortmission"><H1>ABORT MISSION </H1></A>
 <H2>Choosing Abort Mission will return you to the <A HREF="#gettingstarted">game main menu</A> without preserving your game. You may wish to <A HREF="#savegame">save your game</A> before choosing this option.</H2>
-<HR>
-<A NAME="exitgame"><H1>EXIT GAME </H1></A>
-<H2>Choosing Exit Game will completely exit Hostile Takeover and preserve your current view and play status. Your game will continue from there the next time you play Hostile Takeover.</H2>
-<BR>
 <HR>
 <A NAME="personnel"><H1>PERSONNEL </H1></A>
 <HR>
@@ -415,28 +395,16 @@ Power Supply: 0<BR>
 <BR>
 <H2>Research upgrades allow you to improve the units available at your Human Resource Center (HRC) and Vehicle Transport Station (VTS). The Research & Development Center is available starting on Mission 3. Select this building and use the build icon to view available upgrades. Upgrading the HRC enables production of Rocket Troopers and later Corporate Raiders. Upgrading the VTS enables production of Dominions, Cyclops and other advanced tanks. Not all upgrades are available in all missions. It is worth noting that even after you have upgraded your HRC, the R&D Center must survive to enable production of <A HREF="#corporateraider">Corporate Raiders</A>. Therefore you cannot sell this building if you wish to produce these very special units.<BR>
 </H2><HR>
-<A NAME="advanced"><H1>ADVANCED FEATURES </H1></A>
-<HR>
-<A NAME="graffitiscroll"><H1>GRAFFITI SCROLL </H1></A>
-<H2>On many devices you can use the graffiti area to move your view of the map. Tap and hold with your stylus and then move it around within the graffiti area.</H2>
-<HR>
-<A NAME="buttonscroll"><H1>BUTTON SCROLL </H1></A>
-<H2>Many devices have pads or buttons that can be used to scroll the map, allowing convenient two-handed play. Experiment with your device.</H2>
-<HR>
-<A NAME="multiselect"><H1>SELECT MULTIPLE UNITS </H1></A>
-<H2>You can select multiple units at once. Tap your stylus and drag it diagonally across a group of units. A box will be drawn. When you lift your stylus all the units in the box will be selected. You can change this from a box to a 'lasso' that you draw around the units by checking a box in the Options, Game Menu. <BR>
-To select units only of a particular type you can double-tap one unit. Other on-screen units of the same type will also be selected.</H2>
-<HR>
 <A NAME="Tips"><H1>TIPS</H1></A>
 <HR>
 <A NAME="buildingOpts"><H1>BUILDING OPTIONS </H1></A>
 <H2>To display the options associated with a particular building tap on the building and select the Build Icon (the white hammer). The units associated with that building are displayed. Note that not all units are available on all missions. As you advance through more difficult missions, additional options are added to the build menus. Some units are only available after upgrading via the <A HREF="#randd">Research & Development Center</A>.</H2>
 <HR>
 <A NAME="Transform"><H1>TRANSFORMING YOUR HEADQUARTERS </H1></A>
-<H2>To change your Dominion into a Headquarters you need to bring up the Transform Menu. Tap your stylus on the Dominion and hold it until the Transform Menu appears.</H2>
+<H2>To change your Dominion into a Headquarters you need to bring up the Transform Menu. Tap your finger on the Dominion and hold it until the Transform Menu appears.</H2>
 <HR>
 <A NAME="difficulty"><H1>CHANGING THE DIFFICULTY </H1></A>
-<H2>You can change the challenge level of the game in the Options, <A HREF="#OptionsGame">Game Menu</A></H2>
+<H2>You can change the difficulty level of the game in the <A HREF="#gameoptions">Options</A>.</H2>
 <HR>
 <A NAME="unitlimit"><H1>UNIT LIMITS </H1></A>
 <H2>The number of units you can create is limited based on the available memory in your device. When the game reaches the unit limit for your device, a notice is displayed on the lower left-hand corner of your screen. If you notice that all your build buttons are disabled, you may have reached your unit limit.</H2>
@@ -447,6 +415,9 @@ To select units only of a particular type you can double-tap one unit. Other on-
 <A NAME="appswitch"><H1>SWITCHING APPLICATIONS </H1></A>
 <H2>If you switch to another application while playing the game, Hostile Takeover will pause and be restored when you return.</H2>
 <HR>
+<A NAME="authoring"><H1>Authoring Add-On Mission Packs </H1></A>
+<H2>You can create new Add-On Mission Packs with the Mission Editor (M.exe) that comes with the game. Design your missions, then press F5 to try the current mission in the game, or choose Install Mission Pack in Game to add your missions to the Add-On section of the mission list. Now you can play and refine your mission pack until it is ready.</H2>
+<HR>
 
 <A NAME="credits"><H1>CREDITS </H1></A>
 <H2>Hostile Takeover(TM)<BR>
@@ -455,12 +426,9 @@ Developed by:
 Spiffcode, Inc
 http://www.spiffcode.com
 <BR>
-Game Missions, Forum, and Information, and Support:<BR>
-http://www.WarfareIncorporated.com
-<BR>
 <BR>
 Hostile Takeover is a trademark of Spiffcode, Inc
-Copyright 2003-2008 Spiffcode, Inc. 
+Copyright 2003-2014 Spiffcode, Inc. 
 All Rights Reserved.
 <BR>
 <BR>
@@ -484,6 +452,7 @@ Brian Outhwaite
 <BR>
 Test:
 Andrew Massena
+Brian Outhwaite
 <BR>
 Story Editing and Dialog:
 Elizabeth Chapman

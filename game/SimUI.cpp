@@ -59,8 +59,7 @@ SimUIForm::SimUIForm()
 
 	m_nStateMoveTarget = 0;
 
-    m_ppenh = NULL;
-    SetUIType(kuitStylus);
+    m_ppenh = new StylusHandler(this);
 }
 
 SimUIForm::~SimUIForm()
@@ -69,21 +68,6 @@ SimUIForm::~SimUIForm()
 		gtimm.RemoveTimer(this);
 
     delete m_ppenh;
-}
-
-void SimUIForm::SetUIType(UIType uit)
-{
-    switch (uit) {
-    case kuitFinger:
-        delete m_ppenh;
-        m_ppenh = new FingerHandler(this);
-        break;
-
-    case kuitStylus:
-        delete m_ppenh;
-        m_ppenh = new StylusHandler(this);
-        break;
-    }
 }
 
 bool SimUIForm::Init(FormMgr *pfrmm, IniReader *pini, word idf)

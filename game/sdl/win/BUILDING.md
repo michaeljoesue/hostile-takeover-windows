@@ -31,7 +31,7 @@ transparency fix described in `PORTING_NOTES.md`):
 ```sh
 python3 tools/build_dotnet_tools.py /tmp/httools
 cp bin/inicrunch_linux /tmp/httools/
-cd data && make IPHONE=1 MULTIPLAYER=1 TOOLDIR=/tmp/httools
+cd data && make TOOLDIR=/tmp/httools
 mono /tmp/httools/markversion.exe 1 ../game/htdata832.pdb "+++VERSION+++" 1.6
 ```
 

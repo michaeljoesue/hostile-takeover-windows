@@ -766,8 +766,8 @@ them. Single player is unchanged.
 The main menu is now PLAY, LOAD SAVED GAME, OPTIONS and HELP. PLAY goes
 straight to the mission list (Story, Challenge, Add-On); the old "Single
 Player / Multiplayer" screen is gone. The in-game menu and the battlefield
-no longer have a CHAT button. The help text (`data/helpiphone-multiplayer.txt`,
-which is the help the data build uses) no longer describes multiplayer, login,
+no longer have a CHAT button. The help text (`data/helpiphone-multiplayer.txt`, now
+`data/help.txt`) no longer describes multiplayer, login,
 the leaderboard or downloading, and explains installing packs with the editor.
 
 ## 31. What was kept
@@ -858,6 +858,30 @@ predate the SDL layer. Their leftovers were removed too:
   `HostileTakeover.exe` built afterwards has the same code as before (only
   the timestamp bytes differ).
 
+## 36. Other leftovers
+
+A last sweep removed what didn't belong to the Windows SDL build:
+
+- Online and other-platform leftovers: `utilities/` (Python 2 scripts for
+  the mission pack server), `drmutil/` and `bin/drmutil.exe` (registration
+  key generator for the Palm and Pocket PC versions), `texpack/`, the iPhone
+  icon and title screen art sources, and `game/fingerhandler.cpp` (the
+  iPhone touch controls; on Windows it could only be switched on with the
+  "Stylus UI" box in the debug test options, which is gone too).
+- Data: the old `data/help.txt` and the unused `data/helpiphone.txt` were
+  deleted, and `data/helpiphone-multiplayer.txt` (the help the game uses)
+  was renamed to `data/help.txt`. `data/makefile` now always builds the one
+  data set the game uses (8-bit colour, 32 pixel tiles scaled from the 24
+  pixel art); the 4-bit colour and 20/16 pixel tile options and
+  `data/preload_4bpp.pal` were removed. `IPHONE=1 MULTIPLAYER=1` on the make
+  command line are still accepted but no longer needed; a dry run
+  (`make -n -B`) gives the same commands as before.
+- Old notes: `game/README.txt`, the `worklist.txt` files,
+  `game/calcdiagdist.js` and the CVS `.cvsignore` files.
+
+The Windows art tools Spiffcode used (AniMax, aed, BmpProof and others) were
+kept.
+
 ## File map
 
 | File | Purpose |
@@ -898,4 +922,4 @@ predate the SDL layer. Their leftovers were removed too:
 | `data/art824/common_8bpp.pal` | Crimson ramp at palette entries 67–71 |
 | `game/Player.cpp` (`IsVisionSharedWithLocal`, `RevealSharedVision`) | Allies share vision |
 | `game/packs.h`, `mpshared/packmanager.*` | Local mission packs only (online code removed) |
-| `data/forms.ini.pp`, `data/helpiphone-multiplayer.txt` | Main menu without online buttons; help text |
+| `data/forms.ini.pp`, `data/help.txt` | Main menu without online buttons; help text |

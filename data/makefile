@@ -16,78 +16,29 @@ endif
 
 HELPFILE=help.txt
 
-ifdef IPHONE
-TILESIZE=32
-ifdef MULTIPLAYER
-DEFINI=-DIPHONE -DMULTIPLAYER
-HELPFILE=helpiphone-multiplayer.txt
-else
-DEFINI=-DIPHONE
-HELPFILE=helpiphone.txt
-endif
-endif
+# The Windows game uses one data set: 8-bit colour and 32 pixel tiles. The
+# 32 pixel tiles are made by scaling the 24 pixel art. (IPHONE=1 and
+# MULTIPLAYER=1, which older instructions pass, are accepted and ignored.)
 
 ifdef DEV_BUILD
 DEFDEV=-DDEV_BUILD=1
 endif
 
-ifndef DEPTH
 DEPTH=8
-endif
-
-ifeq ($(DEPTH),8)
+TILESIZE=32
 PAL_SIZE=256
 FIXED_PAL_SIZE=131
-endif
-
-ifeq ($(DEPTH),4)
-PAL_SIZE=16
-FIXED_PAL_SIZE=16
-endif
-
-ifdef TS
-TILESIZE=$(TS)
-endif
-
-ifndef TILESIZE
-TILESIZE=16
-endif
 
 OUTDIR:=$(DEPTH)$(TILESIZE)
-ARTDIR:=art$(DEPTH)$(TILESIZE)
-PALDIR:=art$(DEPTH)$(TILESIZE)
-
-ifeq ($(DEPTH),4)
-ARTDIR:=art8$(TILESIZE)
-endif
-DT:=$(DEPTH)$(TILESIZE)
-
-# Hack to support 240x320 mode which blends hires and custom res elements
-# NOTE: all assignments using TILESIZE above this point must be of the ':='
-# variety.
-# NOTE: must rm -rf art820 first since none of it is actually "checked in"
-
-ifeq ($(TILESIZE),20)
-override TILESIZE=24
-ifdef QUICK
-COPYART=xcopy art824 art820 /Q /Y /R /D /E /I /EXCLUDE:excludecvs.txt && xcopy art820.true art820 /Q /Y /R /E /I /EXCLUDE:excludecvs.txt
-else
-COPYART=@rm -rf art820 && mkdir art820 && xcopy art824 art820 /Q /Y /R /D /E /I /EXCLUDE:excludecvs.txt && xcopy art820.true art820 /Q /Y /R /E /I /EXCLUDE:excludecvs.txt
-endif
-endif
-
-# Hack to support iPhone's 32 tile size. Use all the art from 24, but scale
-# tiles and animations.
-
-ifeq ($(TILESIZE),32)
 ARTDIR:=art$(DEPTH)24
 PALDIR:=art$(DEPTH)24
+DT:=$(DEPTH)$(TILESIZE)
+
 AMX_SCALEARG:=-scale 1.3333333333333 -noscaleicon
 TILE_SCALEARG:=-scale 1.3333333333333
 FORMBMP_SCALEARG:=-scale 1.0
 MAPBMP_SCALEARG:=-scale 1.3333333333333
 RAWBMP_SCALEARG:=-scale 1.0
-endif
 
 
 #
@@ -106,15 +57,8 @@ GRASSY_PAL=$(PALDIR)/grassy_$(DEPTH)bpp.pal
 # Palette space for background template
 #
 
-ifeq ($(DEPTH),4)
-DESERT_BACKGROUND_PAL_SIZE=0
-GRASSY_BACKGROUND_PAL_SIZE=0
-endif
-
-ifeq ($(DEPTH),8)
 DESERT_BACKGROUND_PAL_SIZE=32
 GRASSY_BACKGROUND_PAL_SIZE=32
-endif
 
 #
 # Global defines
@@ -253,12 +197,10 @@ trg/help_$(DT).trg trg/strings_$(DT).trg trg/font_bmps_$(DT).trg
 
 all:
 	@. ./makedirs.sh
-	$(COPYART)
 	@make --no-print-directory $(OUTDIR)/$(PDB)
 
 clean:
 	@. ./makedirs.sh
-	$(COPYART)
 	rm -f $(OUTDIR)/*.*
 	rm -f trg/*$(DT).trg
 	rm -f $(FIXED_PAL) $(DESERT_PAL) $(GRASSY_PAL)
@@ -293,7 +235,7 @@ trg/fixed_amxs_$(DT).trg: $(FIXED_AMXS) $(FIXED_PAL) $(patsubst %.amx,%/*.png,$(
 
 $(OUTDIR)/%.ini: %.ini.pp ../game/res.h
 	@echo Preprocessing $(@F).pp...
-	@$(CPP) -DTILESIZE=$(TILESIZE) $(DEFDEMO) $(DEFDEV) $(DEFINI) $(CPP_INCS) $(@F).pp ini.tmp
+	@$(CPP) -DTILESIZE=$(TILESIZE) $(DEFDEMO) $(DEFDEV) $(CPP_INCS) $(@F).pp ini.tmp
 	@if [ -d "prepre" ]; then cp ini.tmp prepre/$(@F); fi
 	@$(TOOLDIR)/$(INICRUNCH) ini.tmp $@
 

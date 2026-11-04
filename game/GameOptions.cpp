@@ -30,7 +30,6 @@ bool gfSuspendUpdates = false;
 bool gfSingleStep = false;
 bool gfGodMode = false;
 bool gfAutosave = false;
-bool gfStylusUI = false;
 
 #define SetControlChecked(id, f) ((CheckBoxControl *)GetControlPtr(id))->SetChecked(f)
 #define GetControlChecked(id) ((CheckBoxControl *)GetControlPtr(id))->IsChecked()
@@ -891,9 +890,6 @@ bool TestOptionsForm::Init(FormMgr *pfrmm, IniReader *pini, word idf)
 #endif
 	SetControlChecked(kidcGodMode, gfGodMode);
 	SetControlChecked(kidcAutosave, gfAutosave);
-    SetControlChecked(kidcStylusUI, gfStylusUI);
-
-    dword ff = ggame.GetSimUIForm()->GetPenHandler()->GetFlags();
 
 	return true;
 }
@@ -935,12 +931,6 @@ void TestOptionsForm::OnControlSelected(word idc)
 	case kidcLockStep:
 		gfLockStep = !gfLockStep;
 		break;
-
-    case kidcStylusUI:
-        gfStylusUI = !gfStylusUI;
-		ggame.GetSimUIForm()->SetUIType(gfStylusUI == true ?
-                kuitStylus : kuitFinger);
-        break;
 
 	case kidcOvermind:
 		{

@@ -16,7 +16,7 @@ if not exist "%TOOLS%\make.exe" (
 set "PATH=%TOOLS%;%PATH%"
 cd /d "%HERE%"
 
-make IPHONE=1 MULTIPLAYER=1 TOOLDIR=../tools all
+make TOOLDIR=../tools all
 if errorlevel 1 (
     echo.
     echo Building the game data failed.

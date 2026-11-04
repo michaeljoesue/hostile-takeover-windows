@@ -179,7 +179,6 @@
 	CHECKBOX=kidcSuspendUpdates (2 69 81 0) "Suspend Updates" kifntShadow
 	CHECKBOX=kidcAutosave (2 78 81 0) "Autosave" kifntShadow
 	CHECKBOX=kidcDrawUpdateRects (2 87 70 0) "Draw Update Rects" kifntShadow
-	CHECKBOX=kidcStylusUI (2 96 56 0) "Stylus UI" kifntShadow
 	CHECKBOX=kidcShowStats (2 96 56 0) "Show stats" kifntShadow
 	CHECKBOX=kidcLockStep (2 105 82 0) "Lock Step Simulations" kifntShadow
 	BUTTON=kidcClearFog (104 14 54 12) "Clear Fog" kifntButton
