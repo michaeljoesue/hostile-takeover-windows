@@ -183,12 +183,6 @@ void HqGob::Deactivate()
 // StateMachine methods
 //
 
-#if defined(DEBUG_HELPERS)
-char *HqGob::GetName()
-{
-	return "Headquarters";
-}
-#endif
 
 void HqGob::RemoveScorch(StructGob *pstru)
 {

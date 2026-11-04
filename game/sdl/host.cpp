@@ -329,10 +329,6 @@ bool ProcessSdlEvent(base::Message *pmsg, Event *pevt)
 			break;
 
         default:
-#ifdef DEBUG_HELPERS
-			extern void DebugHelperKeyHandler(word vk);
-			DebugHelperKeyHandler(pmsg->wParam);
-#endif
             pevt->chr = event.key.keysym.sym;
             break;
         }

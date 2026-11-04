@@ -161,12 +161,6 @@ void DibBitmap::Blt(DibBitmap *pbmSrc, Rect *prcSrc, int xDst, int yDst)
 
 void DibBitmap::Clear(Color clr)
 {
-#ifdef __CPU_68K
-	if (gfArmPresent) {
-		memsetArm(m_pb, (byte)clr, m_cb);
-		return;
-	}
-#endif
 	memset(m_pb, (byte)clr, m_cb);
 }
 
@@ -385,46 +379,6 @@ void DibBitmap::Scroll(Rect *prcSrc, int xDst, int yDst)
     Blt(this, prcSrc, xDst, yDst);
 }
         
-#ifdef __CPU_68K
-void DibBitmap::BltTiles(DibBitmap *pbmSrc, UpdateMap *pupd, int yTopDst)
-{
-	// OS5 path usually not executed
-
-	if (IsOS50Compat()) {
-		bool fFirst = true;
-		Rect rc;
-		while (pupd->EnumUpdateRects(fFirst, NULL, &rc)) {
-			fFirst = false;
-			Blt(pbmSrc, &rc, rc.left, rc.top + yTopDst);
-		}
-		return;
-	}
-
-	// Init
-
-	bool *pfMap = pupd->GetInvalidMap();
-	MapInfo *pmnfo = pupd->GetMapInfo();
-	Size sizMap;
-	pupd->GetMapSize(&sizMap);
-
-	dword cbOffset = yTopDst * (dword)m_siz.cx;
-	byte *pbSrc = pbmSrc->GetBits();
-	byte *pbDst = m_pb + cbOffset;
-
-	switch (gcxTile) {
-	case 16:
-		UpdateScreen816(pfMap, sizMap.cx, sizMap.cy, pbSrc, pbDst, m_siz.cx,
-				pmnfo->cxLeftTile, pmnfo->cyTopTile, pmnfo->cxRightTile, pmnfo->cyBottomTile, pmnfo->ctxInside, pmnfo->ctyInside);
-		break;
-
-	case 24:
-		UpdateScreen824(pfMap, sizMap.cx, sizMap.cy, pbSrc, pbDst, m_siz.cx,
-				pmnfo->cxLeftTile, pmnfo->cyTopTile, pmnfo->cxRightTile, pmnfo->cyBottomTile, pmnfo->ctxInside, pmnfo->ctyInside);
-		break;
-	}
-}
-
-#else
 void DibBitmap::BltTiles(DibBitmap *pbmSrc, UpdateMap *pupd, int yTopDst)
 {
 	bool fFirst = true;
@@ -540,7 +494,6 @@ void DibBitmap::BltTiles(DibBitmap *pbmSrc, UpdateMap *pupd, int yTopDst)
 		}
 	}
 }
-#endif
 #endif
 
 } // namespace wi

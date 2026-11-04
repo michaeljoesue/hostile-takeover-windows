@@ -1614,85 +1614,6 @@ Path *MobileUnitGob::FindPath(TCoord txFrom, TCoord tyFrom, TCoord txTo, TCoord 
 {
 	TerrainMap *ptrmap = gsim.GetLevel()->GetTerrainMap();
 
-#ifdef __CPU_68K
-	// See if we have a cached path that we can reuse - 68K only since this
-	// sucks
-
-#define ktcPathLengthReuse 35
-#define ktcPathEndPointReuse 7
-
-	word nDistT = ganSquared[abs(txFrom - txTo)] + ganSquared[abs(tyFrom - tyTo)];
-	if (GetType() != kgtGalaxMiner && nDistT >= ganSquared[ktcPathLengthReuse]) {
-		for (int nPath = 0; nPath < s_cpathCached; nPath++) {
-			// Long enough to be worth it?
-
-			Path *ppathT = s_apathCached[nPath];
-			if (ppathT->GetCount() < ktcPathLengthReuse)
-				continue;
-
-			// In the general vicinity of our start / end points
-
-			TPoint tptStart;
-			ppathT->GetStartPoint(&tptStart);
-			TPoint tptEnd;
-			ppathT->GetPointRaw(ppathT->GetCount() - 1, &tptEnd);
-			word nDistStart = ganSquared[abs(tptStart.tx - txFrom)] + ganSquared[abs(tptStart.ty - tyFrom)];
-			word nDistEnd = ganSquared[abs(tptEnd.tx - txTo)] + ganSquared[abs(tptEnd.ty - tyTo)];
-			word nDistReuse = ganSquared[ktcPathEndPointReuse] * 2;
-			if (nDistStart > nDistReuse || nDistEnd > nDistReuse)
-				continue;
-
-			// See if our closest approach is free of obstacles
-
-			TPoint tptClosest;
-			if (ppathT->FindClosestPoint(txFrom, tyFrom, 0, 5, &tptClosest) == -1)
-				continue;
-			if (ptrmap->IsLineOccupied(txFrom, tyFrom, tptClosest.tx, tptClosest.ty, 0))
-				continue;
-
-			// Looking good so far. See if our closest end point is free of obstacles
-
-			TPoint tptDestClosest;
-			int itptDestClosest = ppathT->FindClosestPoint(txTo, tyTo, 0, ppathT->GetCount(), &tptDestClosest);
-			if (itptDestClosest == -1)
-				continue;
-			if (ptrmap->IsLineOccupied(tptDestClosest.tx, tptDestClosest.ty, txTo, tyTo, 0))
-				continue;
-
-			// We're ready to use this path. First create a copy
-
-			ppathT = ppathT->Clone();
-			if (ppathT == NULL)
-				continue;
-
-			// If the ending is the same, use it
-
-			if (tptDestClosest.tx == txTo && tptDestClosest.ty == tyTo)
-				return ppathT;
-
-			// Now lop off the end and amend it with our new dest
-			// If this doesn't work, use it as is
-
-			if (!ppathT->TrimEnd(itptDestClosest))
-				return ppathT;
-
-			// Add our new ending. If we run into something, use the path as is
-
-			Path *ppathAppend = ptrmap->FindLinePath(tptDestClosest.tx, tptDestClosest.ty, txTo, tyTo, kbfStructure);
-			if (ppathAppend == NULL)
-				return ppathT;
-
-			// Append this to our ppath
-
-			ppathT->Append(ppathAppend);
-			delete ppathAppend;
-
-			// Done
-
-			return ppathT;
-		}
-	}
-#endif
 
 	// No cached paths that satisfy our needs. Make a new one.
 	// If it's close first try an easy path
@@ -1704,26 +1625,6 @@ Path *MobileUnitGob::FindPath(TCoord txFrom, TCoord tyFrom, TCoord txTo, TCoord 
 	if (ppathT == NULL)
 		ppathT = ptrmap->FindPath(txFrom, tyFrom, txTo, tyTo, kbfStructure);
 
-#ifdef __CPU_68K
-	// Cache this path if it is long enough to be interesting
-
-	if (ppathT != NULL) {
-		if (ppathT->GetCount() >= ktcPathLengthReuse) {
-			// Move the existing paths that we have down one
-
-			Path *ppathCache = ppathT->Clone();
-			if (ppathCache != NULL) {
-				if (s_cpathCached == ARRAYSIZE(s_apathCached)) {
-					delete s_apathCached[ARRAYSIZE(s_apathCached) - 1];
-				} else {
-					s_cpathCached++;
-				}
-				memmove(&s_apathCached[1], &s_apathCached[0], (ARRAYSIZE(s_apathCached) - 1) * ELEMENTSIZE(s_apathCached));
-				s_apathCached[0] = ppathCache;
-			}
-		}
-	}
-#endif
 
 	return ppathT;
 }

@@ -185,10 +185,6 @@ void Simulation::OneTimeExit()
 
 bool Simulation::PerLevelInit()
 {
-#ifdef DEBUG_HELPERS
-    void ClearLog();
-    ClearLog();
-#endif
 
     if (!gcmdq.Init())
         return false;
@@ -438,10 +434,6 @@ void Simulation::Update(CommandQueue *pcmdq)
     m_pbldm->Update();
 
     // Process all queued commands
-#ifdef DEBUG_HELPERS
-    extern void UpdateCommandQueueViewer();
-    UpdateCommandQueueViewer();
-#endif
 
     int cmsg = pcmdq->GetCount();
 #ifdef STATS_DISPLAY
@@ -497,12 +489,6 @@ void Simulation::Update(CommandQueue *pcmdq)
             msgUpdate.smidReceiver = *pgidT;
             gsmm.SendMsg(&msgUpdate);
 
-#ifdef PIL
-            if (gfOS5Pa1Device) {
-                if ((i & 15) == 0)
-                    HostSoundServiceProc();
-            }
-#endif
         }
     }
 
@@ -510,10 +496,6 @@ void Simulation::Update(CommandQueue *pcmdq)
     // respondants create new Gobs they won't receive an immediate Update
     // before their first paint. This is important for cases like delayed shots.
 
-#ifdef DEBUG_HELPERS
-    extern void UpdateDelayedMessageViewer();
-    UpdateDelayedMessageViewer();
-#endif
     gsmm.DispatchDelayedMessages();
 
     long tCurrent = HostGetTickCount();
@@ -785,13 +767,6 @@ void Simulation::Draw(UpdateMap *pupd, DibBitmap *pbm)
                 if (ff & ffLayerT) {
                     pgobT->Draw(pbm, xView, yView, nLayer);
 
-#ifdef PIL
-                    if (gfOS5Pa1Device) {
-                        cT++;
-                        if ((cT & 15) == 0)
-                            HostSoundServiceProc();
-                    }
-#endif
                 }
             }
         }

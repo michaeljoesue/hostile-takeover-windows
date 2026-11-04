@@ -288,68 +288,6 @@ bool DrmValidate()
 
 #else
 
-#ifdef PIL
-	// Special Palm codepath to check for FILR resource
-
-	DmOpenRef pdb;
-    int nRec = (short)DmSearchResource('FILR', 0, NULL, &pdb);
-	bool fHasFILR = (nRec >= 0);
-
-	// If our key is valid, return success
-
-	Code code;
-	if (!GetCode(NULL, &code, !fHasFILR)) {
-		// No code, which means not hotsynced yet. If we have a FILR resource, let copy protect succeed.
-		// We'll mark this binary later after the device has been hotsynced. Note there is a window where by
-		// someone could receive WI before hotsyncing, run it, and then beam it to someone else who could also
-		// run it.
-
-		if (fHasFILR)
-			return true;
-			
-		// Go into demo mode
-		
-		HtMessageBox(kfMbClearDib, "Hostile Takeover", "License key not entered. Entering demo mode.");
-		gfDemo = true;
-		return true;
-	}
-	
-	Key keyT;
-	GetKeyFromCode(&code, &keyT);
-
-	// Check for special resource. If present, mark the resource, copy a working key into gkey, save prefs
-	// and return. This way if someone beams this game to another device without the key or resource, the
-	// DRM form will come up
-
-	if (fHasFILR) {
-		// Found resource; make sure it is on our .prc
-
-		LocalID lidRes;
-		DmOpenDatabaseInfo(pdb, &lidRes, NULL, NULL, NULL, NULL);
-		LocalID lidApp;
-		UInt16 nCard;
-		SysCurAppDatabase (&nCard, &lidApp);
-		if (lidApp == lidRes) {
-			// If it starts with a 0, it's been poked already
-			// Otherwise it is first time; copy over a valid retail key
-
-#define memHeapFlagReadOnly 0x01
-
-			MemHandle hMem = DmGetResourceIndex(pdb, nRec);
-			UInt16 idHeap = MemHandleHeapID(hMem);
-			if (!(MemHeapFlags(idHeap) & memHeapFlagReadOnly)) {
-				char *psz = (char *)MemHandleLock(hMem);
-				if (*psz != 0) {
-					char ch = 0;
-					DmWrite(psz, 0, &ch, 1);
-					gkey = keyT;
-					ggame.SavePreferences();
-				}
-				MemHandleUnlock(hMem);
-			}
-		}
-	}
-#else
 	// If our key is valid, return success
 
 	Code code;
@@ -359,7 +297,6 @@ bool DrmValidate()
 	Key keyT;
 	GetKeyFromCode(&code, &keyT);
 
-#endif
 
 	// Compare keys
 

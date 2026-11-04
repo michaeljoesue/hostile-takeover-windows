@@ -88,23 +88,6 @@ void Shell::Launch(bool fLoadReinitializeSave, MissionIdentifier *pmiid)
 #endif // def STRESS
 
 #if 0
-#if defined(DEBUG) && defined(CE)
-	WCHAR wszDeviceName[128];
-	SystemParametersInfo(SPI_GETOEMINFO, sizeof(wszDeviceName), &wszDeviceName, 0);
-   char tst[500];
-   int cch = wcslen(wszDeviceName);
-   char *pch = (char *)wszDeviceName;
-   char *pdst = tst;
-   while (cch > 0) {
-	   if (*pch != 0)
-		   *pdst++ = *pch++;
-		else
-			pch++;
-	   cch--;
-   }
-   *pdst = 0;
-   HtMessageBox(kfMbClearDib, "Device ID String", tst); 
-#endif
 #endif
 
 #ifdef BETA_TIMEOUT

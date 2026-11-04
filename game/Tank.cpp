@@ -248,12 +248,6 @@ void TankGob::GetClippingBounds(Rect *prc)
 
 static MobileUnitConsts gLTankConsts;
 
-#if defined(DEBUG_HELPERS)
-char *LTankGob::GetName()
-{
-	return "LTank";
-}
-#endif
 
 static int s_anTurretStripIndices[16] = { 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23 };
 static int s_anBaseStripIndices[8] = { 0, 1, 2, 3, 4, 5, 6, 7 };
@@ -298,12 +292,6 @@ LTankGob::LTankGob() : TankGob(&gLTankConsts)
 
 static MobileUnitConsts gMTankConsts;
 
-#if defined(DEBUG_HELPERS)
-char *MTankGob::GetName()
-{
-	return "MTank";
-}
-#endif
 
 bool MTankGob::InitClass(IniReader *pini)
 {
@@ -425,12 +413,6 @@ void MTankGob::DefUpdate()
 
 static MobileUnitConsts gRTankConsts;
 
-#if defined(DEBUG_HELPERS)
-char *RTankGob::GetName()
-{
-	return "RTank";
-}
-#endif
 
 bool RTankGob::InitClass(IniReader *pini)
 {
@@ -478,12 +460,6 @@ void RTankGob::LaunchProjectile(WCoord wx, WCoord wy, WCoord wxTarget, WCoord wy
 
 static MobileUnitConsts gGTankConsts;
 
-#if defined(DEBUG_HELPERS)
-char *GTankGob::GetName()
-{
-	return "GTank";
-}
-#endif
 
 bool GTankGob::InitClass(IniReader *pini)
 {
@@ -763,12 +739,6 @@ void TankShotGob::Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLa
 	}
 }
 
-#if defined(DEBUG_HELPERS)
-char *TankShotGob::GetName()
-{
-	return "TankShot";
-}
-#endif
 
 int TankShotGob::ProcessStateMachineMessage(State st, Message *pmsg)
 {

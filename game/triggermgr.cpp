@@ -90,18 +90,6 @@ bool TriggerMgr::Init(IniReader *pini)
 
 	m_tLastUpdate = gsim.GetTickCount();
 
-#ifdef DEBUG_HELPERS
-	FindProp findSwitch;
-	int isw = 0;
-	while (pini->FindNextProperty(&findSwitch, "Switches", szProp, sizeof(szProp))) {
-		strncpyz(m_aszSwitchNames[isw], szProp, sizeof(m_aszSwitchNames[0]));
-		isw++;
-		Assert(isw <= kcSwitchMax);
-	}
-
-	extern void UpdateTriggerViewer();
-	UpdateTriggerViewer();
-#endif
 	return true;
 }
 
@@ -244,10 +232,6 @@ void TriggerMgr::Update()
 		pct++;
 	}
 
-#ifdef DEBUG_HELPERS
-	extern void UpdateTriggerViewer();
-	UpdateTriggerViewer();
-#endif
 }
 
 void TriggerMgr::SetConditionTrue(int nCondition, SideMask sidm)
@@ -432,10 +416,6 @@ void Trigger::Execute(Side side, bool fForce)
 
 		m_apactnLast[side] = pactnNext;
 
-#ifdef DEBUG_HELPERS
-		extern void UpdateTriggerViewer();
-		UpdateTriggerViewer();
-#endif
 		if (!pactnNext->Perform(this, side))
 			return;
 

@@ -4,12 +4,6 @@ namespace wi {
 
 static MobileUnitConsts gmuntcAndy;
 
-#if defined(DEBUG_HELPERS)
-char *AndyGob::GetName()
-{
-	return "Andy";
-}
-#endif
 
 static int s_anFiringStripIndices[8] = { 1, 2, 3, 4, 5, 6, 7, 8 };
 static int s_anMovingStripIndices[8] = { 17, 18, 19, 20, 21, 22, 23, 24 };
@@ -178,12 +172,6 @@ EndStateMachineInherit(MobileUnitGob)
 
 static MobileUnitConsts gmuntcFox;
 
-#if defined(DEBUG_HELPERS)
-char *FoxGob::GetName()
-{
-	return "Fox";
-}
-#endif
 
 FoxGob::FoxGob() : AndyGob(&gmuntcFox)
 {
@@ -267,11 +255,5 @@ GobType AndyShotGob::GetType()
 	return kgtAndyShot;
 }
 
-#if defined(DEBUG_HELPERS)
-char *AndyShotGob::GetName()
-{
-	return "AndyShot";
-}
-#endif
 
 } // namespace wi

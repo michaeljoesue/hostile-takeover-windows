@@ -277,7 +277,6 @@ bool TBitmap::Init(File *pfil, word ib)
         if ((int)gpakr.fread(ptbeT, kcbTBitmapEntry, 1, pfil) != 1) {
             return false;
         }
-#ifndef __CPU_68K
         // Swap bytes (non-Palm only)
 
 		ptbeT->cx = BigWord(ptbeT->cx);
@@ -285,7 +284,6 @@ bool TBitmap::Init(File *pfil, word ib)
 		ptbeT->yBaseline = BigWord(ptbeT->yBaseline);
 		ptbeT->ibsd = BigWord(ptbeT->ibsd);
 		ptbeT->cbsd = BigWord(ptbeT->cbsd);
-#endif
     }
 
 	word cbAlloc = sizeof(TBitmapEntry) * m_ctbm;
@@ -734,7 +732,6 @@ void TBitmap::FillTo(int itbm, class DibBitmap *pbmDst, int xDst, int yDst, int 
 
 // C code for compiling / drawing
 
-#ifndef __CPU_68K
 void CopyBits128Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, int cy)
 {
 	dword *pdwSrc = (dword *)pbSrc;
@@ -1582,6 +1579,5 @@ void CopyBits4Wide(byte *pbSrc, int cbSrcReturn, byte *pbDst, int cbDstReturn, i
 		pdwDst = (dword *)((byte *)pdwDst + cbDstReturn);
 	}
 }
-#endif
 
 } // namespace wi

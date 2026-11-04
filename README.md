@@ -127,7 +127,8 @@ and [`PORTING_NOTES.md`](PORTING_NOTES.md) for how the port was done.
 ## Other platforms
 
 On branch `feature/crimson-side` this repository builds for Windows only. The
-iOS, Android, macOS, Linux and Native Client builds, the multiplayer server
+iOS, Android, macOS, Linux and Native Client builds, the old Palm OS and
+Windows Mobile code, the multiplayer server
 (`server/`, `stats/`, `syncerror/`) and the game's online code have been
 removed. The original upstream instructions are kept, for reference, in
 [`README-upstream.md`](README-upstream.md); the source of the other ports is

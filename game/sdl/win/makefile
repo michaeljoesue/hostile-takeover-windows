@@ -53,7 +53,7 @@ LDFLAGS := $(filter-out -mwindows,$(LDFLAGS)) -mconsole
 endif
 
 GAME_FILES := $(basename $(notdir $(wildcard $(HTROOT)/game/*.cpp)))
-GAME_FILES := $(filter-out SocTransport miscgraphics hashtablecode filepdbreader DebugHelpers, $(GAME_FILES))
+GAME_FILES := $(filter-out miscgraphics, $(GAME_FILES))
 BASE_FILES := $(basename $(notdir $(wildcard $(HTROOT)/base/*.cpp)))
 MPSHARED_FILES := $(basename $(notdir $(wildcard $(HTROOT)/mpshared/*.cpp)))
 INC_FILES := rip
@@ -108,7 +108,7 @@ $(OUTDIR)/sdl/%.o: ../%.cpp
 $(OUTDIR)/win/%.o: %.cpp
 	@mkdir -p $(@D)
 	$(CXX) $(CPPFLAGS) -c $< -o $@
-$(OUTDIR)/win/resource.o: resource.rc ../../win/app.ico app.manifest
+$(OUTDIR)/win/resource.o: resource.rc app.ico app.manifest
 	@mkdir -p $(@D)
 	$(WINDRES) resource.rc -O coff -o $@
 

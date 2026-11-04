@@ -278,12 +278,6 @@ void ProcessorGob::NotifyMinersAttemptingDelivery(bool fDying)
 // StateMachine methods
 //
 
-#if defined(DEBUG_HELPERS)
-char *ProcessorGob::GetName()
-{
-	return "Processor";
-}
-#endif
 
 int ProcessorGob::ProcessStateMachineMessage(State st, Message *pmsg)
 {

@@ -254,12 +254,6 @@ void ResearchGob::OnMenuItemSelected(int idc)
 // StateMachine methods
 //
 
-#if defined(DEBUG_HELPERS)
-char *ResearchGob::GetName()
-{
-	return "ResearchCenter";
-}
-#endif
 
 int ResearchGob::ProcessStateMachineMessage(State st, Message *pmsg)
 {

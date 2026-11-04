@@ -40,9 +40,6 @@ namespace wi {
 //#define INCL_TESTS
 //#define INCL_MEMTRACE
 
-#if defined(WIN) && !defined(CE)
-#define DEBUG_HELPERS
-#endif
 #endif
 
 // Enable stress testing
@@ -74,9 +71,6 @@ namespace wi {
 #define TRACE_TO_DB_LOG
 
 // Maintain and check a ring buffer of old allocs
-#if defined(WIN) && defined(DEBUG)
-//#define CHECK_OLD_ALLOCS
-#endif
 #endif // defined(DEV_BULD)
 
 // Things that are permanently on
@@ -89,12 +83,6 @@ namespace wi {
 // the Update results
 //#define DETECT_SYNC_ERRORS
 
-#ifdef DEBUG_HELPERS
-class TriggerViewer;
-class UnitGroupViewer;
-class DelayedMessageViewer;
-class CommandQueueViewer;
-#endif
 
 } // namespace wi
     
@@ -124,25 +112,6 @@ typedef word CacheHandle; // hc
 
 #define MAKEDWORD(x) ((((dword)x) << 24) | (((dword)x) << 16) | (((dword)x) << 8) | (x))
 
-#if defined(PIL) && defined(__CPU_68K) && defined(__GNUC__)
-#define secCode1
-#define secCode2 __attribute__((section("code2")))
-#define secCode3 __attribute__((section("code3")))
-#define secCode4 __attribute__((section("code4")))
-#define secCode5 __attribute__((section("code5")))
-#define secCode6 __attribute__((section("code6")))
-#define secCode7 __attribute__((section("code7")))
-#define secCode8 __attribute__((section("code8")))
-#define secCode9 __attribute__((section("code9")))
-#define secCode10 __attribute__((section("code10")))
-#define secCode11 __attribute__((section("code11")))
-#define secCode12 __attribute__((section("code12")))
-#define secCode13 __attribute__((section("code13")))
-#define secCode14 __attribute__((section("code14")))
-#define secCode15 __attribute__((section("code15")))
-#define secCode16 __attribute__((section("code16")))
-#define secCode17 __attribute__((section("code17")))
-#else
 #define secCode1
 #define secCode2
 #define secCode3
@@ -160,7 +129,6 @@ typedef word CacheHandle; // hc
 #define secCode15
 #define secCode16
 #define secCode17
-#endif
 
 #define secGame secCode9
 #define secHost secCode17
@@ -578,10 +546,6 @@ const StateMachineId ksmidNull = (word)-1;
 
 extern bool gfLockStep;
 
-#ifdef DEBUG_HELPERS
-char *PszFromUnitMask(UnitMask um);
-char *PszFromCaSideMask(word wfCaSideMask);
-#endif
 
 class UpdateInterval // unvl
 {
@@ -1934,33 +1898,12 @@ const int knDeleted = -1;
 #define BeginStateMachine   if (st == kstReservedGlobal) { if(0) {
 #define State(stTest)       return knHandled; } } else if (st == stTest) { if(0) {
 
-#if defined(DEBUG_HELPERS)
-void Log(StateMachine *psm, Message *pmsg);
-void Log(StateMachine *psm, State stOld, State stNew);
-
-#define OnEnter             return knHandled; } else if (pmsg->mid == kmidReservedEnter) { \
-							Log(this, pmsg);
-#define OnExit              return knHandled; } else if (pmsg->mid == kmidReservedExit) { \
-							Log(this, pmsg);
-#define OnUpdate            return knHandled; } else if (pmsg->mid == kmidReservedUpdate) { \
-							Log(this, pmsg); \
-							if (m_fDebug) DebugBreak();
-#define OnMsg(midTest)		return knHandled; } else if (pmsg->mid == midTest) { \
-							Log(this, pmsg); \
-							if (m_fDebug) DebugBreak();
-#define SetState(stNext)    { m_stNext = stNext; m_fForceStateChange = true; m_unvl.MinSkip(); \
-							Log(this, m_st, stNext); }
-#define DiscardMsgs			return knHandled; } else { \
-							Log(this, pmsg); \
-							if (m_fDebug) DebugBreak();
-#else
 #define OnEnter             return knHandled; } else if (pmsg->mid == kmidReservedEnter) {
 #define OnExit              return knHandled; } else if (pmsg->mid == kmidReservedExit) {
 #define OnUpdate            return knHandled; } else if (pmsg->mid == kmidReservedUpdate) {
 #define OnMsg(midTest)		return knHandled; } else if (pmsg->mid == midTest) {
 #define SetState(stNext)    { m_stNext = stNext; m_fForceStateChange = true; m_unvl.MinSkip(); }
 #define DiscardMsgs			return knHandled; } else {
-#endif
 
 #define EndStateMachineInherit(base)     return knHandled; } } else { \
 							return (int)##base::ProcessStateMachineMessage(st, pmsg); } return (int)##base::ProcessStateMachineMessage(st, pmsg);
@@ -1979,9 +1922,6 @@ public:
 	StateMachine() secStateMachine;
 	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secStateMachine;
 
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() = 0;
-#endif
 
 	UpdateInterval *GetUpdateInterval() {
 		return &m_unvl;
@@ -1996,16 +1936,6 @@ protected:
 	State m_st;
 	State m_stNext;
 	bool m_fForceStateChange;
-#ifdef DEBUG_HELPERS
-public:
-	friend void Log(StateMachine *psm, Message *pmsg);
-	bool m_fDebug;
-	void EnableDebug(bool fDebug) {
-		m_fDebug = fDebug;
-	}
-
-	friend void paint();
-#endif
 };
 
 class StateMachineMgr // smm
@@ -2037,9 +1967,6 @@ private:
 	DelayedMessage *m_pdmsgHead;
 	TimerMgr *m_ptimm;
 
-#ifdef DEBUG_HELPERS
-	friend class DelayedMessageViewer;
-#endif
 
 };
 
@@ -3696,29 +3623,6 @@ class QualifiedNumber
 public:
 	bool Parse(char **ppsz) secTrigger;
 	bool Compare(long nNumber) secTrigger;
-#ifdef DEBUG_HELPERS
-	char *ToString() {
-		char *pszQualifier = "???";
-		switch (m_nQualifier) {
-		case knQualifierAtLeast:
-			pszQualifier = "at least";
-			break;
-
-		case knQualifierAtMost:
-			pszQualifier = "at most";
-			break;
-
-		case knQualifierExactly:
-			pszQualifier = "exactly";
-			break;
-		}
-
-		sprintf(s_szDebugHelpers, "%s %d", pszQualifier, m_nNumber);
-		return s_szDebugHelpers;
-	}
-
-	static char s_szDebugHelpers[200];
-#endif
 
 	int m_nQualifier;
 	long m_nNumber;
@@ -3766,13 +3670,6 @@ public:
 	virtual ~Condition() {}
 	virtual bool Init(char *psz) secCondition;
 	virtual bool IsTrue(Side side) = 0;
-#ifdef DEBUG_HELPERS
-	virtual bool SafeIsTrue(Side side) secCondition;
-	virtual char *ToString() {
-		return "Base";
-	}
-	static char s_szDebugHelpers[300];
-#endif
 	Condition *m_pcdnNext;
 };
 
@@ -3782,11 +3679,6 @@ public:
 	// REMOVE_SOMEDAY: keep m68k-gcc from generating default constructor in .text section
 	MissionLoadedCondition() secCondition;
 	virtual bool IsTrue(Side side) secCondition;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Mission loaded";
-	}
-#endif
 };
 
 class CreditsCondition : public Condition
@@ -3796,12 +3688,6 @@ public:
 	CreditsCondition() secCondition;
 	virtual bool Init(char *psz) secCondition;
 	virtual bool IsTrue(Side side) secCondition;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		sprintf(s_szDebugHelpers, "%s has %s credits", PszFromCaSideMask(m_wfCaSideMask), m_qnum.ToString());
-		return s_szDebugHelpers;
-	}
-#endif
 
 private:
 	word m_wfCaSideMask;
@@ -3815,12 +3701,6 @@ public:
 	OwnsUnitsCondition() secCondition;
 	virtual bool Init(char *psz) secCondition;
 	virtual bool IsTrue(Side side) secCondition;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		sprintf(s_szDebugHelpers, "%s owns %s %s", PszFromCaSideMask(m_wfCaSideMask), m_qnum.ToString(), PszFromUnitMask(m_um));
-		return s_szDebugHelpers;
-	}
-#endif
 
 private:
 	word m_wfCaSideMask;
@@ -3835,9 +3715,6 @@ public:
 	AreaContainsUnitsCondition() secCondition;
 	virtual bool Init(char *psz) secCondition;
 	virtual bool IsTrue(Side side) secCondition;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString();
-#endif
 
 private:
 	word m_wfCaSideMask;
@@ -3853,12 +3730,6 @@ public:
 	// REMOVE_SOMEDAY: keep m68k-gcc from generating default constructor in .text section
 	PlaceStructureModeCondition() secCondition;
 	virtual bool IsTrue(Side side) secCondition;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		sprintf(s_szDebugHelpers, "place structure mode");
-		return s_szDebugHelpers;
-	}
-#endif
 };
 
 class MinerCantFindGalaxiteCondition : public Condition
@@ -3868,12 +3739,6 @@ public:
 	MinerCantFindGalaxiteCondition() secCondition;
 	virtual bool Init(char *psz) secCondition;
 	virtual bool IsTrue(Side side) secCondition;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		sprintf(s_szDebugHelpers, "%s's Miner can't find Galaxite", PszFromCaSideMask(m_wfCaSideMask));
-		return s_szDebugHelpers;
-	}
-#endif
 
 private:
 	word m_wfCaSideMask;
@@ -3886,12 +3751,6 @@ public:
 	GalaxiteCapacityReachedCondition() secCondition;
 	virtual bool Init(char *psz) secCondition;
 	virtual bool IsTrue(Side side) secCondition;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		sprintf(s_szDebugHelpers, "%s's Galaxite capacity reached", PszFromCaSideMask(m_wfCaSideMask));
-		return s_szDebugHelpers;
-	}
-#endif
 
 private:
 	word m_wfCaSideMask;
@@ -3904,9 +3763,6 @@ public:
 	ElapsedTimeCondition() secCondition;
 	virtual bool Init(char *psz) secCondition;
 	virtual bool IsTrue(Side side) secCondition;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString();
-#endif
 
 private:
 	QualifiedNumber m_qnum;
@@ -3919,9 +3775,6 @@ public:
 	SwitchCondition() secCondition;
 	virtual bool Init(char *psz) secCondition;
 	virtual bool IsTrue(Side side) secCondition;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString();
-#endif
 
 private:
 	int m_iSwitch;
@@ -3935,10 +3788,6 @@ public:
 	PeriodicTimerCondition() secCondition;
 	virtual bool Init(char *psz) secCondition;
 	virtual bool IsTrue(Side side) secCondition;
-#ifdef DEBUG_HELPERS
-	virtual bool SafeIsTrue(Side side) secCondition;
-	virtual char *ToString();
-#endif
 
 private:
 	int m_iTimer;
@@ -3949,12 +3798,6 @@ class CountdownTimerCondition : public Condition
 public:
 	virtual bool Init(char *psz) secCondition;
 	virtual bool IsTrue(Side side) secCondition;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		sprintf(s_szDebugHelpers, "Coundown Timer is %s", m_qnum.ToString());
-		return s_szDebugHelpers;
-	}
-#endif
 
 private:
 	QualifiedNumber m_qnum;
@@ -3967,14 +3810,6 @@ public:
 	DiscoversSideCondition() secCondition;
 	virtual bool Init(char *psz) secCondition;
 	virtual bool IsTrue(Side side) secCondition;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		char szSideA[100];
-		strcpy(szSideA, PszFromCaSideMask(m_wfCaSideMaskA));
-		sprintf(s_szDebugHelpers, "%s discovers %s", szSideA, PszFromCaSideMask(m_wfCaSideMaskB));
-		return s_szDebugHelpers;
-	}
-#endif
 
 private:
 	word m_wfCaSideMaskA;
@@ -3988,12 +3823,6 @@ public:
 	TestPvarCondition() secCondition;
 	virtual bool Init(char *psz) secCondition;
 	virtual bool IsTrue(Side side) secCondition;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		sprintf(s_szDebugHelpers, "Pvar \"%s\": is %s", m_szName, m_qnum.ToString());
-		return s_szDebugHelpers;
-	}
-#endif
 
 private:
 	char m_szName[kcbPvarNameMax];
@@ -4007,12 +3836,6 @@ public:
 	HasUpgradesCondition() secCondition;
 	virtual bool Init(char *psz) secCondition;
 	virtual bool IsTrue(Side side) secCondition;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		sprintf(s_szDebugHelpers, "%s has ??? upgrades", PszFromCaSideMask(m_wfCaSideMask));
-		return s_szDebugHelpers;
-	}
-#endif
 
 private:
 	word m_wfCaSideMask;
@@ -4032,12 +3855,6 @@ public:
 	virtual bool Perform(Trigger *ptgr, Side side) = 0;
 	TriggerAction *m_pactnNext;
 
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Action";
-	}
-	static char s_szDebugHelpers[200];
-#endif
 };
 
 class PreserveTriggerAction : public TriggerAction
@@ -4054,9 +3871,6 @@ public:
 	virtual bool SaveState(Stream *pstm) secAction;
 	virtual bool Init(char *psz) secAction;
 	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString();
-#endif
 
 private:
 	dword m_ctWait;
@@ -4069,11 +3883,6 @@ class CenterViewAction : public TriggerAction
 public:
 	virtual bool Init(char *psz) secAction;
 	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Center view";
-	}
-#endif
 
 private:
 	int m_nArea;
@@ -4084,11 +3893,6 @@ class SetNextMissionAction : public TriggerAction
 public:
 	virtual bool Init(char *psz) secAction;
 	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Set next mission";
-	}
-#endif
 
 private:
 	char m_szLevel[kcbFilename];
@@ -4099,11 +3903,6 @@ class EndMissionAction : public TriggerAction
 public:
 	virtual bool Init(char *psz) secAction;
 	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "End mission";
-	}
-#endif
 
    static void OnMPEndMissionActionEvent(int nWinLose, Side side);
 
@@ -4117,11 +3916,6 @@ public:
 	virtual ~EcomAction() secAction;
 	virtual bool Init(char *psz) secAction;
 	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Ecom";
-	}
-#endif
 
 private:
 	int m_nBackground;
@@ -4136,11 +3930,6 @@ class SetAllowedUnitsAction : public TriggerAction
 public:
 	virtual bool Init(char *psz) secAction;
 	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Set allowed units";
-	}
-#endif
 
 private:
 	word m_wfCaSideMask;
@@ -4152,11 +3941,6 @@ class SetAllowedUpgradesAction : public TriggerAction
 public:
 	virtual bool Init(char *psz) secAction;
 	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Set allowed upgrades";
-	}
-#endif
 
 private:
 	word m_wfCaSideMask;
@@ -4168,11 +3952,6 @@ class SetUpgradesAction : public TriggerAction
 public:
 	virtual bool Init(char *psz) secAction;
 	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Set upgrades";
-	}
-#endif
 
 private:
 	word m_wfCaSideMask;
@@ -4184,11 +3963,6 @@ class AlliesAction : public TriggerAction
 public:
 	virtual bool Init(char *psz) secAction;
 	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Allies";
-	}
-#endif
 
 private:
 	word m_wfCaSideMaskA;
@@ -4203,11 +3977,6 @@ public:
 
 	virtual bool Init(char *psz) secAction;
 	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Set objective";
-	}
-#endif
 
 private:
 	word m_wfCaSideMask;
@@ -4219,11 +3988,6 @@ class SetSwitchAction : public TriggerAction
 public:
 	virtual bool Init(char *psz) secAction;
 	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Set switch";
-	}
-#endif
 
 private:
 	int m_iSwitch;
@@ -4235,11 +3999,6 @@ class DefogAreaAction : public TriggerAction
 public:
 	virtual bool Init(char *psz) secAction;
 	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Defog area";
-	}
-#endif
 
 private:
 	int m_nArea;
@@ -4252,11 +4011,6 @@ class CreateUnitGroupAction : public TriggerAction
 public:
 	virtual bool Init(char *psz) secAction;
 	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Create unit group";
-	}
-#endif
 
 private:
 	int m_nUnitGroup;
@@ -4267,11 +4021,6 @@ class HuntAction : public TriggerAction
 public:
 	virtual bool Init(char *psz) secAction;
 	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Hunt";
-	}
-#endif
 
 private:
 	word m_wfCaSideMask1;
@@ -4287,11 +4036,6 @@ class CreateRandomUnitGroupAction : public TriggerAction
 public:
 	virtual bool Init(char *psz) secAction;
 	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Create random unit group";
-	}
-#endif
 };
 
 // Start Countdown Action
@@ -4317,9 +4061,6 @@ class ModifyCountdownAction : public TriggerAction
 public:
 	virtual bool Init(char *psz) secAction;
 	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString();
-#endif
 
 private:
 	int m_nAction;
@@ -4330,11 +4071,6 @@ class RepairAction : public TriggerAction
 public:
 	virtual bool Init(char *psz) secAction;
 	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Repair";
-	}
-#endif
 
 private:
 	word m_wfCaSideMask;
@@ -4346,11 +4082,6 @@ class EnableReplicatorAction : public TriggerAction
 public:
 	virtual bool Init(char *psz) secAction;
 	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Enable Replicator";
-	}
-#endif
 
 private:
 	word m_wfCaSideMask;
@@ -4364,9 +4095,6 @@ class ModifyCreditsAction : public TriggerAction
 public:
 	virtual bool Init(char *psz) secAction;
 	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString();
-#endif
 
 private:
 	word m_wfCaSideMask;
@@ -4381,11 +4109,6 @@ class MoveUnitsInAreaAction : public TriggerAction
 public:
 	virtual bool Init(char *psz) secAction;
 	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "MoveUnitsInArea";
-	}
-#endif
 
 private:
 	word m_wfCaSideMask;
@@ -4408,11 +4131,6 @@ public:
 
 	virtual bool Init(char *psz) secAction;
 	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "SetFormalObjectiveText";
-	}
-#endif
 
 private:
 	int m_iObjective;
@@ -4429,11 +4147,6 @@ public:
 
 	virtual bool Init(char *psz) secAction;
 	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "SetFormalObjectiveStatus";
-	}
-#endif
 
 private:
 	int m_iObjective;
@@ -4450,11 +4163,6 @@ public:
 
 	virtual bool Init(char *psz) secAction;
 	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "SetFormalObjectiveInfo";
-	}
-#endif
 
 private:
 	char *m_szInfo;
@@ -4478,11 +4186,6 @@ public:
 	virtual ~CutSceneAction() secAction;
 	virtual bool Init(char *psz) secAction;
 	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Cut scene";
-	}
-#endif
 
 private:
 	char *m_pszMessage;
@@ -4495,11 +4198,6 @@ class JumpToMissionAction : public TriggerAction
 public:
 	virtual bool Init(char *psz) secAction;
 	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Jump to mission";
-	}
-#endif
 
 private:
 	char m_szLevel[kcbFilename];
@@ -4530,9 +4228,6 @@ private:
 	TriggerAction *m_apactnLast[kcSides];
 	bool m_afArmed[kcSides];
 
-#ifdef DEBUG_HELPERS
-	friend class TriggerViewer;
-#endif
 };
 
 // Modify Persistent Variable action
@@ -4542,9 +4237,6 @@ class ModifyPvarAction : public TriggerAction
 public:
 	virtual bool Init(char *psz) secAction;
 	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString();
-#endif
 
 private:
 	char m_szName[kcbPvarNameMax];
@@ -4559,11 +4251,6 @@ class SetPvarTextAction : public TriggerAction
 public:
 	virtual bool Init(char *psz) secAction;
 	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Set Pvar Text";
-	}
-#endif
 
 private:
 	char m_szName[kcbPvarNameMax];
@@ -4577,11 +4264,6 @@ class ShowAlertAction : public TriggerAction
 public:
 	virtual bool Init(char *psz) secAction;
 	virtual bool Perform(Trigger *ptgr, Side side) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Show Alert";
-	}
-#endif
 
 private:
 	char m_szAlert[80];
@@ -4638,19 +4320,6 @@ public:
 		return m_actCountdown[iTimer] <= 0;
 	}
 
-#ifdef DEBUG_HELPERS
-	long GetTimerCountdown(int iTimer) {
-		return m_actCountdown[iTimer];
-	}
-
-	long GetTimerPeriod(int iTimer) {
-		return m_actPeriod[iTimer];
-	}
-
-	char *GetSwitchName(int iSwitch) {
-		return m_aszSwitchNames[iSwitch];
-	}
-#endif
 
 	void Enable(bool fEnable) {
 		m_fEnabled = fEnable;
@@ -4671,10 +4340,6 @@ private:
 	bool m_fEnabled;
 	CountdownTimer m_cdt;
 
-#ifdef DEBUG_HELPERS
-	char m_aszSwitchNames[kcSwitchMax][50];
-	friend TriggerViewer;
-#endif
 };
 
 // UnitGroup
@@ -4750,9 +4415,6 @@ private:
 	char m_szName[64];
 #endif
 
-#ifdef DEBUG_HELPERS
-	friend class UnitGroupViewer;
-#endif
 };
 
 const word kfUgNeedsUnit = 0x0001;
@@ -4792,9 +4454,6 @@ private:
 	int m_cug;
 	UnitGroup *m_aug;
 
-#ifdef DEBUG_HELPERS
-	friend class UnitGroupViewer;
-#endif
 };
 
 // UnitGroup Actions
@@ -4812,13 +4471,6 @@ public:
 
 	UnitGroupAction *m_pactnNext;
 
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "UnitGroupAction";
-	}
-
-	static char s_szDebugHelpers[200];
-#endif
 };
 
 class WaitUnitGroupAction : public UnitGroupAction
@@ -4830,9 +4482,6 @@ public:
 	virtual bool Init(char *psz) secAction;
 	virtual void Reset() secAction;
 	virtual bool Perform(UnitGroup *pug) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString();
-#endif
 
 private:
 	dword m_ctWait;
@@ -4845,11 +4494,6 @@ class SetSwitchUnitGroupAction : public UnitGroupAction
 public:
 	virtual bool Init(char *psz) secAction;
 	virtual bool Perform(UnitGroup *pug) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Set switch";
-	}
-#endif
 
 private:
 	int m_iSwitch;
@@ -4864,9 +4508,6 @@ public:
 	virtual bool Init(char *psz) secAction;
 	virtual void Reset() secAction;
 	virtual bool Perform(UnitGroup *pug) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString();
-#endif
 
 private:
 	bool m_fWaiting;
@@ -4881,9 +4522,6 @@ public:
 	virtual bool Init(char *psz) secAction;
 	virtual void Reset() secAction;
 	virtual bool Perform(UnitGroup *pug) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString();
-#endif
 
 private:
 	// These are initialized from the loaded level
@@ -4907,11 +4545,6 @@ public:
 	virtual bool Init(char *psz) secAction;
 	virtual void Reset() secAction;
 	virtual bool Perform(UnitGroup *pug) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Guard";
-	}
-#endif
 
 private:
 	// These are initialized from the loaded level
@@ -4929,11 +4562,6 @@ class MineUnitGroupAction : public UnitGroupAction
 public:
 	virtual bool Init(char *psz) secAction;
 	virtual bool Perform(UnitGroup *pug) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Mine";
-	}
-#endif
 };
 
 class GuardVicinityUnitGroupAction : public UnitGroupAction
@@ -4944,11 +4572,6 @@ public:
 	virtual bool Init(char *psz) secAction;
 	virtual void Reset() secAction;
 	virtual bool Perform(UnitGroup *pug) secAction;
-#ifdef DEBUG_HELPERS
-	virtual char *ToString() {
-		return "Guard vicinity";
-	}
-#endif
 
 private:
 	// These are initialized from the loaded level
@@ -4992,11 +4615,7 @@ private:
 
 // Use min gob count for 68K build because of stack variables
 
-#ifdef __CPU_68K
-#define kcpgobMax 512
-#else
 #define kcpgobMax 768
-#endif
 #define kcpgobVisibleMax 200
 
 class Simulation : public TimerMgr // sim
@@ -5684,15 +5303,9 @@ public:
 	virtual void PopupMenu() secGob;
 	virtual void InitMenu(Form *pfrm) secGob;
 	virtual void OnMenuItemSelected(int id) secGob;
-#if defined(WIN) && defined(DEBUG)
-	virtual void ToString(char *psz);
-#endif
 
 	// StateMachine methods
 
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secGob;
-#endif
 
 	// Used for tracking visibility
 
@@ -5805,12 +5418,6 @@ public:
 	bool CheckUnitsInArea(int nArea, SideMask sidm, UnitMask um) secGobMgr;
 	bool IsGobWithinArea(Gob *pgobTarget, int nArea) secGobMgr;
 
-#ifdef DEBUG_HELPERS
-	char m_aszAreaNames[kcAreasMax][50];
-	char *GetAreaName(int nArea) {
-		return m_aszAreaNames[nArea];
-	}
-#endif
 
 	Gob *GetFirstGob() {
 		return m_pgobHead;
@@ -5850,9 +5457,6 @@ public:
 
 	int FindGobs(const Rect *prcBounds, Gob **apgob, int cpgobMax, byte *pbFogMap) secGobMgr;
 	bool IsStructurePlacementValid(StructConsts *pstruc, TCoord tx, TCoord ty, Player *pplr) secGobMgr;
-#if defined(DEBUG) && defined(WIN)
-	Gob *FindEnemyWithinRange(UnitGob *punt, TCoord tcRange, bool fStructures = false) secGobMgr;
-#endif
 	int FindGobs(const TRect *ptrcBounds, Gob **apgob, int cpgobMax) secGobMgr;
 	void TrackGobCounts(Gob *pgob, bool fIncrement) secGobMgr;
 	bool IsBelowLimit(int nLimit, Player *pplr = NULL) secGobMgr;
@@ -5915,9 +5519,6 @@ public:
 	// StateMachine methods
 
 	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secOvermindGob;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secOvermindGob;
-#endif
 
 private:
 	bool m_fEnabled;
@@ -6012,9 +5613,6 @@ public:
 	// StateMachine methods
 
 	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secAnimGob;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secAnimGob;
-#endif
 
 protected:
 	StateMachineId m_smidNotify;
@@ -6542,13 +6140,7 @@ public:
 protected:
 #endif
 
-#ifdef DEBUG_HELPERS
-public:
-#endif
 	TCoord m_txDst, m_tyDst;
-#ifdef DEBUG_HELPERS
-protected:
-#endif
 
 #ifdef DRAW_LINES
 public:
@@ -6569,10 +6161,6 @@ public:
 	static Path *s_apathCached[kcPathsCache];
 	static int s_cpathCached;
 
-#ifdef DEBUG_HELPERS
-	friend void paint();
-	friend class UnitGroupViewer;
-#endif
 };
 
 // Values returned by UnitGob::MoveUpdate()
@@ -6758,9 +6346,6 @@ public:
 	// StateMachine methods
 
 	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secInfantryGob;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secInfantryGob;
-#endif
 };
 
 class LRInfantryGob : public MobileUnitGob // lri
@@ -6778,9 +6363,6 @@ public:
 	// StateMachine methods
 
 	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secInfantryGob;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secInfantryGob;
-#endif
 };
 
 class SpInfantryGob : public MobileUnitGob // lri
@@ -6799,9 +6381,6 @@ public:
 	// StateMachine methods
 
 	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secInfantryGob;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secInfantryGob;
-#endif
 };
 
 class LTankGob : public TankGob // ltnk
@@ -6810,9 +6389,6 @@ public:
 	LTankGob() secTankGob;
 	static bool InitClass(IniReader *pini) secTankGob;
 	static void ExitClass() secTankGob;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secGob;
-#endif
 };
 
 class TankShotGob; // it's down there
@@ -6825,9 +6401,6 @@ public:
 	static bool InitClass(IniReader *pini) secTankGob;
 	static void ExitClass() secTankGob;
 	void LaunchProjectile(WCoord wx, WCoord wy, WCoord wxTarget, WCoord wyTarget, int nDamage, Gid gidOwner, Gid gidTarget) secTankGob;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secGob;
-#endif
 
 	// UnitGob overrides
 
@@ -6847,9 +6420,6 @@ public:
 	static void ExitClass() secTankGob;
 	void LaunchProjectile(WCoord wx, WCoord wy, WCoord wxTarget, WCoord wyTarget, int nDamage, Gid gidOwner, Gid gidTarget) secTankGob;
 
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secGob;
-#endif
 };
 
 class GTankGob : public TankGob // gtnk
@@ -6867,9 +6437,6 @@ public:
 
 	virtual bool Fire(UnitGob *puntTarget, WCoord wx, WCoord wy, WCoord wdx, WCoord wdy) secTankGob;
 
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secGob;
-#endif
 };
 
 class MinerGob : public MobileUnitGob // mnr
@@ -6914,9 +6481,6 @@ public:
 	// StateMachine methods
 
 	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secMiner;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secGob;
-#endif
 
 private:
 	void Mine(WCoord wx, WCoord wy) secMiner;
@@ -6971,9 +6535,6 @@ public:
 	// StateMachine methods
 
 	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secGob;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secGob;
-#endif
 };
 
 class MobileUnitBuilderGob : public BuilderGob // mub
@@ -6999,9 +6560,6 @@ public:
 	// StateMachine methods
 
 	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secStructures;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secStructures;
-#endif
 };
 
 class HrcGob : public MobileUnitBuilderGob // hrc
@@ -7013,9 +6571,6 @@ public:
 
 	// StateMachine methods
 
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secStructures;
-#endif
 private:
 	static MobileUnitBuildForm *s_pfrmBuild;
 };
@@ -7029,9 +6584,6 @@ public:
 
 	// StateMachine methods
 
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secStructures;
-#endif
 };
 
 class ProcessorGob : public StructGob // prcr
@@ -7062,9 +6614,6 @@ public:
 	// StateMachine methods
 
 	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secStructures;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secStructures;
-#endif
 
 private:
 	void NotifyMinersAttemptingDelivery(bool fDying) secStructures;
@@ -7099,9 +6648,6 @@ public:
 	// StateMachine methods
 
 	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secStructures;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secStructures;
-#endif
 private:
 
 	void RemoveScorch(StructGob *pstru) secStructures;
@@ -7168,9 +6714,6 @@ public:
 	// StateMachine methods
 
 	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secRadar;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secRadar;
-#endif
 };
 
 class ResearchGob : public StructGob // rsrch
@@ -7194,9 +6737,6 @@ public:
 	// StateMachine methods
 
 	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secStructures;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secStructures;
-#endif
 
 private:
 	int m_nCreditsSpentOnUpgrade;
@@ -7238,9 +6778,6 @@ public:
 	// StateMachine methods
 
 	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secGob;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secGob;
-#endif
 
 private:
 	Gid m_gidOwner;
@@ -7266,9 +6803,6 @@ public:
 
 	// StateMachine methods
 
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secGob;
-#endif
 
 public:
 	static AnimationData *s_panidShot;
@@ -7287,9 +6821,6 @@ public:
 
 	// StateMachine methods
 
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secGob;
-#endif
 
 public:
 	static AnimationData *s_panidShot;
@@ -7315,9 +6846,6 @@ public:
 	// StateMachine methods
 
 	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secGob;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secGob;
-#endif
 
 private:
 	Gid m_gidOwner;
@@ -7403,9 +6931,6 @@ public:
 	// StateMachine methods
 
 	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secWarehouse;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secWarehouse;
-#endif
 };
 
 // TowerGob
@@ -7479,9 +7004,6 @@ public:
 
 	virtual bool Fire(UnitGob *puntTarget, WCoord wx, WCoord wy, WCoord wdx, WCoord wdy) secTowers;
 
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secTowers;
-#endif
 };
 
 // RocketTowerGob
@@ -7497,9 +7019,6 @@ public:
 
 	virtual bool Fire(UnitGob *puntTarget, WCoord wx, WCoord wy, WCoord wdx, WCoord wdy) secTowers;
 
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secTowers;
-#endif
 };
 
 class ArtilleryGob : public MobileUnitGob // art
@@ -7516,9 +7035,6 @@ public:
 	// StateMachine methods
 
 //	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secArtilleryGob;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secArtilleryGob;
-#endif
 };
 
 class ArtilleryShotGob : public TankShotGob
@@ -7533,9 +7049,6 @@ public:
 
 	// StateMachine methods
 
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secArtilleryGob;
-#endif
 
 public:
 	static AnimationData *s_panidShot;
@@ -7559,9 +7072,6 @@ public:
 	// StateMachine methods
 
 	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secInfantryGob;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secInfantryGob;
-#endif
 };
 
 class FoxGob : public AndyGob // fox
@@ -7571,9 +7081,6 @@ public:
 	static bool InitClass(IniReader *pini) secInfantryGob;
 	static void ExitClass() secInfantryGob;
 
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secInfantryGob;
-#endif
 };
 
 class ReplicatorGob : public StructGob // rep
@@ -7602,9 +7109,6 @@ public:
 	// StateMachine methods
 
 	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secReplicatorGob;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secReplicatorGob;
-#endif
 
 	// For query of replicator input points
 
@@ -7662,9 +7166,6 @@ public:
 	// StateMachine methods
 
 	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secReplicatorGob;
-#if defined(DEBUG_HELPERS)
-	virtual char *GetName() secReplicatorGob;
-#endif
 
 private:
 	bool m_fActivated;
@@ -7760,10 +7261,6 @@ private:
 	int m_chtabAlloced;
 	dword m_cbTotalFreeBlocks;
 
-#ifdef PIL
-	LocalID m_lid;
-	DmOpenRef m_pdb;
-#endif
 };
 extern MemMgr gmmgr;
 
@@ -8060,9 +7557,6 @@ struct PreferencesV100 // prefs
 	word nDegreeOrientationLast;
 	Key key;						// DRM key
 	short nDemoRank;
-#if defined(WIN) && !defined(CE)
-	short nScale;
-#endif
     double nScrollSpeed;
     char szAskURL[512];
 };
@@ -8333,28 +7827,6 @@ struct ClipInfo
 	int cyClip;
 };
 
-#ifdef __CPU_68K
-extern "C" void DrawTileMap816(byte **ppbMap, int ctx, int cty, byte *pbDst, int cbDstStride, int cxLeftTile, int cyTopTile, int cxRightTile, int cyBottomTile, int ctxInside, int ctyInside) secCode7;
-extern "C" void DrawTileMap824(byte **ppbMap, int ctx, int cty, byte *pbDst, int cbDstStride, int cxLeftTile, int cyTopTile, int cxRightTile, int cyBottomTile, int ctxInside, int ctyInside) secCode9;
-extern "C" void CopyToScreen4bpp(byte *pbSrc, byte *pbDst, byte *mp8to4, int c) secCode14;
-extern "C" void FillShadow68K(byte *pbDst, int cbRowDst, int cx, int cy, byte *aclrMap) secCode14;
-extern "C" void Fill68K(byte *pbRow, int cx, int cy, int cbStride, byte bFill) secCode11;
-extern "C" void LeftToRightBlt68K(byte *pbSrc, int cxSrcStride, byte *pbDst, int cxDstStride, int cx, int cy) secCode10;
-extern "C" void RightToLeftBlt68K(byte *pbSrc, int cxSrcStride, byte *pbDst, int cxDstStride, int cx, int cy) secCode10;
-extern "C" dword DecodeAndMix8BitAdpcmChannelsBy4(MixerState *pmxst, bool fZeroSilence) secCode6;
-extern "C" void Decode8BitAdpcmTable() secCode6;
-extern "C" word Compile868K(byte *pb, ScanData *psd, bool fOdd) secCode8;
-extern "C" void DrawDispatch68K(byte *pb, byte *pbSrc, byte *pbDst, int cbReturn, dword *mpscaiclrSide, byte *mpiclriclrShadow) secCode8;
-extern "C" void DrawSelection68k(byte *pbDst, int cxDib, int cxSel, int cySel, int cxTab, int cyTab, byte clrSel, int cxHealth, byte clrHealth, byte *mpclrclrShadow, bool fBrackets) secCode14;
-extern "C" void DebugBreak() secCode14;
-extern "C" void CopyToScreen2bpp(byte *pbSrc, byte *pbDst, byte *mp8to2Low, byte *mp8to2High) secCode14;
-extern "C" void CopyToScreen4bpp(byte *pbSrc, byte *pbDst, byte *mp8to4, int c) secCode14;
-extern "C" void CopyToScreen8bpp(byte *pbSrc, byte *pbDst, int cx, int cy) secCode14;
-extern "C" void FastMemSet(void *pv, long cb, byte b) secCode14;
-extern "C" void UpdateScreen824(bool *pfMap, int ctx, int cty, byte *pbSrc, byte *pbDst, int cbStride, int cxLeftTile, int cyTopTile, int cxRightTile, int cyBottomTile, int ctxInside, int ctyInside) secCode10;
-extern "C" void UpdateScreen816(bool *pfMap, int ctx, int cty, byte *pbSrc, byte *pbDst, int cbStride, int cxLeftTile, int cyTopTile, int cxRightTile, int cyBottomTile, int ctxInside, int ctyInside) secCode10;
-extern "C" void UpdateScreen416(byte *mp8to4, bool *pfMap, int ctx, int cty, byte *pbSrc, byte *pbDst, int cbStride, int cxLeftTile, int cyTopTile, int cxRightTile, int cyBottomTile, int ctxInside, int ctyInside) secCode11;
-#endif
 
 extern "C" word DecompressChunk(byte **ppbCompressed, byte *pbDecompressed, byte *pbCacheEnd, word cbMax) secPackFile;
 extern "C" void DecompressToCache(byte *pbCompressed, CacheHandle hc, CompressionHeader *pcoh) secPackFile;
@@ -8535,10 +8007,6 @@ void Status(const char *psz) secMisc;
 #define Status(psz)
 #endif
 
-#ifdef DEBUG_HELPERS
-void InitDebugHelpers();
-void ExitDebugHelpers();
-#endif
 
 } // namespace wi
 

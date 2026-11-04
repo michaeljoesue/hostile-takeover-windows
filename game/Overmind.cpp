@@ -89,12 +89,6 @@ void OvermindGob::Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLa
 // StateMachine methods
 //
 
-#if defined(DEBUG_HELPERS)
-char *OvermindGob::GetName()
-{
-	return "Overmind";
-}
-#endif
 
 void OvermindGob::Toggle()
 {

@@ -145,10 +145,6 @@ void UnitGroupMgr::Update()
 		if (pug->GetFlags() & kfUgActive)
 			pug->Update();
 
-#ifdef DEBUG_HELPERS
-	extern void UpdateUnitGroupViewer();
-	UpdateUnitGroupViewer();
-#endif
 }
 
 bool UnitGroupMgr::CreateAtLevelLoadGroups()
@@ -844,13 +840,6 @@ bool WaitUnitGroupAction::Perform(UnitGroup *pug)
 	return false;
 }
 
-#ifdef DEBUG_HELPERS
-char *WaitUnitGroupAction::ToString() 
-{
-	sprintf(s_szDebugHelpers, "Wait %d [%d]", m_ctWait / 100, (gsim.GetTickCount() - m_tStart) / 100);
-	return s_szDebugHelpers;
-}
-#endif
 
 // SetSwitchUnitGroupAction
 
@@ -995,13 +984,6 @@ bool MoveUnitGroupAction::Perform(UnitGroup *pug)
 	return !m_fWaiting;
 }
 
-#ifdef DEBUG_HELPERS
-char *MoveUnitGroupAction::ToString() 
-{
-	sprintf(s_szDebugHelpers, "Move to \"%s\"", ggobm.GetAreaName(m_nArea));
-	return s_szDebugHelpers;
-}
-#endif
 
 // UnitGroup Attack <UnitMask> for <seconds> action:
 // Each member of the group attacks the nearest enemy Unit that matches
@@ -1206,13 +1188,6 @@ bool AttackUnitGroupAction::Perform(UnitGroup *pug)
 	return false;
 }
 
-#ifdef DEBUG_HELPERS
-char *AttackUnitGroupAction::ToString() 
-{
-	sprintf(s_szDebugHelpers, "Attack %s for %d [%d]", PszFromUnitMask(m_um), m_ctWait / 100, (gsim.GetTickCount() - m_tStart) / 100);
-	return s_szDebugHelpers;
-}
-#endif
 
 // UnitGroup Guard action:
 // All members of the group stand still and guard as per the group's 

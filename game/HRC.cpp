@@ -9,12 +9,6 @@ namespace wi {
 static MobileUnitBuilderConsts gConsts;
 MobileUnitBuildForm *HrcGob::s_pfrmBuild = NULL;
 
-#if defined(DEBUG_HELPERS)
-char *HrcGob::GetName()
-{
-	return "HRC";
-}
-#endif
 
 bool HrcGob::InitClass(IniReader *pini)
 {

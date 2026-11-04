@@ -42,11 +42,5 @@ ReactorGob::ReactorGob() : StructGob(&gConsts)
 // StateMachine methods
 //
 
-#if defined(DEBUG_HELPERS)
-char *ReactorGob::GetName()
-{
-	return "Reactor";
-}
-#endif
 
 } // namespace wi

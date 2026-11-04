@@ -306,12 +306,6 @@ dword Gob::GetSortKey()
 	return MakeSortKey(m_wy, m_gid);
 }
 
-#if defined(WIN) && defined(DEBUG)
-void Gob::ToString(char *psz)
-{
-	sprintf(psz, "this=0x%08lx, gid=0x%08lx, gt=0x%lx, wx=0x%04lx, wy=0x%04lx", this, m_gid, GetType(), m_wx, m_wy);
-}
-#endif
 
 // Clipping bounds is used to determine on-display visibility
 // This bounds is a rectangle tightly enclosing all the pixels the Gob
@@ -502,12 +496,6 @@ bool Gob::IsSavable()
 
 // StateMachine methods
 
-#if defined(DEBUG_HELPERS)
-char *Gob::GetName()
-{
-	return "Gob";
-}
-#endif
 
 //
 // SurfaceDecalGob implementation
@@ -887,12 +875,6 @@ void AnimGob::Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLayer)
 	}
 }
 
-#if defined(DEBUG_HELPERS)
-char *AnimGob::GetName()
-{
-	return "Animation";
-}
-#endif
 
 int AnimGob::ProcessStateMachineMessage(State st, Message *pmsg)
 {
@@ -992,27 +974,6 @@ void DrawSelectionIndicator(DibBitmap *pbm, Rect *prc, int nNumerator, int nDeno
 
 	bool fSelectionBrackets = (gwfPerfOptions & kfPerfSelectionBrackets) != 0;
 
-#ifdef __CPU_68K
-	//debug
-	//BitmapType *pbmpScreen = WinGetBitmap(WinGetDisplayWindow());
-	//byte *pbBits = (byte *)BmpGetBits(pbmpScreen);
-	byte *pbBits = pbm->GetBits();
-	
-	// Hack to make drawing a selection faster if not clipped
-	// OPT: Could still be faster as TBitmaps
-
-	Size sizDib;
-	pbm->GetSize(&sizDib);
-
-	if (prc->left >= 0 && prc->top - kcyHealthBar >= 0 && prc->right <= sizDib.cx && prc->bottom <= sizDib.cy) {
-		Color clrHealth;
-		int nLength;
-		GetHealthColorAndLength(nNumerator, nDenominator, cxWidth, &clrHealth, &nLength);
-		byte *pbDst = pbBits + (long)(prc->top - kcyHealthBar) * sizDib.cx + prc->left;
-		DrawSelection68k(pbDst, sizDib.cx, cxWidth, cyHeight, nCornerWidth, nCornerHeight, GetColor(kiclrWhite), nLength, clrHealth, gmpiclriclrShadow, fSelectionBrackets);
-		return;
-	}
-#endif
 
 	// Slow clipped path
 
@@ -1050,15 +1011,6 @@ void DrawHealthIndicator(DibBitmap *pbm, Rect *prc, int nNumerator, int nDenomin
 	int nLength;
 	GetHealthColorAndLength(nNumerator, nDenominator, cxWidth, &clr, &nLength);
 
-#ifdef __CPU_68K
-	Size sizDib;
-	pbm->GetSize(&sizDib);
-	if (prc->left >= 0 && prc->top - kcyHealthBar >= 0 && prc->right <= sizDib.cx && prc->bottom <= sizDib.cy) {
-		byte *pbDst = pbm->GetBits() + (long)(prc->top - kcyHealthBar) * sizDib.cx + prc->left;
-		DrawSelection68k(pbDst, sizDib.cx, cxWidth, 0, 0, 0, 0, nLength, clr, gmpiclriclrShadow, false);
-		return;
-	}
-#endif
 
 	pbm->Shadow(prc->left, prc->top - kcyHealthBar, cxWidth, kcyHealthBar);
 	pbm->Fill(prc->left + 1, prc->top - (kcyHealthBar - 1), nLength, kcyHealthBar - 2, clr);
@@ -1503,15 +1455,6 @@ void GobMgr::RemoveGob(Gob *pgob)
 {
 	// Ensure this gob isn't in any area lists still
 
-#if defined(WIN) && !defined(CE) && defined(DEBUG)
-	// Validate not already in these areas
-
-	for (int iar = 0; iar < m_car; iar++) {
-		Area *par = &m_aar[iar];
-		for (word iareT = par->iareHead; iareT != (word)-1; iareT = par->aare[iareT].iareNext)
-			Assert(par->aare[iareT].gid != pgob->m_gid);
-	}
-#endif
 
 	// Mark this gob invalid in the update map so this area gets drawn correctly
 
@@ -1844,15 +1787,6 @@ void GobMgr::AddGobToAreas(Gid gid, AreaMask am)
 	int aiar[kcAreasMax];
 	int car = GetAreasFromMask(am, aiar);
 
-#if defined(WIN) && !defined(CE) && defined(DEBUG)
-	// Validate not already in these areas
-
-	for (int iar = 0; iar < car; iar++) {
-		Area *par = &m_aar[aiar[iar]];
-		for (word iareT = par->iareHead; iareT != (word)-1; iareT = par->aare[iareT].iareNext)
-			Assert(par->aare[iareT].gid != gid);
-	}
-#endif
 
 	// Add to the following areas
 
@@ -1920,21 +1854,6 @@ void GobMgr::RemoveGobFromAreas(Gid gid, AreaMask am)
 	int aiar[kcAreasMax];
 	int car = GetAreasFromMask(am, aiar);
 
-#if defined(WIN) && !defined(CE) && defined(DEBUG)
-	// Validate already in these areas
-
-	for (int iar = 0; iar < car; iar++) {
-		Area *par = &m_aar[aiar[iar]];
-		bool fFound = false;
-		for (word iareT = par->iareHead; iareT != (word)-1; iareT = par->aare[iareT].iareNext) {
-			if (par->aare[iareT].gid == gid) {
-				fFound = true;
-				break;
-			}
-		}
-		Assert(fFound);
-	}
-#endif
 
 	// Remove from the following areas
 
@@ -2078,9 +1997,6 @@ bool GobMgr::LoadAreas(IniReader *pini)
 	char szProp[128];
 	FindProp findArea;
 	while (pini->FindNextProperty(&findArea, "Areas", szProp, sizeof(szProp))) {
-#ifdef DEBUG_HELPERS
-		strncpyz(m_aszAreaNames[m_car], szProp, 50);
-#endif
 		int nLeft, nTop, nWidth, nHeight;
 		if (!pini->GetPropertyValue(&findArea, "%d,%d,%d,%d", &nLeft, &nTop, &nWidth, &nHeight))
 			return false;
@@ -2710,45 +2626,5 @@ lbFull:
 	return cpgob;
 }
 
-#if defined(DEBUG) && defined(WIN)
-Gob *GobMgr::FindEnemyWithinRange(UnitGob *punt, TCoord tcRange, bool fStructures)
-{
-	TRect trc;
-	punt->GetTileRect(&trc);
-	trc.left -= tcRange;
-	trc.right += tcRange;
-	trc.top -= tcRange;
-	trc.bottom += tcRange;
-
-	Gob *apgob[kcpgobInRangeMax];
-	int cpgob = FindGobs(&trc, apgob, sizeof(apgob));
-	Assert(cpgob <= kcpgobInRangeMax);
-
-	if (cpgob == 0)
-		return NULL;
-
-	Gob **ppgobT = apgob;
-	for (int i = 0; i < cpgob; i++, ppgobT++) {
-		Gob *pgobT = *ppgobT;
-
-		// Don't fire on non-military targets or allies
-
-		if (!punt->IsValidTarget(pgobT))
-			continue;
-
-		// or enemy structures
-
-		if (!fStructures && (pgobT->GetFlags() & kfGobStructure))
-			continue;
-
-		// NOTE: this doesn't return the NEAREST Gob, just the first
-		// found within range
-
-		return pgobT;
-	}
-
-	return NULL;
-}
-#endif
 
 } // namespace wi

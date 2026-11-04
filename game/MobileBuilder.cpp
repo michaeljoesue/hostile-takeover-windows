@@ -7,12 +7,6 @@ namespace wi {
 // base gob for VTS and HRC
 //
 
-#if defined(DEBUG_HELPERS)
-char *MobileUnitBuilderGob::GetName()
-{
-	return "MobileUnitBuilder";
-}
-#endif
 
 MobileUnitBuilderGob::MobileUnitBuilderGob(MobileUnitBuilderConsts *pmubc) : BuilderGob(pmubc)
 {

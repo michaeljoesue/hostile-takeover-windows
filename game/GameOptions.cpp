@@ -225,15 +225,6 @@ bool GameOptionsForm::Init(FormMgr *pfrmm, IniReader *pini, word idf)
 	if (ggame.GetModeMatchCount() == 1)
 		GetControlPtr(kidcDisplayOptions)->Show(false);
 
-	// Can't delete mission packs from here on Palm because they may have been bundle-bit copied
-	// from card to internal ram; deleting them here and then exiting causes the launcher to crash
-	// because it expects them still to be there. For Palm we have an external application that does
-	// mission pack management
-
-#ifdef PIL
-	GetControlPtr(kidcDeleteMissionPack)->Show(false);
-#endif
-
 	// Format the remaining visible buttons
 
 	word aidcFormat[] = { kidcInGameOptions, kidcSoundOptions, kidcPerformanceOptions, kidcColorOptions, kidcDisplayOptions, kidcDeleteMissionPack };
@@ -635,9 +626,6 @@ void ColorOptionsForm::OnControlSelected(word idc)
 			// Some devices such as the PocketPC need the form redrawn because setting the palette
 			// is only setting an 8->16 bit translation table, and only the controls are redrawing.
 
-#ifdef CE
-			gpmfrmm->InvalidateRect(NULL);
-#endif
 		}
 		break;
 
@@ -672,9 +660,6 @@ void ColorOptionsForm::OnControlSelected(word idc)
 		// Some devices such as the PocketPC need the form redrawn because setting the palette
 		// is only setting an 8->16 bit translation table, and only the controls are redrawing.
 
-#ifdef CE
-		gpmfrmm->InvalidateRect(NULL);
-#endif
 		break;
 	}
 }
@@ -728,11 +713,7 @@ bool DisplayOptionsForm::Init(FormMgr *pfrmm, IniReader *pini, word idf)
 
 		case 20:
 			// Don't want to insult PPC users
-#ifdef CE
-			strcat(szArt, " art");
-#else
 			strcat(szArt, " med-res art");
-#endif
 			break;
 
 		case 24:
@@ -921,9 +902,6 @@ void TestOptionsForm::OnControlSelected(word idc)
 {
 	switch (idc) {
 	case kidcBreak:
-#if defined(PIL) && !defined(PNO)
-		DebugBreak();
-#endif
 		break;
 
 	case kidcGobCount:
@@ -1081,13 +1059,7 @@ void MemoryUseForm::UpdateLabels()
 	dword cbDyn, cbDb;
 	dword cbTotal = gmmgr.GetTotalSize(&cbDyn, &cbDb);
 
-#ifdef PIL
-	dword cbFree;
-	dword cbMax;
-	MemHeapFreeBytes(0, (UInt32 *)&cbFree, (UInt32 *)&cbMax);
-#else
 	dword cbFree = 0;
-#endif
 
 	char szT[128];
 
@@ -1142,9 +1114,7 @@ void GobCountForm::OnPaint(DibBitmap *pbm)
 	for (Gob *pgobT = ggobm.GetFirstGob(); pgobT != NULL; pgobT = ggobm.GetNextGob(pgobT)) {
 		GobType gt = pgobT->GetType();
 		acGobs[gt]++;
-#if defined(PIL)
-		acbGob[gt] = MemPtrSize(pgobT);
-#elif defined(SDL)
+#if   defined(SDL)
 		acbGob[gt] = 0;
 #else
 		acbGob[gt] = _msize(pgobT);
@@ -1237,14 +1207,6 @@ void GobCountForm::OnPaint(DibBitmap *pbm)
 	sprintf(szT, "gob mem:%ld", cbGobs);
 	OutputString(pbm, szT, &x, &y);
 
-#ifdef PIL
-	UInt32 cbFree, cbMax;
-	MemHeapFreeBytes(0, &cbFree, &cbMax);
-	sprintf(szT, "heap free:%ld", cbFree);
-	OutputString(pbm, szT, &x, &y);
-	sprintf(szT, "dyn use:%ld/%ld", gcbDynMemAtStart - cbFree, gcbDynMemAtStart);
-	OutputString(pbm, szT, &x, &y);
-#endif
 }
 
 void GobCountForm::OutputString(DibBitmap *pbm, char *psz, int *px, int *py)

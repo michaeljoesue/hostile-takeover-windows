@@ -853,9 +853,6 @@ UnitGob *UnitGob::FindEnemyNearby(TCoord tcRange)
 		return puntEnemyClosest;
 
 	if (cEmpty == ARRAYSIZE(m_agidEnemyNearby)) {
-#if defined(DEBUG) && defined(WIN)
-//		Assert(ggobm.FindEnemyWithinRange(this, tcRange) == NULL, "Lost track of a nearby enemy!");
-#endif
 		m_ff |= kfGobNoEnemiesNearby;
 	}
 

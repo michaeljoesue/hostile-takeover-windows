@@ -32,9 +32,6 @@ const long kctPenHoldDelay = 50;
 
 bool EventMgr::GetEvent(Event *pevt, long ctWait, bool fCheckPaints)
 {
-#if defined(WIN) && !defined(CE) && defined(DEBUG)
-	Assert(_CrtCheckMemory());
-#endif
 
 	// Force stopping once we've started. Retain modifiers to the appStopEvent if there are any
 
@@ -118,18 +115,7 @@ bool EventMgr::GetEvent(Event *pevt, long ctWait, bool fCheckPaints)
 		if ((m_wfRedraw & (kfRedrawDirty | kfRedrawBeforeInput)) != (kfRedrawDirty | kfRedrawBeforeInput)) {
 #endif
 
-#ifdef __CPU_68K
-			// In general we like to call HostGetEvent so it can sleep,
-            // do I/O processing, whatever. However, on 68K Palms SysGetEvent
-            // is very slow and feeds us a lot of pen events the processing of
-            // which also slows the game so on 68K devices we throttle our
-			// calls to GetEvent some.
-
-			if (abs(tCurrent - m_tLastMoveEvent) >
-                    (long)m_ctMoveEventInterval) {
-#else
             {
-#endif
                 // Get the event from the host. The host doesn't coalesce
                 // messages, but does mark messages has being coalesce
                 // candidates, based on what was in the queue when the post

@@ -334,7 +334,7 @@ long SoundMgr::FilterSleepTicks(long ct)
     // limit sleeping Further, if we DO limit sleeping we will cause problems
     // for the background Bluetooth communications threads.
 
-#if !defined(CE) && !defined(SDL)
+#if !defined(SDL)
 	// If we have sound effects to play, don't sleep
 
 	if (m_psndd != NULL) {

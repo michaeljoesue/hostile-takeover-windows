@@ -7,7 +7,6 @@
 
 namespace wi {
 
-#if !defined(PIL)
 
 // Pdb structs
 
@@ -54,7 +53,6 @@ struct DatabaseHdrType {
 	RecordListType	recordList;	// 72 first record list
                                 // 80
 };		
-#endif // !defined(PIL)
 
 // PackFileReader. Exposes c-runtime prototype apis, calls PdbReader for data
 // access to pdbs created with packpdb.

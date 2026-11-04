@@ -186,13 +186,6 @@ char ganStepIndexMap[89][16] = {
     87, 87, 87, 87, 88, 88, 88, 88, 87, 87, 87, 87, 88, 88, 88, 88,
 };
 
-#if defined(__MWERKS__) && defined(__CPU_ARM)
-// The stepping tables are globals. This declspec puts in a prologue which loads up r10 with
-// the globals pointer and then restores it on exit. Could also do this by passing in the
-// tables as parameters.
-#pragma thumb off // below declspec only works in non-thumb mode
-__declspec(pace_native_callback)
-#endif
 void MixChannels(Channel *achnl, int cchnl, byte *pb, word cb)
 {
 	byte *pbT = pb;
@@ -225,8 +218,5 @@ void MixChannels(Channel *achnl, int cchnl, byte *pb, word cb)
 		}
 	}
 }
-#if defined(__MWERKS__) && defined(__CPU_ARM)
-#pragma thumb reset
-#endif
 
 } // namespace wi

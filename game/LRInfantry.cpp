@@ -4,12 +4,6 @@ namespace wi {
 
 static MobileUnitConsts gConsts;
 
-#if defined(DEBUG_HELPERS)
-char *LRInfantryGob::GetName()
-{
-	return "LRInfantry";
-}
-#endif
 
 static int s_anFiringStripIndices[8] = { 1, 2, 3, 4, 5, 6, 7, 8 };
 static int s_anMovingStripIndices[8] = { 17, 18, 19, 20, 21, 22, 23, 24 };
@@ -297,12 +291,6 @@ void RocketGob::Draw(DibBitmap *pbm, int xViewOrigin, int yViewOrigin, int nLaye
 	}
 }
 
-#if defined(DEBUG_HELPERS)
-char *RocketGob::GetName()
-{
-	return "Rocket";
-}
-#endif
 
 int RocketGob::ProcessStateMachineMessage(State st, Message *pmsg)
 {

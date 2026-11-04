@@ -158,7 +158,7 @@ unchanged.
 - **Windows manifest** (`game/sdl/win/app.manifest`): sets the process code
   page to UTF-8, so file paths work when the Windows user name contains
   non-English characters (for example Japanese). It also declares Windows
-  10/11 compatibility. The game's own icon from `game/win/app.ico` and
+  10/11 compatibility. The game's own icon (`game/sdl/win/app.ico`, originally `game/win/app.ico`) and
   version information are embedded too.
 
 ## 8. Testing
@@ -783,9 +783,7 @@ the leaderboard or downloading, and explains installing packs with the editor.
   (user name, password, token, device id, ask URL) are written empty.
   Resource ids in `res.h` and the message ids in `mpshared/mpht.h` were left
   alone.
-- **Other platforms.** The iOS, Android, macOS, Linux and Palm folders were
-  not touched. They still refer to the removed files and won't build without
-  similar changes; only the Windows build is maintained here.
+- **Other platforms** were removed afterwards; see sections 34 and 35.
 
 ## 32. Data changes
 
@@ -833,13 +831,32 @@ the repository only contains what the Windows build uses:
   branches were removed from the shared code (with `unifdef`), keeping what
   the Windows build compiles.
 - Kept: the shared SDL2 layer in `game/sdl/` and the Windows host in
-  `game/sdl/win/`; `game/win/` (the original Win32/Windows Mobile code; its
-  icon is the Windows build's icon); `bin/inicrunch_linux` and the Linux part
+  `game/sdl/win/`; `bin/inicrunch_linux` and the Linux part
   of the data makefile, because the Windows build is cross-compiled on
   Linux or WSL. The art sources (`.psd`) are untouched, and the data build
   still uses its `IPHONE` setting, which means 32 × 32 pixel tiles.
-- Palm OS code is still in the shared files behind `#ifdef PIL`; it was
-  never compiled for Windows.
+
+## 35. Palm OS and Windows Mobile
+
+There was never an SDL build for Palm OS or Windows Mobile; those versions
+predate the SDL layer. Their leftovers were removed too:
+
+- Deleted: `game/win/` (the original Win32 and Windows Mobile/Pocket PC
+  port, without SDL), the Palm build files (`game/makefile`,
+  `game/makefile.dsp`, `game/sizeops.makefile`, `game/pno_*.h`),
+  `game/mkwin.bat`, files only those ports compiled
+  (`game/DebugHelpers.cpp`, `game/hashtablecode.cpp`,
+  `game/filepdbreader.cpp`), the Palm, Sony, Tapwave, Bluetooth and
+  Windows CE SDK headers in `inc/` (only `basictypes.h` and `rip.*` remain)
+  and the Palm tools `bin/prc2bin.exe`, `prc2rcp.exe`, `prcview.exe`,
+  `splitprc.exe` and `sizeops.exe`.
+- The icon moved to `game/sdl/win/app.ico`.
+- The `PIL`, `__CPU_68K`, `CPU_68K`, `PNO`, `__MWERKS__` (Palm), `CE`,
+  `_WIN32_WCE`, `UNDER_CE` (Windows Mobile), `WIN` and `DEBUG_HELPERS` (old
+  Win32 port) branches were removed from the shared code with `unifdef`.
+  None of them were defined in the SDL Windows build, and the release
+  `HostileTakeover.exe` built afterwards has the same code as before (only
+  the timestamp bytes differ).
 
 ## File map
 

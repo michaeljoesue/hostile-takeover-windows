@@ -515,12 +515,6 @@ bool GunTowerGob::Fire(UnitGob *puntTarget, WCoord wx, WCoord wy, WCoord wdx, WC
 	return true;
 }
 
-#if defined(DEBUG_HELPERS)
-char *GunTowerGob::GetName()
-{
-	return "GunTower";
-}
-#endif
 
 //
 // RocketTowerGob implementation
@@ -556,12 +550,6 @@ RocketTowerGob::RocketTowerGob() : TowerGob(&gtwrcRocket)
 {
 }
 
-#if defined(DEBUG_HELPERS)
-char *RocketTowerGob::GetName()
-{
-	return "RocketTower";
-}
-#endif
 
 // UNDONE: UnitGob can handle some of this (e.g., timing)
 

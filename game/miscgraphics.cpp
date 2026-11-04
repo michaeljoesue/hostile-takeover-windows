@@ -6,9 +6,6 @@
 
 void Shadow(byte *pbDst, int cbRowDst, int cx, int cy, byte *aclrMap)
 {
-#if defined(__CPU_68K) && !defined(DEV_BUILD)
-	return;
-#else
 
 	byte *pbRow = pbDst;
 	while (cy-- != 0) {
@@ -26,14 +23,10 @@ void Shadow(byte *pbDst, int cbRowDst, int cx, int cy, byte *aclrMap)
 		}
 		pbRow += cbRowDst;
 	}
-#endif
 }
 
 void Fill(byte *pbDst, int cx, int cy, int cbStride, byte bFill)
 {
-#if defined(__CPU_68K) && !defined(DEV_BUILD)
-	return;
-#else
 
 	int cbReturn = cbStride - cx;
 	while (cy-- != 0) {
@@ -42,14 +35,10 @@ void Fill(byte *pbDst, int cx, int cy, int cbStride, byte bFill)
 			*pbDst++ = bFill;
 		pbDst += cbReturn;
 	}
-#endif
 }
 
 void LeftToRightBlt(byte *pbSrc, int cxSrcStride, byte *pbDst, int cxDstStride, int cx, int cy)
 {
-#if defined(__CPU_68K) && !defined(DEV_BUILD)
-	return;
-#else
 
 	int cwSrcReturn = (cxSrcStride - cx) / 2;
 	int cwDstReturn = (cxDstStride - cx) / 2;
@@ -62,14 +51,10 @@ void LeftToRightBlt(byte *pbSrc, int cxSrcStride, byte *pbDst, int cxDstStride, 
 		pwSrc += cwSrcReturn;
 		pwDst += cwDstReturn;
 	}
-#endif
 }
 
 void RightToLeftBlt(byte *pbSrc, int cxSrcStride, byte *pbDst, int cxDstStride, int cx, int cy)
 {
-#if defined(__CPU_68K) && !defined(DEV_BUILD)
-	return;
-#else
 
 	if (cy <= 0)
 		return;
@@ -84,14 +69,10 @@ void RightToLeftBlt(byte *pbSrc, int cxSrcStride, byte *pbDst, int cxDstStride, 
 		pwSrc -= cwSrcReturn;
 		pwDst -= cwDstReturn;
 	}
-#endif
 }
 
 void DrawTileMap(byte **ppbMap, int ctx, int cty, byte *pbDst, int cbDstStride, int cxLeftTile, int cyTopTile, int cxRightTile, int cyBottomTile, int ctxInside, int ctyInside, int cxTile, int cyTile)
 {
-#if defined(__CPU_68K) && !defined(DEV_BUILD)
-	return;
-#else
 
 	int cxRightDst = cxLeftTile + ctxInside * cxTile + cxRightTile;
 	int cyBottomDst = cyTopTile + ctyInside * cyTile + cyBottomTile;
@@ -130,12 +111,7 @@ void DrawTileMap(byte **ppbMap, int ctx, int cty, byte *pbDst, int cbDstStride, 
 			int cySrc = yBottom - yTop;
 			// Swap if data is 68K but this code is armlet (v1.0 format)
 
-#if defined(PIL) && !defined(PNO)
-			dword dw = (dword)*ppbMapT;
-			word *pwSrcT = (word *)SwapDword(dw);
-#else
 			word *pwSrcT = (word *)*ppbMapT;
-#endif
 			word *pwDstT = pwDst;
 
 			if (xSrc == 0 && ySrc == 0 && cxSrc == 16 && cySrc == 16) {
@@ -203,7 +179,6 @@ void DrawTileMap(byte **ppbMap, int ctx, int cty, byte *pbDst, int cbDstStride, 
 		}
 		ppbMapT += ctx - ctxT;
 	}
-#endif
 }
 
 inline word GetSideColorOffset(int b0, int b1, int b2, int b3)
@@ -385,9 +360,6 @@ word Compile8(byte *pbCompileBuffer, ScanData *psd, bool fOdd)
 
 void DrawDispatch(byte *pb, byte *pbSrc, byte *pbDst, int cbReturn, dword *mpscaiclr, byte *mpiclriclrShadow)
 {
-#if defined(__CPU_68K) && !defined(DEV_BUILD)
-	return;
-#else
 
 	word *pw = (word *)pb;
 	word *psc = (word *)(pb + pw[0]);
@@ -491,5 +463,4 @@ void DrawDispatch(byte *pb, byte *pbSrc, byte *pbDst, int cbReturn, dword *mpsca
 		if (op == kopEnd)
 			return;
 	}
-#endif
 }

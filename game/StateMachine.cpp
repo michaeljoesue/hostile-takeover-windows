@@ -10,9 +10,6 @@ StateMachine::StateMachine()
 {
 	m_fForceStateChange = false;
 	m_st = m_stNext = kstReservedGlobal;
-#ifdef DEBUG_HELPERS
-	m_fDebug = false;
-#endif
 }
 
 int StateMachine::ProcessStateMachineMessage(State st, Message *pmsg)
@@ -329,87 +326,5 @@ bool StateMachineMgr::StoreDelayedMessage(Message *pmsg)
 }
 
 
-#if defined(DEBUG_HELPERS)
-
-// NOTE: these must be in the same order as the MessageId enum
-// Note: Use LABEL macros instead of this
-
-char *gaszMessageNames[] = {
-	"Null",
-	"Enter",
-	"Exit",
-	"Update",
-
-	"Hit",
-	"NearbyAllyHit",
-	"Delete",
-	"EnemyNearby",
-	"PowerLowHigh",
-	"MoveWaitingNearby",
-	"BeginUpgraded",
-	"UpgradeComplete",
-	"MoveCommand",
-	"AttackCommand",
-	"AnimationComplete",
-	"BuildOtherCommand",
-	"AbortBuildOtherCommand",
-	"BuildComplete",
-	"FireComplete",
-	"SpawnSmoke",
-	"SelfDestructCommand",
-	"RepairCommand",
-	"UpgradeCommand",
-	"AbortUpgradeCommand",
-	"TransformCommand",
-	"DeliverCommand",
-	"GalaxiteDelivery",
-	"MineCommand",
-
-	"MoveAction",
-	"AttackAction",
-	"GuardAction",
-	"GuardVicinityAction",
-	"GuardAreaAction",
-	"HuntEnemiesAction",
-	
-	"Fire",
-	"Heal",
-};
-
-// NOTE: these must be in the same order as the State enum
-// Note: Use LABEL macros instead of this
-
-char *gaszStateNames[] = {
-	"Null",
-	"Zombie",
-	"Global",
-
-	"Guard",
-	"Move",
-	"Attack",
-	"Chase",
-	"Idle",
-	"Dying",
-	"BuildOtherCompleting",
-	"BeingBuilt",
-	"HuntEnemies",
-
-	"ProcessorGetMiner",
-	"ProcessorPutMiner",
-	"ProcessorTakeGalaxite",
-
-	"MinerMoveToProcessor",
-	"MinerRotateForEntry",
-	"MinerMine",
-	"MinerFindGalaxite",
-	"MinerFaceGalaxite",
-	"MinerApproachGalaxite",
-	"MinerSuck",
-	"MinerStepAside",
-
-	"ChangeStatePendingFireComplete",
-	"ContinueActionPendingFireComplete",
-};
-#endif
 
 } // namespace wi

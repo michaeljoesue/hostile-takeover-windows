@@ -383,10 +383,6 @@ void FogMap::Draw(DibBitmap *pbm, int xMap, int yMap, UpdateMap *pupd)
 			if (cEmpty != 0) {
 				pbm->Fill(xStart, yTile, cEmpty * gcxTile, gcyTile, clrBlack);
 				cEmpty = 0;
-#ifdef PIL
-				if (gfOS5Pa1Device)
-					HostSoundServiceProc();
-#endif
 			}
 
 			// Not opaque; draw unique tile
@@ -404,10 +400,6 @@ void FogMap::Draw(DibBitmap *pbm, int xMap, int yMap, UpdateMap *pupd)
 			pbm->Fill(xStart, yTile, cEmpty * gcxTile, gcyTile, clrBlack);
 			cEmpty = 0;
 
-#ifdef PIL
-			if (gfOS5Pa1Device)
-				HostSoundServiceProc();
-#endif
 		}
 
 		pbMapT += cbNextScan;
@@ -477,13 +469,6 @@ void FogMap::DrawGalaxite(DibBitmap *pbm, int xMap, int yMap, UpdateMap *pupd, b
 				TBitmap *ptbm = m_aptbmGalax[s_abGxTranslate[(b & kbfGalaxiteMask) >> kcGalaxiteShift]];
 				ptbm->BltTo(pbm, xTile, yTile);
 
-#ifdef PIL
-				if (gfOS5Pa1Device) {
-					nServiceSfx++;
-					if ((nServiceSfx & 31) == 0)
-						HostSoundServiceProc();
-				}
-#endif
 
 			} 
 
@@ -520,13 +505,6 @@ void FogMap::DrawGalaxite(DibBitmap *pbm, int xMap, int yMap, UpdateMap *pupd, b
 //				m_panidWalls->DrawFrame(w <= (kwfWallMask >> 1) ? 1 : 0, ifrm, pbm, xTile, yTile, ksideNeutral);
 				m_panidWalls->DrawFrame(0, ifrm, pbm, xTile, yTile, ksideNeutral);
 
-#ifdef PIL
-				if (gfOS5Pa1Device) {
-					nServiceSfx++;
-					if ((nServiceSfx & 31) == 0)
-						HostSoundServiceProc();
-				}
-#endif
 			}
 
 			xTile += gcxTile;

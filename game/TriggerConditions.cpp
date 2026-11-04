@@ -130,12 +130,6 @@ bool Condition::Init(char *psz)
 	return true;
 }
 
-#ifdef DEBUG_HELPERS
-bool Condition::SafeIsTrue(Side side)
-{
-	return IsTrue(side);
-}
-#endif
 
 // MissionLoadedCondition
 
@@ -278,13 +272,6 @@ bool AreaContainsUnitsCondition::IsTrue(Side side)
 	return m_qnum.Compare(cgobsMatch);
 }
 
-#ifdef DEBUG_HELPERS
-char *AreaContainsUnitsCondition::ToString() 
-{
-	sprintf(s_szDebugHelpers, "area \"%s\" contains %s %s owned by %s", ggobm.GetAreaName(m_nArea), m_qnum.ToString(), PszFromUnitMask(m_um), PszFromCaSideMask(m_wfCaSideMask));
-	return s_szDebugHelpers;
-}
-#endif
 
 // PlaceStructureModeCondition
 
@@ -369,13 +356,6 @@ bool ElapsedTimeCondition::IsTrue(Side side)
 	return m_qnum.Compare(gsim.GetTickCount() / 100);
 }
 
-#ifdef DEBUG_HELPERS
-char *ElapsedTimeCondition::ToString() 
-{
-	sprintf(s_szDebugHelpers, "elapsed time [%d] is %s", gsim.GetTickCount() / 100, m_qnum.ToString());
-	return s_szDebugHelpers;
-}
-#endif
 
 // SwitchCondition
 
@@ -403,14 +383,6 @@ bool SwitchCondition::IsTrue(Side side)
 	return gsim.GetLevel()->GetTriggerMgr()->GetSwitch(m_iSwitch) == m_fOn;
 }
 
-#ifdef DEBUG_HELPERS
-char *SwitchCondition::ToString()
-{
-	sprintf(s_szDebugHelpers, "switch \"%s\" is %s", gsim.GetLevel()->GetTriggerMgr()->GetSwitchName(m_iSwitch), 
-			m_fOn ? "on" : "off");
-	return s_szDebugHelpers;
-}
-#endif
 
 // PeriodicTimerCondition
 
@@ -441,23 +413,6 @@ bool PeriodicTimerCondition::IsTrue(Side side)
 	return ptgrm->IsPeriodicTimerTriggered(m_iTimer);
 }
 
-#ifdef DEBUG_HELPERS
-bool PeriodicTimerCondition::SafeIsTrue(Side side)
-{
-	return gsim.GetLevel()->GetTriggerMgr()->IsPeriodicTimerTriggered(m_iTimer);
-}
-
-char *PeriodicTimerCondition::ToString() 
-{
-	TriggerMgr *ptgrm = gsim.GetLevel()->GetTriggerMgr();
-	long ctPeriod = ptgrm->GetTimerPeriod(m_iTimer);
-	long ctCountdown = ptgrm->GetTimerCountdown(m_iTimer);
-	if (ctCountdown == kctTimerNotStarted)
-		ctCountdown = ctPeriod + 100;
-	sprintf(s_szDebugHelpers, "every %d [%d] seconds", ctPeriod / 100, (ctPeriod - ctCountdown) / 100);
-	return s_szDebugHelpers;
-}
-#endif
 
 // CountdownTimerCondition
 

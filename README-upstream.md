@@ -1,6 +1,7 @@
 > **Note:** this is the original upstream README, kept for reference. This
-> repository now only builds for Windows: the iOS, Android, macOS, Linux and
-> Native Client builds and the multiplayer server have been removed (branch
+> repository now only builds for Windows: the iOS, Android, macOS, Linux,
+> Native Client, Palm OS and Windows Mobile code and the multiplayer server
+> have been removed (branch
 > `feature/crimson-side`). See [`README.md`](README.md).
 
 ## About

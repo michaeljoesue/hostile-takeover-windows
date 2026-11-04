@@ -332,10 +332,6 @@ void UpdateMap::Validate()
 
 void UpdateMap::CalcTileRect(Rect *prc, TRectSmall *ptrc)
 {
-#if WIN
-	Assert(m_xOriginView == 0 || (m_xOriginView % gcxTile) == m_xMapOffset);
-	Assert(m_yOriginView == 0 || (m_yOriginView % gcyTile) == m_yMapOffset);
-#endif
 
 	int x = prc->left + m_xMapOffset;
 	if (x >= kpcMax)

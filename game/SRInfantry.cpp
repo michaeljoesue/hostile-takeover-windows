@@ -4,12 +4,6 @@ namespace wi {
 
 static MobileUnitConsts gConsts;
 
-#if defined(DEBUG_HELPERS)
-char *SRInfantryGob::GetName()
-{
-	return "SRInfantry";
-}
-#endif
 
 static int s_anFiringStripIndices[8] = { 1, 2, 3, 4, 5, 6, 7, 8 };
 static int s_anMovingStripIndices[8] = { 17, 18, 19, 20, 21, 22, 23, 24 };
@@ -210,11 +204,5 @@ GobType BulletGob::GetType()
 	return kgtBullet;
 }
 
-#if defined(DEBUG_HELPERS)
-char *BulletGob::GetName()
-{
-	return "Bullet";
-}
-#endif
 
 } // namespace wi

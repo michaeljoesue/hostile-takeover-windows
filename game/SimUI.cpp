@@ -175,10 +175,6 @@ void SimUIForm::OnTimer(long tCurrent) {
 
 	Update();
 
-#ifdef DEBUG_HELPERS
-    extern void UpdateLog();
-    UpdateLog();
-#endif
 }
 
 bool SimUIForm::EventProc(Event *pevt)
@@ -642,21 +638,6 @@ bool SimUIForm::OnPenEvent(Event *pevt)
     // Debug gob identification
 
     if (pevt->eType == penHoverEvent) {
-#if defined(WIN) && defined(DEBUG)
-        WCoord wxTarget, wyTarget;
-        gsim.GetViewPos(&wxTarget, &wyTarget);
-        TCoord tx = TcFromWc(wxTarget + WcFromPc(pevt->x));
-        TCoord ty = TcFromWc(wyTarget + WcFromPc(pevt->y));
-        for (Gid gid = ggobm.GetFirstGid(tx, ty); gid != kgidNull;
-                gid = ggobm.GetNextGid(gid)) {
-            Gob *pgob = ggobm.GetGob(gid);
-            if (pgob != NULL) {
-                char sz[512];
-                pgob->ToString(sz);
-                Trace(sz);
-            }
-        }
-#endif
         return true;
     }
 

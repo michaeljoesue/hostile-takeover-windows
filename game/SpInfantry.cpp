@@ -4,12 +4,6 @@ namespace wi {
 
 static SpConsts gConsts;
 
-#if defined(DEBUG_HELPERS)
-char *SpInfantryGob::GetName()
-{
-	return "SpInfantry";
-}
-#endif
 
 static int s_anIdleStripIndices[8] = { 1, 2, 3, 4, 5, 6, 7, 8 };
 static int s_anMovingStripIndices[8] = { 9, 10, 11, 12, 13, 14, 15, 16 };

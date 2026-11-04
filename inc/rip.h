@@ -8,15 +8,8 @@ namespace wi {
 // For Palm we need to specify the section these functions will end up in
 // or bad things will happen when Assert is used in inline functions/methods.
 
-#if defined(__GNUC__) && defined(__CPU_68K)
-#define secRip __attribute__((section("code2")))
-#define secCode14 __attribute__((section("code14")))
-typedef char TCHAR;
-#define TEXT(str) str
-#else
 #define secRip
 #define secCode14
-#endif
 
 // These are macroized solely so they can be redefined. This is useful
 // if the below macros are going to be used in helper functions, where you

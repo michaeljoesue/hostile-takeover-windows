@@ -80,15 +80,6 @@ void DeleteStaleSaveGames()
 bool CheckSaveGameVersion(char *pszVersion, byte bPlatform)
 {
 #ifndef DEV_BUILD
-#ifdef PIL
-#ifdef PNO
-	if (bPlatform != 1)
-		return false;
-#else
-	if (bPlatform != 0)
-		return false;
-#endif
-#endif
 #endif
 
 	// If not upwardly compatible with ship version and major version, delete the save game.

@@ -279,15 +279,6 @@ bool WaitAction::Perform(Trigger *ptgr, Side side)
 	return false;
 }
 
-#ifdef DEBUG_HELPERS
-char *WaitAction::ToString() 
-{
-	// UNDONE: remove hardcode kside1
-	sprintf(s_szDebugHelpers, "Wait %d [%d]", m_ctWait / 100, 
-			(gsim.GetTickCount() - m_atStartSide[kside1]) / 100);
-	return s_szDebugHelpers;
-}
-#endif
 
 // CenterViewAction
 // Immediately center the View on the specified Area
@@ -737,28 +728,6 @@ bool ModifyCountdownAction::Perform(Trigger *ptgr, Side side)
 	return true;
 }
 
-#ifdef DEBUG_HELPERS
-char *ModifyCountdownAction::ToString()
-{
-	switch (m_nAction) {
-	case knModifyCountdownTypeStop:
-		sprintf(s_szDebugHelpers, "Stop Countdown");
-		break;
-	case knModifyCountdownTypeResume:
-		sprintf(s_szDebugHelpers, "Resume Countdown");
-		break;
-	case knModifyCountdownTypeHide:
-		sprintf(s_szDebugHelpers, "Hide Countdown");
-		break;
-	case knModifyCountdownTypeShow:
-		sprintf(s_szDebugHelpers, "Show Countdown");
-		break;
-	default:
-		Assert(false);
-	}
-	return s_szDebugHelpers;
-}
-#endif
 
 // RepairAction
 
@@ -871,28 +840,6 @@ bool ModifyCreditsAction::Perform(Trigger *ptgr, Side side)
 	return true;
 }
 
-#ifdef DEBUG_HELPERS
-char *ModifyCreditsAction::ToString()
-{
-	switch (m_nAction) {
-	case knModifyNumberTypeSet:
-		sprintf(s_szDebugHelpers, "Set Credits");
-		break;
-
-	case knModifyNumberTypeAdd:
-		sprintf(s_szDebugHelpers, "Add Credits");
-		break;
-
-	case knModifyNumberTypeSubtract:
-		sprintf(s_szDebugHelpers, "Subtract Credits");
-		break;
-
-	default:
-		Assert(false);
-	}
-	return s_szDebugHelpers;
-}
-#endif
 
 // MoveUnitsInAreaAction
 
@@ -1212,28 +1159,6 @@ bool ModifyPvarAction::Perform(Trigger *ptgr, Side side)
 	return true;
 }
 
-#ifdef DEBUG_HELPERS
-char *ModifyPvarAction::ToString()
-{
-	switch (m_nAction) {
-	case knModifyNumberTypeSet:
-		sprintf(s_szDebugHelpers, "Set Pvar");
-		break;
-
-	case knModifyNumberTypeAdd:
-		sprintf(s_szDebugHelpers, "Add to Pvar");
-		break;
-
-	case knModifyNumberTypeSubtract:
-		sprintf(s_szDebugHelpers, "Subtract from Pvar");
-		break;
-
-	default:
-		Assert(false);
-	}
-	return s_szDebugHelpers;
-}
-#endif
 
 // SetPvarTextAction
 

@@ -1,7 +1,7 @@
 #include <winver.h>
 
 1 24 "app.manifest"
-IDI_ICON1 ICON "../../win/app.ico"
+IDI_ICON1 ICON "app.ico"
 
 VS_VERSION_INFO VERSIONINFO
 FILEVERSION     1,6,0,0

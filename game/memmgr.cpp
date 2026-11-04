@@ -5,7 +5,7 @@
 // "block" are the blocks of memory we reserve in our heaps for allocs
 // "alloc" are the allocs requested. cbBlock == ((cbAlloc + 1) & ~1) + sizeof(MemHeader)
 
-#if defined(DEBUG) && !defined(PIL)
+#if defined(DEBUG)
 #define INCL_FORCECOMPACTION
 #endif
 
@@ -60,66 +60,34 @@ MemMgr::MemMgr()
 	m_chtabAlloced = 0;
 	m_aphtab = NULL;
 	m_cbTotalFreeBlocks = 0;
-#ifdef PIL
-	m_lid = 0;
-	m_pdb = NULL;
-#endif
 }
 
 MemMgr::~MemMgr()
 {
 	Assert(m_cheap == 0);
 	Assert(m_chtab == 0);
-#ifdef PIL
-	Assert(m_pdb == NULL);
-#endif
 }
 
 void MemMgr::OnRebootFreeStorageDatabase()
 {
-#ifdef PIL
-	LocalID lid = DmFindDatabase(0, kszDbMemMgr);
-	if (lid != 0)
-		DmDeleteDatabase(0, lid);
-#endif
 }
 
-#if defined(WIN) || defined(SDL)
+#if defined(SDL)
 #define kcbDynMemWindows (3 * 1024 * 1024)
 #endif
 
 void MemMgr::GetInitSize(dword cbDynReserve, dword *pcbDyn, dword *pcbStorage)
 {
-#ifdef PIL
-	UInt32 cbDyn, cbStorage;
-	UInt32 cbMaxT;
-	MemHeapFreeBytes(0, (UInt32 *)&cbDyn, &cbMaxT);
-	MemHeapFreeBytes(1, (UInt32 *)&cbStorage, &cbMaxT);
-
-	dword cbDynRemaining = 0;
-	if (cbDynReserve < cbDyn)
-		cbDynRemaining = cbDyn - cbDynReserve;
-
-	*pcbDyn = cbDynRemaining;
-	*pcbStorage = cbStorage;
-#else
 	*pcbDyn = kcbDynMemWindows;
 	*pcbStorage = 0;
-#endif
 }
 
 void MemMgr::Init(dword cbDynReserve, dword cbMaxNeeded, dword *pcbTotal)
 {
 	// Remember how much memory is available in dyn, db heaps before doing anything.
 
-#ifdef PIL
-	UInt32 cbMaxT;
-	MemHeapFreeBytes(0, (UInt32 *)&gcbDynMemAtStart, &cbMaxT);
-	MemHeapFreeBytes(1, (UInt32 *)&gcbDbMemAtStart, &cbMaxT);
-#else
 	gcbDynMemAtStart = kcbDynMemWindows;
 	gcbDbMemAtStart = 0;
-#endif
 
 	// First, dyn allocs. Grab everything we can, in the largest chunks we can.
 
@@ -134,16 +102,9 @@ void MemMgr::Init(dword cbDynReserve, dword cbMaxNeeded, dword *pcbTotal)
 		// Find out how much dyn ram we have to alloc. If we're at our
 		// reserve limit, break out.
 
-#ifdef PIL
-		// Call the mem api for Palm
-
-		UInt32 cbFree;
-		MemHeapFreeBytes(0, &cbFree, &cbMaxT);
-#else
 		// For non-Palm, just assume a big size
 
 		dword cbFree = gcbDynMemAtStart - *pcbTotal;
-#endif
 		if (cbFree <= cbDynReserve)
 			break;
 
@@ -198,54 +159,6 @@ void MemMgr::Init(dword cbDynReserve, dword cbMaxNeeded, dword *pcbTotal)
 	if (*pcbTotal >= cbMaxNeeded)
 		return;
 
-#ifdef PIL
-	// Start allocing out of db ram (Palm only)
-
-	LocalID lid = DmFindDatabase(0, kszDbMemMgr);
-	if (lid != 0)
-		DmDeleteDatabase(0, lid);
-	if (DmCreateDatabase(0, kszDbMemMgr, kdwCreator, kdwType, false) != 0)
-		return;
-	m_lid = DmFindDatabase(0, kszDbMemMgr);
-	if (m_lid == 0)
-		return;
-	m_pdb = DmOpenDatabase(0, m_lid, dmModeReadWrite);
-	if (m_pdb == NULL) {
-		DmDeleteDatabase(0, m_lid);
-		return;
-	}
-
-	// Start creating heaps
-
-	while (*pcbTotal < cbMaxNeeded) {
-		// Bounds check
-
-		if (m_cheap == ARRAYSIZE(m_apheap))
-			break;
-
-		// Try to allocate a chunk
-
-		UInt32 cbAlloc = kcbChunkAllocBig;
-		UInt16 irec = dmMaxRecordIndex;
-		MemHandle hNew = DmNewRecord(m_pdb, &irec, cbAlloc);
-		if (hNew == NULL) {
-			cbAlloc = kcbChunkAllocSmall;
-			hNew = DmNewRecord(m_pdb, &irec, cbAlloc);
-		}
-		if (hNew == NULL)
-			break;
-		void *pv = MemHandleLock(hNew);
-
-		// Make a heap in this chunk. If this fails, break out. The db records
-		// will get removed in later cleanup
-
-		Heap *pheap = NewHeap(pv, (word)cbAlloc, true, irec, hNew);
-		if (pheap == NULL)
-			break;
-		m_apheap[m_cheap++] = pheap;
-		*pcbTotal += cbAlloc;
-	}
-#endif
 }
 
 void MemMgr::Exit()
@@ -262,14 +175,7 @@ void MemMgr::Exit()
 		// dyn heap or db heap?
 
 		if (pheap->wf & kfHeapDbRam) {
-#ifdef PIL
-			// Just unlock the record; it'll get freed below all at once
-
-			MemHandleUnlock((MemHandle)pheap->hMem);
-			DmReleaseRecord(m_pdb, pheap->nRec, false);
-#else
 			Assert(false);
-#endif
 		} else {
 			// Free the dyn chunk
 
@@ -279,17 +185,6 @@ void MemMgr::Exit()
 	}
 	m_cheap = 0;
 
-#ifdef PIL
-	// Now free database which'll free all db chunks at once.
-
-	if (m_pdb != NULL) {
-		Err err = DmCloseDatabase(m_pdb);
-		Assert(err == 0);
-		DmDeleteDatabase(0, m_lid);
-		m_pdb = NULL;
-		m_lid = 0;
-	}
-#endif
 
 	// Free handle tables
 
@@ -489,11 +384,7 @@ HMem MemMgr::AllocHandle(word cbAlloc, word wfHints)
 {
 	// CE is ARM which wants dword aligned allocs because of alignment issues
 
-#ifdef __CPU_68K
-	word cbBlock = ((cbAlloc + 1) & ~1) + sizeof(MemHeader);
-#else
 	word cbBlock = ((cbAlloc + 3) & ~3) + sizeof(MemHeader);
-#endif
 	bool fLastCacheDiscardFailed = false;
 
 	// Try to alloc from one of our heaps. If this fails, free space from the cache and try again
@@ -1034,19 +925,11 @@ void *MemMgr::GetPtr(HMem hmem)
 
 void MemMgr::WriteHeader(Heap *pheap, MemHeader *pmhdrDst, MemHeader *pmhdrSrc, word cb)
 {
-#ifdef PIL
-	if (pheap->wf & kfHeapDbRam) {
-		DmWrite(pheap->pbHeap, (byte *)pmhdrDst - pheap->pbHeap, pmhdrSrc, cb);
-	} else {
-		memcpy(pmhdrDst, pmhdrSrc, cb);
-	}
-#else
 	if (pmhdrSrc + cb <= pmhdrDst || pmhdrDst + cb <= pmhdrSrc) {
 		memcpy(pmhdrDst, pmhdrSrc, cb);
 	} else {
 		memmove(pmhdrDst, pmhdrSrc, cb);
 	}
-#endif
 }
 
 void MemMgr::WriteHandle(HMem hmem, word ib, void *pvSrc, word cb)
@@ -1056,16 +939,7 @@ void MemMgr::WriteHandle(HMem hmem, word ib, void *pvSrc, word cb)
 #endif
 	MemHeader *pmhdr = GetMemHeader(hmem);
 	Assert(ib + cb <= pmhdr->cbBlock);
-#ifdef PIL
-	Heap *pheap = GetHeap(hmem);
-	if (pheap->wf & kfHeapDbRam) {
-		DmWrite(pheap->pbHeap, (byte *)(pmhdr + 1) - pheap->pbHeap + ib, pvSrc, cb);
-	} else {
-		memcpy(((byte *)(pmhdr + 1)) + ib, pvSrc, cb);
-	}
-#else
 	memcpy(((byte *)(pmhdr + 1)) + ib, pvSrc, cb);
-#endif
 }
 
 void *MemMgr::AllocPtr(word cb)

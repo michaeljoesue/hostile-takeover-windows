@@ -10,12 +10,6 @@ namespace wi {
 static AnimationData *s_panidActivator = NULL;
 static BuilderConsts gConsts;
 
-#if defined(DEBUG_HELPERS)
-char *ReplicatorGob::GetName()
-{
-	return "Replicator";
-}
-#endif
 
 bool ReplicatorGob::InitClass(IniReader *pini)
 {
@@ -465,12 +459,6 @@ void ReplicatorGob::RemoveReplicatorInputPoint(TCoord tx, TCoord ty)
 // ActivatorGob implementation
 //
 
-#if defined(DEBUG_HELPERS)
-char *ActivatorGob::GetName()
-{
-	return "Activator";
-}
-#endif
 
 bool ActivatorGob::Init(IniReader *pini, FindProp *pfind, const char *pszName)
 {

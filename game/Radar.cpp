@@ -63,12 +63,6 @@ void RadarGob::Deactivate()
 // StateMachine methods
 //
 
-#if defined(DEBUG_HELPERS)
-char *RadarGob::GetName()
-{
-	return "Radar";
-}
-#endif
 
 int RadarGob::ProcessStateMachineMessage(State st, Message *pmsg)
 {

@@ -70,12 +70,10 @@ bool gfStress = false;
 long gtStressTimeout;
 #endif
 
-#ifndef PIL
 #if defined(SDL) && (!defined(DEV_BUILD) && !defined(BETA_TIMEOUT))
 char *gszVersion = "1.6";
 #else
 char *gszVersion = "+++VERSION+++";
-#endif
 #endif
 
 // Forward declarations
@@ -109,14 +107,11 @@ static bool FindPlayPackMission(MissionIdentifier *pmiid) {
 
 void GameMain(char *pszCmds)
 {
-#if defined(DEBUG) && !defined(CE) && !defined(PIL) && !defined(SDL)
+#if defined(DEBUG) && !defined(SDL)
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
 	char *pszLevel = NULL;
 	char szLevel[kcbFilename];
-#ifdef WIN
-	char szData[_MAX_PATH];
-#endif
 
 	// Parse command line
 
@@ -169,9 +164,6 @@ void GameMain(char *pszCmds)
 		}
 	}
 
-#ifdef DEBUG_HELPERS
-	InitDebugHelpers();
-#endif
 
     if (!HostInit()) {
         return;
@@ -221,11 +213,8 @@ void GameMain(char *pszCmds)
 
     HostExit();
 
-#ifdef DEBUG_HELPERS
-	ExitDebugHelpers();
-#endif
 
-#if defined(CHECK_OLD_ALLOCS) && defined(DEBUG) && !defined(CE) && !defined(PIL)
+#if defined(CHECK_OLD_ALLOCS) && defined(DEBUG)
 	_CrtDumpMemoryLeaks();
 #endif
 }
@@ -287,9 +276,6 @@ bool Game::Init(int imm)
 
 	// Requires gpbScratch to work
 
-#if defined(PIL) && defined(TRACE_TO_DB_LOG)
-	DbLogInit();
-#endif
 
 	// Init event manager
 
@@ -474,10 +460,8 @@ bool Game::CheckMemoryAvailable()
 #define kcStructGobsMaxMP 55 // 33
 #define kcMuntGobsMaxMP 88 // 66
 
-#ifndef __CPU_68K
 #if (kcSceneryGobsLimit+kcScorchGobsLimit+kcSupportGobsLimit+kcStructGobsMaxMP*4+kcMuntGobsMaxMP*4 > kcpgobMax)
 #error Gob count limit error!
-#endif
 #endif
 
 	// Assume max. Works for all platforms except lowest end Palms.
@@ -492,41 +476,6 @@ bool Game::CheckMemoryAvailable()
 	gcScorchGobsLimit = kcScorchGobsLimit;
 	gcSupportGobsLimit = kcSupportGobsLimit;
 
-#ifdef PIL
-
-#if 0
-	// Limit test
-
-	gcStructGobsHumanLimitSP = kcStructGobsHumanMinSP;
-	gcStructGobsComputerLimitSP = kcStructGobsComputerMinSP;
-	gcMuntGobsHumanLimitSP = kcMuntGobsHumanMinSP;
-	gcMuntGobsComputerLimitSP = kcMuntGobsComputerMinSP;
-
-#else
-
-	// Max scenario?
-	UInt32 cbFree, cbMax;
-	MemHeapFreeBytes(0, &cbFree, &cbMax);
-	if (cbFree < kcbDynMemMax) {
-		if (cbFree >= kcbDynMemMed) {
-			gcStructGobsHumanLimitSP = kcStructGobsHumanMedSP;
-			gcStructGobsComputerLimitSP = kcStructGobsComputerMedSP;
-			gcMuntGobsHumanLimitSP = kcMuntGobsHumanMedSP;
-			gcMuntGobsComputerLimitSP = kcMuntGobsComputerMedSP;
-		}
-		else if (cbFree >= kcbDynMemMin) {
-			gcStructGobsHumanLimitSP = kcStructGobsHumanMinSP;
-			gcStructGobsComputerLimitSP = kcStructGobsComputerMinSP;
-			gcMuntGobsHumanLimitSP = kcMuntGobsHumanMinSP;
-			gcMuntGobsComputerLimitSP = kcMuntGobsComputerMinSP;
-		}
-		else {
-			HostNotEnoughMemory(false, cbFree, kcbDynMemMin);
-			return false;
-		}
-	}
-#endif
-#endif
 
 	return true;
 }
@@ -690,13 +639,8 @@ bool Game::InitMemMgr()
 // will be used by the storage memory manager. This is more than enough; we don't get
 // anywhere close this much on low-end Palms.
 
-#ifdef __CPU_68K
-// Single player only
-#define kcbDynReserve ((dword)384 * 1024)
-#else
 // Single and multi player
 #define kcbDynReserve ((dword)512 * 1024)
-#endif
 
 #define kcbSaveGame ((dword)20 * 1024)
 #define kcbMaxSaveGame ((dword)13 * kcbSaveGame)
@@ -1106,18 +1050,8 @@ bool Game::InitDisplay(int immRequested)
 
 	// Try to set this mode
 
-#if defined(WIN) && !defined(CE)
-	// If changing modes, use the default scale (-1)
-
-	int nScale = gprefsInit.nScale;
-	if (immRequested != -1)
-		nScale = -1;
-	if (!gpdisp->SetMode(m_amm[immNew].imode, nScale))
-		return false;
-#else
 	if (!gpdisp->SetMode(m_amm[immNew].imode))
 		return false;
-#endif
 
 	// Worked, remember new and best
 
@@ -1857,14 +1791,6 @@ void Game::ExitSimulation()
 
 void Game::Exit()
 {
-#if defined(WIN) && !defined(CE)
-	// If the game exits without pressing F8, stop the avi recording automatically
-
-	if (gpavir != NULL) {
-		delete gpavir;
-		gpavir = NULL;
-	}
-#endif
 
 	// Save preferences
 
@@ -1942,9 +1868,6 @@ void Game::Exit()
 
 	// Depends on gpbScratch so clean up before deleting
 
-#if defined(PIL) && defined(TRACE_TO_DB_LOG)
-	DbLogExit();
-#endif
 
 	delete[] gpbScratch;
 	gpbScratch = NULL;
@@ -2138,21 +2061,9 @@ void Game::SaveGame(Stream *pstm)
 
 		// Save platform byte. Needed for platform compatibility check (68K->ARM transition)
 
-#ifdef PIL
-#ifdef PNO
-		// ARM saved game
-
-		pstm->WriteByte(1);
-#else
-		// 68K saved game
-
-		pstm->WriteByte(0);
-#endif
-#else
 		// Whatever, doesn't matter since it isn't Palm
 
 		pstm->WriteByte(0);
-#endif
 
 		// Save mission identifier
 
@@ -2265,9 +2176,6 @@ void Game::LoadPreferences()
 		gprefsInit.wfPerfOptions = kfPerfMax;
 		gprefsInit.ctGameSpeed = kctUpdate / 2;
 		gprefsInit.wfHandicap = kfHcapDefault;
-#if defined(WIN) && !defined(CE)
-		gprefsInit.nScale = -1;
-#endif
         gprefsInit.nScrollSpeed = 1.0;
 	}
 }
@@ -2346,9 +2254,6 @@ bool Game::LoadPreferencesV100(PreferencesV100 *pprefsV100)
         gprefsInit.wfHandicap = kfHcapDefault;
 
     gprefsInit.key = pprefsV100->key;
-#if defined(WIN) && !defined(CE)
-    gprefsInit.nScale = BigWord(pprefsV100->nScale);
-#endif
 
     return true;
 }
@@ -2438,13 +2343,6 @@ void Game::SavePreferences()
 		prefs.nDegreeOrientationLast = BigWord(mode.nDegreeOrientation);
 	}
 	prefs.key = gkey;
-#if defined(WIN) && !defined(CE)
-	if (gpdisp == NULL) {
-		prefs.nScale = (word)-1;
-	} else {
-		prefs.nScale = BigWord(gpdisp->GetScale());
-	}
-#endif
 	
 	HostSavePreferences(&prefs, sizeof(prefs));
 }

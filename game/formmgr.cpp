@@ -421,7 +421,6 @@ bool FormMgr::ScrollBits()
     // we can scroll the middle (rotated) dib rather than the back dib, giving
     // us a speedup.
 
-#if !defined(WIN)
 	DibBitmap *pbmFront = gpdisp->GetFrontDib();
 	if (pbmFront->GetFlags() & kfDibWantScrolls) {
 #if defined(PALM)
@@ -435,7 +434,6 @@ bool FormMgr::ScrollBits()
 		m_dyScrollAccumulate = 0;
 		return true;
 	}
-#endif
 
 	// Perform blt of the back buffer
 
@@ -954,10 +952,6 @@ void MultiFormMgr::DrawFrame(bool fForceBackBufferValid, bool fPaint)
 
 	// Save avi frame
 
-#if defined(WIN) && !defined(CE)
-	if (gpavir != NULL)
-		gpavir->AddFrame(gpdisp->GetFrontDib());
-#endif
 
 	// Draw update rects
 
