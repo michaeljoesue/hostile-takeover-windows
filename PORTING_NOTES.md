@@ -892,6 +892,24 @@ every story, challenge and add-on mission can be played from the start, and
 completed missions are still marked "Complete". The lock flag, the hidden
 unlock gesture and `IsSelectedMissionLocked` were removed.
 
+## 38. Scrolling lists with the mouse
+
+Lists (the build menus, the mission list and others; `ListControl` in
+`game/misccontrols.cpp`) were written for touch: an item was selected the
+moment the pen went down. With a mouse that meant every drag to scroll a
+build menu first selected the item under the pointer, and in the unit build
+menus pressing on the already-selected item to start scrolling ordered
+another unit. When the drag ended off the list, the building menu's
+description and Build button didn't follow the new highlight. Paging with
+the arrows could also leave empty rows at the end, and clicking an empty row
+cleared the selection and hid the Build/Order button, so it looked as if
+nothing could be selected.
+
+Now a list selects on release, and only when the mouse wasn't dragged (a
+click); dragging only scrolls. Clicks on empty space leave the selection
+alone, arrow paging stops at a full last page, and the building menu updates
+its description and Build button whenever the selection changes.
+
 ## File map
 
 | File | Purpose |

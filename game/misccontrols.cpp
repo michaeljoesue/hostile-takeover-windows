@@ -1085,6 +1085,14 @@ void ListControl::OnControlSelected(word idc)
 	} else {
 		m_iliTop += iliVisible;
 	}
+
+	// Keep the last page full rather than leaving empty rows below the
+	// last item (empty rows can't be selected).
+
+	if (m_iliTop > m_cli - iliVisible)
+		m_iliTop = m_cli - iliVisible;
+	if (m_iliTop < 0)
+		m_iliTop = 0;
 	Invalidate();
 }
 
@@ -1200,49 +1208,59 @@ void ListControl::DrawText(DibBitmap *pbm, char *psz, int x, int y,
 
 void ListControl::OnPenEvent(Event *pevt)
 {
+    // Mouse behaviour: pressing and dragging scrolls the list; an item is
+    // selected when the button is released without having dragged (a click).
+    // Selecting on press made every scroll drag first select (and, in the
+    // unit build menus, order) whatever was under the pointer.
+
     switch (pevt->eType) {
     case penDownEvent:
         m_fDrag = false;
         m_yDrag = pevt->y;
         m_iliTopDrag = m_iliTop;
         m_fPenDown = true;
+        m_flics.Clear();
         Invalidate();
-        break;
+        return;
 
     case penMoveEvent:
+        if (!m_fPenDown) {
+            return;
+        }
         if (!m_fDrag) {
             if (abs(m_yDrag - pevt->y) >= m_cyItem / 2) {
                 m_fDrag = true;
             }
         }
-        break;
+        if (m_fDrag) {
+            DragScroll(pevt->y);
+        }
+        return;
 
     case penUpEvent:
+        if (!m_fPenDown) {
+            return;
+        }
         m_fPenDown = false;
         Invalidate();
         if (m_fDrag) {
+            m_fDrag = false;
             if (m_flics.Init(1, 1.0f, 0.12f, 33, false)) {
                 m_yDragUp = pevt->y;
-                gtimm.AddTimer(this, 10);
-                m_fTimerAdded = true;
+                if (!m_fTimerAdded) {
+                    gtimm.AddTimer(this, 10);
+                    m_fTimerAdded = true;
+                }
             }
-            m_fDrag = false;
             return;
         }
-        break;
-
-    default:
-        m_fDrag = false;
-        break;
-    }
-
-    if (!m_fDrag) {
-        m_flics.Clear();
         OnPenEvent2(pevt);
         return;
-    }
 
-    DragScroll(pevt->y);
+    default:
+        // Holds and other events don't change the drag state
+        return;
+    }
 }
 
 void ListControl::DragScroll(int y)
@@ -1363,25 +1381,18 @@ void ListControl::OnPenEvent2(Event *pevt)
         }
     }
 
-	if (pevt->eType != penDownEvent) {
+	if (pevt->eType != penUpEvent) {
 		return;
     }
 
-	// Pin selection to min/max entry
+	// Clicks that aren't on an item (an empty row, the border) leave the
+	// selection alone.
 
-    Assert(iClosest >= 0 && iClosest <= iliBottom - m_iliTop);
-    if (iClosest < 0)
+    if (iClosest < 0 || nDistClosest > nDistHit)
         return;
-    
-    int iliSel;
-    bool fOnItem;
-    if (nDistClosest <= nDistHit) {
-        iliSel = m_iliTop + iClosest;
-        fOnItem = true;
-    } else {
-        iliSel = -1;
-        fOnItem = false;
-    }
+
+    int iliSel = m_iliTop + iClosest;
+    bool fOnItem = true;
 
 	int ili = 0;
 	bool fChange = false;
@@ -1397,7 +1408,7 @@ void ListControl::OnPenEvent2(Event *pevt)
 		gsndm.PlaySfx(ksfxGuiScrollingListSelectItem);
 		Invalidate();
 	} else {
-		if (fOnItem && pevt->eType == penDownEvent)
+		if (fOnItem)
 			m_pceh->OnControlNotify(m_idc, knNotifySelectionTap);
 	}
 }

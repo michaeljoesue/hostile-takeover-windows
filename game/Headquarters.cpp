@@ -506,6 +506,9 @@ void StructureBuildForm::OnControlNotify(word idc, int nNotify)
     ListControl *plstc = (ListControl *)GetControlPtr(kidcList);
     if (plstc->GetSelectedItemIndex() == -1) {
 		GetControlPtr(kidcOk)->Show(false);
+    } else {
+        // Keep the description and Build button in step with the selection
+        UpdateStructureInfo(plstc->GetSelectedItem());
     }
 }
 
