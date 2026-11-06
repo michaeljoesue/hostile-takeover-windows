@@ -6,9 +6,6 @@
 
 namespace wi {
 
-#define kcUnlockAhead 1
-#define kfItemLocked 0x8000
-
 // Should be moved into PackInfoManager, but in a better form,
 // for getting specific properties without needing to know the key.
 
@@ -39,11 +36,6 @@ SelectMissionForm::SelectMissionForm(MissionList *pml,
     m_pml = pml;
     m_pmiidFind = pmiidFind;
     m_mt = kmtStory;
-    m_cMagic = 0;
-    m_fMagicUnlock = false;
-#ifdef DEBUG
-    m_fMagicUnlock = true;
-#endif
     memset(m_aplstc, 0, sizeof(m_aplstc));
 }
 
@@ -155,7 +147,6 @@ MissionType SelectMissionForm::InitLists(int iMissionSelect) {
 
     int ailiFirstIncomplete[kmtUnknown + 1];
     memset(ailiFirstIncomplete, 0xff, sizeof(ailiFirstIncomplete));
-    int iliLastCompleteStory = -1;
     int iliSelectSpecial = -1;
     MissionType mtSelectSpecial = kmtUnknown;
 
@@ -169,32 +160,15 @@ MissionType SelectMissionForm::InitLists(int iMissionSelect) {
             continue;
         }
 
-        // The first locked mission is kcUnlockAhead missions ahead of the
-        // last complete story mission.
+        // All missions are unlocked. The status is Complete or nothing.
 
         ListControl *plstc = m_aplstc[IndexFromMissionType(md.mt)];
-        bool fLocked = false;
-        if (md.mt == kmtStory) {
-            int iliMissionLocked = iliLastCompleteStory + 1 + kcUnlockAhead;
-            int iliNext = plstc->GetCount();
-            if (iliNext >= iliMissionLocked) {
-                fLocked = true;
-            }
-        }
-
-        // Get the status - LOCKED, Complete, or nothing
-
         MissionIdentifier miid;
         m_pml->GetMissionIdentifier(i, &miid);
         dword dw = (dword)i;
         const char *pszStatus = "";
-        if (fLocked) {
-            pszStatus = "LOCKED";
-            dw |= kfItemLocked;
-        } else {
-            if (gpcptm->IsComplete(&miid)) {
-                pszStatus = "Complete";
-            }
+        if (gpcptm->IsComplete(&miid)) {
+            pszStatus = "Complete";
         }
 
         // Add the item
@@ -207,14 +181,6 @@ MissionType SelectMissionForm::InitLists(int iMissionSelect) {
         if (ailiFirstIncomplete[md.mt] == -1) {
             if (!gpcptm->IsComplete(&miid)) {
                 ailiFirstIncomplete[md.mt] = plstc->GetCount() - 1;
-            }
-        }
-
-        // Track the last complete for story missions, for mission unlocking
-
-        if (md.mt == kmtStory) {
-            if (gpcptm->IsComplete(&miid)) {
-                iliLastCompleteStory = plstc->GetCount() - 1;
             }
         }
 
@@ -249,34 +215,6 @@ MissionType SelectMissionForm::InitLists(int iMissionSelect) {
         plstc->Select(iliSelect, true, true);
     }
     return mtSelect;
-}
-
-bool SelectMissionForm::OnPenEvent(Event *pevt) {
-    if (m_mt != kmtStory || pevt->eType != penUpEvent) {
-        return ShellForm::OnPenEvent(pevt);
-    }
-
-    Control *pctlCaptureBefore = GetControlCapture();
-    bool f = ShellForm::OnPenEvent(pevt);
-    Control *pctlCaptureAfter = GetControlCapture();
-
-#define kcMagic 5
-
-    // Tap down on back, move your finger off so it unhighlights, then
-    // let up. Do this  kcMagic times and get a play button.
-    if (pctlCaptureBefore != NULL && pctlCaptureAfter == NULL) {
-        if (pctlCaptureBefore->GetId() == kidcCancel) {
-            m_cMagic++;
-            if (m_cMagic >= kcMagic) {
-                m_cMagic = 0;
-                m_fMagicUnlock = true;
-#ifdef BETA_TIMEOUT
-                GetControlPtr(kidcOk)->Show(true);
-#endif
-            }
-        }
-    }
-    return f;
 }
 
 void SelectMissionForm::OnControlSelected(word idc) {
@@ -351,25 +289,12 @@ void SelectMissionForm::OnControlNotify(word idc, int nNotify) {
     if (plstc->GetSelectedItemIndex() == -1) {
         fShow = false;
     }
-    if (m_mt == kmtStory) {
-        if (IsSelectedMissionLocked(plstc)) {
-            fShow = false;
-        }
-    }
-    if (m_fMagicUnlock) {
-        fShow = true;
-    }
     GetControlPtr(kidcOk)->Show(fShow);
 }
 
 int SelectMissionForm::GetSelectedMissionIndex(ListControl *plstc) {
     pword pw = (pword)plstc->GetSelectedItemData();
-    return (int)(pw & ~kfItemLocked);
-}
-
-bool SelectMissionForm::IsSelectedMissionLocked(ListControl *plstc) {
-    pword pw = (pword)plstc->GetSelectedItemData();
-    return (pw & kfItemLocked) != 0;
+    return (int)pw;
 }
 
 void SelectMissionForm::UpdateDescription() {

@@ -3494,7 +3494,6 @@ public:
 	virtual bool Init(FormMgr *pfrmm, IniReader *pini, word idf) secGame;
 	virtual void OnControlSelected(word idc) secGame;
 	virtual void OnControlNotify(word idc, int nNotify);
-    virtual bool OnPenEvent(Event *pevt);
 
 private:
     MissionType InitLists(int iMissionSelect);
@@ -3502,12 +3501,9 @@ private:
     MissionType MissionTypeFromIndex(int i);
     void SwitchMissionType(MissionType mt);
     int GetSelectedMissionIndex(ListControl *plstc);
-    bool IsSelectedMissionLocked(ListControl *plstc);
     void SwitchToMissionType(MissionType mt);
     void UpdateDescription();
 
-    int m_fMagicUnlock;
-    int m_cMagic;
     MissionList *m_pml;
     const MissionIdentifier *m_pmiidFind;
     MissionType m_mt;

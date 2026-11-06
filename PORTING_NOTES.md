@@ -882,6 +882,16 @@ A last sweep removed what didn't belong to the Windows SDL build:
 The Windows art tools Spiffcode used (AniMax, aed, BmpProof and others) were
 kept.
 
+## 37. All missions unlocked
+
+Story missions used to unlock one at a time: only the missions up to one
+past the last completed one could be played, the rest showed LOCKED (a
+hidden gesture on the BACK button, or a debug build, got around it).
+`SelectMissionForm` (`game/selectmission.cpp`) no longer locks anything:
+every story, challenge and add-on mission can be played from the start, and
+completed missions are still marked "Complete". The lock flag, the hidden
+unlock gesture and `IsSelectedMissionLocked` were removed.
+
 ## File map
 
 | File | Purpose |
