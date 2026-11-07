@@ -1517,22 +1517,17 @@ void GobMgr::TrackGobCounts(Gob *pgob, bool fIncrement)
 		}
 	}
 
-	// Validate counts so we know of errors
+	// Validate counts so we know of errors. Levels may start with more
+	// units, buildings and scenery than the original limits (the limits are
+	// raised to fit once the level is loaded, see Game::FitLimitsToLevel), so
+	// only check that those counts make sense.
 
 #ifdef DEBUG
-	int cMuntGobsComputer = gplrm.GetUnitInstanceCountFromMask(kumMobileUnits, kfPlrComputer);
-	Assert(cMuntGobsComputer >= 0 && cMuntGobsComputer <= gcMuntGobsComputerLimitSP);
-
-	int cStructGobsComputer = gplrm.GetUnitInstanceCountFromMask(kumStructures, kfPlrComputer);
-	Assert(cStructGobsComputer >= 0 && cStructGobsComputer <= gcStructGobsComputerLimitSP + gcStructGobsComputerDeltaSP);
-
-	int cMuntGobsHuman = gplrm.GetUnitInstanceCountFromMask(kumMobileUnits, 0);
-	Assert(cMuntGobsHuman >= 0 && cMuntGobsHuman <= gcMuntGobsHumanLimitSP);
-
-	int cStructGobsHuman = gplrm.GetUnitInstanceCountFromMask(kumStructures, 0);
-	Assert(cStructGobsHuman >= 0 && cStructGobsHuman <= gcStructGobsHumanLimitSP + gcStructGobsHumanDeltaSP);
-
-	Assert(m_cSceneryGobs >= 0 && m_cSceneryGobs <= gcSceneryGobsLimit);
+	Assert(gplrm.GetUnitInstanceCountFromMask(kumMobileUnits, kfPlrComputer) >= 0);
+	Assert(gplrm.GetUnitInstanceCountFromMask(kumStructures, kfPlrComputer) >= 0);
+	Assert(gplrm.GetUnitInstanceCountFromMask(kumMobileUnits, 0) >= 0);
+	Assert(gplrm.GetUnitInstanceCountFromMask(kumStructures, 0) >= 0);
+	Assert(m_cSceneryGobs >= 0);
 	Assert(m_cScorchGobs >= 0 && m_cScorchGobs <= gcScorchGobsLimit);
 	Assert(m_cSupportGobs >= 0 && m_cSupportGobs <= gcSupportGobsLimit);
 #endif
@@ -1540,6 +1535,11 @@ void GobMgr::TrackGobCounts(Gob *pgob, bool fIncrement)
 
 bool GobMgr::IsBelowLimit(int nLimit, Player *pplr)
 {
+	// Never let new objects use up the last free entries of the object list
+
+	if (m_cpgobActive >= m_cpgobMax - 32)
+		return false;
+
 	switch (nLimit) {
 	case knLimitStruct:
 		{
@@ -1742,7 +1742,7 @@ AreaMask GobMgr::CalcAreaMask(TCoord tx, TCoord ty)
 	AreaMask am = 0;
 	for (int nArea = 0; nArea < m_car; nArea++) {
 		if (m_aar[nArea].trc.PtIn(tx, ty)) {
-			am |= (1UL << nArea);
+			am |= ((AreaMask)1 << nArea);
 		}
 	}
 	Assert(am != 0);
@@ -1754,10 +1754,10 @@ AreaMask GobMgr::CalcAreaMask(TCoord tx, TCoord ty)
 
 int GobMgr::GetAreasFromMask(AreaMask am, int *pnArea)
 {
-	Assert(kcAreasMax <= 32);
+	Assert(kcAreasMax <= 64);
 	int cArea = 0;
 	for (int n = 0; n < kcAreasMax && am != 0; n++) {
-		if (am & (1UL << n)) {
+		if (am & ((AreaMask)1 << n)) {
 			*pnArea++ = n;
 			cArea++;
 			am &= (am - 1);
@@ -2000,9 +2000,13 @@ bool GobMgr::LoadAreas(IniReader *pini)
 		int nLeft, nTop, nWidth, nHeight;
 		if (!pini->GetPropertyValue(&findArea, "%d,%d,%d,%d", &nLeft, &nTop, &nWidth, &nHeight))
 			return false;
+		// Areas past the limit are ignored (they used to overwrite memory)
+
+		Assert(m_car < kcAreasMax);
+		if (m_car >= kcAreasMax)
+			break;
 		m_aar[m_car].trc.Set(nLeft, nTop, nLeft + nWidth, nTop + nHeight);
 		m_car++;
-		Assert(m_car <= kcAreasMax);
 	}
 	return true;
 }

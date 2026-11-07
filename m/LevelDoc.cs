@@ -840,7 +840,7 @@ namespace m {
 				if (mi is Area)
 					cAreas++;
 			}
-			int cAreasMax = 32;
+			int cAreasMax = 64;
 			if (cAreas > cAreasMax) {
 				dgt(this, ValidateError.Error, 0, 0, null, String.Format("Max areas is {0}, this mission has {1}", cAreasMax, cAreas));
 				cError++;
@@ -1082,116 +1082,22 @@ namespace m {
 			}
 
 
-			// Validate gob limits
+			// Validate the total number of objects. The game used to limit
+			// scenery (100) and each side's starting buildings and units;
+			// it now raises those limits to fit the level, so only the size
+			// of its object list (2048, with room kept for units built,
+			// shots and effects during play) is a real limit.
 
-			int[] acStructures = new int[Enum.GetNames(typeof(Side)).Length];
-			int[] acMunts = new int[Enum.GetNames(typeof(Side)).Length];
-			int cScenery = 0;
+			int cObjects = 0;
 			foreach (IMapItem mi in m_alsmi) {
-				if (mi is Unit) {
-					Unit unit = (Unit)mi;
-					if (unit is Structure) {
-						acStructures[(int)unit.Side]++;
-					} else {
-						acMunts[(int)unit.Side]++;
-					}
-					continue;
-				}
-				if (mi is Scenery) {
-					cScenery++;
-					continue;
-				}
+				if (mi is Unit || mi is Scenery)
+					cObjects++;
 			}
-
-			// Scenery Limit
-
-			int cSceneryMax = 100;
-			if (cScenery > cSceneryMax) {
-				string strT = String.Format("{0} scenery; {1} allowed", cScenery, cSceneryMax);
+			int cObjectsMax = 1600;
+			if (cObjects > cObjectsMax) {
+				string strT = String.Format("{0} units, buildings and scenery; at most {1} fit in the game", cObjects, cObjectsMax);
 				dgt(this, ValidateError.Error, 0, 0, null, strT);
 				cError++;
-			}
-
-			// Unit counts
-
-			if (MaxPlayers == 1) {
-				// Single player - asymmetric: one human count, shared computer counts
-				// #define kcStructGobsHumanMin 39
-				// #define kcStructGobsComputerMin 52
-				// #define kcMuntGobsHumanMin 60
-				// #define kcMuntGobsComputerMin 80
-
-				int cStructsHumanMax = 39;
-				int cMuntsHumanMax = 60;
-				int cStructsComputerMax = 52;
-				int cMuntsComputerMax = 80;
-
-				int cStructsHuman = 0;
-				int cMuntsHuman = 0;
-				int cStructsComputer = 0;
-				int cMuntsComputer = 0;
-
-				foreach (SideInfo sidi in m_alsidi) {
-					if (sidi.Intelligence == Intelligence.Human) {
-						cStructsHuman += acStructures[(int)sidi.Side];
-						cMuntsHuman += acMunts[(int)sidi.Side];
-					} else {
-						cStructsComputer += acStructures[(int)sidi.Side];
-						cMuntsComputer += acMunts[(int)sidi.Side];
-					}
-				}
-
-				// HACK ALERT: Sometimes levels have more human structures than the human limit. In this
-				// case, take some from the computer side if possible. Hack: Reserve 5 structs for computer building
-
-				int cStructuresAvailable = cStructsComputerMax - cStructsComputer - 5;
-				if (cStructuresAvailable < 0)
-					cStructuresAvailable = 0;
-				cStructsHumanMax += cStructuresAvailable;
-				cStructsComputerMax -= cStructuresAvailable;
-
-				// Check
-
-				if (cStructsHuman > cStructsHumanMax) {
-					string strT = String.Format("Human Side has {0} structures; {1} allowed", cStructsHuman, cStructsHumanMax);
-					dgt(this, ValidateError.Error, 0, 0, null, strT);
-					cError++;
-				}
-				if (cMuntsHuman > cMuntsHumanMax) {
-					string strT = String.Format("Human Side has {0} mobile units; {1} allowed", cMuntsHuman, cMuntsHumanMax);
-					dgt(this, ValidateError.Error, 0, 0, null, strT);
-					cError++;
-				}
-				if (cStructsComputer > cStructsComputerMax) {
-					string strT = String.Format("Computer Side has {0} structures; {1} allowed", cStructsComputer, cStructsComputerMax);
-					dgt(this, ValidateError.Error, 0, 0, null, strT);
-					cError++;
-				}
-				if (cMuntsComputer > cMuntsComputerMax) {
-					string strT = String.Format("Computer Side has {0} mobile units; {1} allowed", cMuntsComputer, cMuntsComputerMax);
-					dgt(this, ValidateError.Error, 0, 0, null, strT);
-					cError++;
-				}
-			} else {
-				// Multi-player - symmetric: same counts for each side
-				// #define kcStructGobsMax 55
-				// #define kcMuntGobsMax 88
-
-				int cStructsMax = 55;
-				int cMuntsMax = 88;
-
-				foreach (Side side in Enum.GetValues(typeof(Side))) {
-					if (acStructures[(int)side] > cStructsMax) {
-						string strT = String.Format("Side {0} has {1} structures; {2} allowed", side.ToString(), acStructures[(int)side], cStructsMax);
-						dgt(this, ValidateError.Error, 0, 0, null, strT);
-						cError++;
-					}
-					if (acMunts[(int)side] > cMuntsMax) {
-						string strT = String.Format("Side {0} has {1} mobile units; {2} allowed", side.ToString(), acMunts[(int)side], cMuntsMax);
-						dgt(this, ValidateError.Error, 0, 0, null, strT);
-						cError++;
-					}
-				}
 			}
 
 			// UNDONE: Validate legal multiplayer triggers

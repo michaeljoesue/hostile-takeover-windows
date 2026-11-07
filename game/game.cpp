@@ -488,6 +488,15 @@ void Game::CalcUnitCountDeltas(Level *plvl)
     // NOTE: For now all this does is take the computer's extra structure count
     // and gives it to the human player.
 
+	// Start from the original limits; FitLimitsToLevel raises them once the
+	// level's units are loaded.
+
+	gcStructGobsHumanLimitSP = kcStructGobsHumanMaxSP;
+	gcStructGobsComputerLimitSP = kcStructGobsComputerMaxSP;
+	gcMuntGobsHumanLimitSP = kcMuntGobsHumanMaxSP;
+	gcMuntGobsComputerLimitSP = kcMuntGobsComputerMaxSP;
+	gcSceneryGobsLimit = kcSceneryGobsLimit;
+
 	int cComputerStructuresInitial = 0;
 	for (int side = ksideNeutral; side < kcSides; side++) {
 		Player *pplr = gplrm.GetPlayer(side);
@@ -508,6 +517,33 @@ void Game::CalcUnitCountDeltas(Level *plvl)
 		gcStructGobsComputerDeltaSP = 0;
 		gcStructGobsHumanDeltaSP = 0;
 	}
+}
+
+// Levels made with the editor can start with more buildings, units and
+// scenery than the original limits allowed (the editor no longer refuses
+// them). Raise a limit to fit what the level starts with, plus room to build
+// more, so the starting units don't use up the whole limit. The original
+// limits stay the minimum, so the built-in missions play as before.
+
+#define kcStructGobsHeadroom 10
+#define kcMuntGobsHeadroom 20
+
+void Game::FitLimitsToLevel()
+{
+	int cStructHuman = gplrm.GetUnitInstanceCountFromMask(kumStructures, 0);
+	int cStructComputer = gplrm.GetUnitInstanceCountFromMask(kumStructures, kfPlrComputer);
+	int cMuntHuman = gplrm.GetUnitInstanceCountFromMask(kumMobileUnits, 0);
+	int cMuntComputer = gplrm.GetUnitInstanceCountFromMask(kumMobileUnits, kfPlrComputer);
+
+	gcStructGobsHumanLimitSP = _max(kcStructGobsHumanMaxSP,
+            cStructHuman - gcStructGobsHumanDeltaSP + kcStructGobsHeadroom);
+	gcStructGobsComputerLimitSP = _max(kcStructGobsComputerMaxSP,
+            cStructComputer - gcStructGobsComputerDeltaSP + kcStructGobsHeadroom);
+	gcMuntGobsHumanLimitSP = _max(kcMuntGobsHumanMaxSP,
+            cMuntHuman + kcMuntGobsHeadroom);
+	gcMuntGobsComputerLimitSP = _max(kcMuntGobsComputerMaxSP,
+            cMuntComputer + kcMuntGobsHeadroom);
+	gcSceneryGobsLimit = _max(kcSceneryGobsLimit, ggobm.GetSceneryCount());
 }
 
 bool Game::LoadGameData()
@@ -1658,6 +1694,10 @@ bool Game::InitSimulation(Stream *pstm, char *pszLevel) {
 			return false;
 		}
 	}
+
+	// Fit the unit and scenery limits to what the level has
+
+	FitLimitsToLevel();
 
 	// Load the sim UI form
 

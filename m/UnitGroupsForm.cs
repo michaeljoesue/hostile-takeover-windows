@@ -63,6 +63,7 @@ namespace m
 			m_ugm = ugm;
 			m_lvld = lvld;
 			m_ugm.ClearModified();
+			AddRenameButton();
 			InitUnitGroupsListBox();
 			InitSideComboBox();
 			InitAggressivenessComboBox();
@@ -560,9 +561,69 @@ namespace m
 			EnableUnitsButtons();
 		}
 
+		// Renaming: the Rename button, F2 or double-clicking a group starts
+		// editing its name in the list.
+
+		private System.Windows.Forms.Button buttonRenameUnitGroup;
+
+		void AddRenameButton() {
+			buttonNewUnitGroup.SetBounds(8, 456, 66, 23);
+			buttonDeleteUnitGroup.SetBounds(8, 488, 66, 23);
+			buttonRenameUnitGroup = new System.Windows.Forms.Button();
+			buttonRenameUnitGroup.Text = "Rename";
+			buttonRenameUnitGroup.SetBounds(78, 456, 66, 23);
+			buttonRenameUnitGroup.Click += new System.EventHandler(this.buttonRenameUnitGroup_Click);
+			Controls.Add(buttonRenameUnitGroup);
+			listViewUnitGroups.KeyDown += new System.Windows.Forms.KeyEventHandler(this.listViewUnitGroups_KeyDown);
+			listViewUnitGroups.DoubleClick += new System.EventHandler(this.buttonRenameUnitGroup_Click);
+		}
+
+		private void buttonRenameUnitGroup_Click(object sender, System.EventArgs e) {
+			if (listViewUnitGroups.SelectedItems.Count == 0)
+				return;
+			listViewUnitGroups.Focus();
+			listViewUnitGroups.SelectedItems[0].BeginEdit();
+		}
+
+		private void listViewUnitGroups_KeyDown(object sender, System.Windows.Forms.KeyEventArgs e) {
+			if (e.KeyCode == System.Windows.Forms.Keys.F2) {
+				buttonRenameUnitGroup_Click(sender, e);
+				e.Handled = true;
+			}
+		}
+
 		private void listViewUnitGroups_AfterLabelEdit(object sender, System.Windows.Forms.LabelEditEventArgs e) {
-			if (e.Label != null && e.Label != "")
-				((UnitGroup)listViewUnitGroups.Items[e.Item].Tag).Name = e.Label;
+			// Label is null when the edit was cancelled or nothing changed
+
+			if (e.Label == null)
+				return;
+			string strName = e.Label.Trim();
+			UnitGroup ug = (UnitGroup)listViewUnitGroups.Items[e.Item].Tag;
+			if (strName == "") {
+				e.CancelEdit = true;
+				return;
+			}
+			foreach (UnitGroup ugT in m_ugm.GetUnitGroupList()) {
+				if (ugT != ug && ugT.Name == strName) {
+					e.CancelEdit = true;
+					System.Windows.Forms.MessageBox.Show(this,
+							"There is already a unit group named \"" + strName + "\".",
+							"Rename Unit Group");
+					return;
+				}
+			}
+			if (ug.Name == strName)
+				return;
+
+			// Triggers refer to unit groups by position, not by name, so they
+			// follow the rename. Mark the level changed so it gets saved.
+
+			ug.Name = strName;
+			m_ugm.SetModified();
+			if (strName != e.Label) {
+				e.CancelEdit = true;
+				listViewUnitGroups.Items[e.Item].Text = strName;
+			}
 		}
 
 		private void buttonNewUnitGroup_Click(object sender, System.EventArgs e) {

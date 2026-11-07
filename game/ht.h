@@ -2086,6 +2086,7 @@ public:
 	bool GetVar(const char *pszName, char *pszBuff, int cbBuff) secGame;
 	bool SetVar(const char *pszName, const char *pszValue) secGame;
 	void CalcUnitCountDeltas(Level *plvl) secGame;
+	void FitLimitsToLevel() secGame;
 	bool IsVersionCompatibleWithExe(int nVersionCompareShip, int nVersionCompareMajor, char chVersionCompareMinor, bool fUpwardCompatOK) secGame;
 	void ParseVersion(char *pszVersion, int *pnShipVersion, int *pnMajorVersion, char *pchMinorVersion) secGame;
 	bool CheckDatabaseVersion(const char *pszDir, char *pszPdb,
@@ -4552,7 +4553,9 @@ private:
 
 // Use min gob count for 68K build because of stack variables
 
-#define kcpgobMax 768
+// Total game objects (units, buildings, scenery, effects). Was 768; raised so
+// levels made with the editor can hold many more units and scenery.
+#define kcpgobMax 2048
 #define kcpgobVisibleMax 200
 
 class Simulation : public TimerMgr // sim
@@ -5295,14 +5298,14 @@ Gob *CreateGob(GobType gt) secGob;
 const Gid kgidNull = (Gid)-1;
 const word kwfGidEndMarker = 0x8000;
 
-// AreaMask; assumes 32 areas max
+// AreaMask: one bit per area, so at most 64 areas (was 32)
 
-#define kcAreasMax 32
+#define kcAreasMax 64
 #define knAreaLastDiscovery -1
-#if kcAreasMax > 32
-#error Code assumes 32 areas max! Could change to 64 easily enough
+#if kcAreasMax > 64
+#error AreaMask holds 64 areas at most
 #endif
-typedef dword AreaMask;
+typedef unsigned long long AreaMask;
 
 struct AreaEntry // are
 {
@@ -5390,6 +5393,9 @@ public:
 
 	int GetGobCount() {
 		return m_cpgobActive;
+	}
+	int GetSceneryCount() {
+		return m_cSceneryGobs;
 	}
 
 	int FindGobs(const Rect *prcBounds, Gob **apgob, int cpgobMax, byte *pbFogMap) secGobMgr;

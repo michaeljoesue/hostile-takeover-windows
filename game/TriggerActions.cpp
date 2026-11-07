@@ -863,7 +863,6 @@ bool MoveUnitsInAreaAction::Perform(Trigger *ptgr, Side side)
 {
 	// Store the gobs on the stack
 
-	Assert(kcpgobMax / 2 * sizeof(Gob *) <= 1536);
 	Gob *apgob[kcpgobMax / 2];
 
 	// Find all the relevent units in AreaSrc

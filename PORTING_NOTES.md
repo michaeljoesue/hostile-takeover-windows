@@ -914,6 +914,48 @@ click); dragging only scrolls. Clicks on empty space leave the selection
 alone, arrow paging stops at a full last page, and the building menu updates
 its description and Build button whenever the selection changes.
 
+## 39. Editor limits and renaming unit groups
+
+The editor refused levels with more than 100 scenery items, 32 areas, or
+more starting buildings and units per side than the original limits (for
+example 39 buildings and 60 units for the player). On 120 × 120 maps those
+limits get in the way. What each one really protected:
+
+- **Scenery and per-side units/buildings.** The game creates everything a
+  level places without checking these limits; they only stop more being
+  built or scenery added. A level that started above a limit couldn't build
+  anything. Now `Game::FitLimitsToLevel` (`game/game.cpp`), run after a
+  level or saved game is loaded, raises each limit to what the level starts
+  with plus room to build (10 buildings, 20 units); the original limits stay
+  the minimum, so the built-in missions play exactly as before. The debug
+  build's count checks in `GobMgr::TrackGobCounts` no longer compare against
+  the limits.
+- **The object list.** All units, buildings, scenery, shots and effects live
+  in one list of `kcpgobMax` entries, which was 768. It is now 2048, and
+  `GobMgr::IsBelowLimit` keeps the last 32 entries free so building can't
+  use them up. The editor's only object check is now a total of 1600 placed
+  units, buildings and scenery, leaving room for what is built during play.
+- **Areas.** These were a real limit: each area is one bit of an
+  `AreaMask`, a 32-bit number, and `GobMgr::LoadAreas` wrote past its
+  32-entry array (in release builds) when a level had more. `AreaMask` is
+  now 64 bits, so 64 areas fit, and extra areas are ignored instead of
+  overwriting memory. The editor now allows 64.
+
+Saved games are unaffected (area masks and the limits are worked out again
+when a game is loaded).
+
+Renaming unit groups (Settings > Unit Groups) only worked by clicking an
+already selected name, and even then the change didn't mark the level as
+changed, so it could be lost. There is now a Rename button, F2 and
+double-click start the rename, empty and duplicate names are refused, and
+the level is marked changed. Triggers refer to unit groups by position, not
+by name, so they keep working after a rename.
+
+Tested with a 120 × 120 level that has 321 scenery items, 55 areas and 139
+of the player's units (all over the old limits): it passes the editor's
+checks, loads in the release and debug builds (no asserts), and the player
+can still order more units.
+
 ## File map
 
 | File | Purpose |

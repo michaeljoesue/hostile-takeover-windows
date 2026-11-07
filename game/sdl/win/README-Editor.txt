@@ -78,11 +78,16 @@ Output window:
   Placement warnings   Something stands on terrain M thinks is blocked.
                        Most of the game's own missions have some of these
                        and play fine, so you can continue.
-  Errors               For example scenery partly off the map or too many
-                       buildings for one side. These can make a level
-                       misbehave, so fix them if you can. (A few built-in
-                       missions have one and still work, so M lets you
-                       continue anyway.)
+  Errors               For example scenery partly off the map, more than
+                       64 areas, more than 16 switches or more than 1600
+                       units, buildings and scenery in total. These can
+                       make a level misbehave, so fix them if you can. (A
+                       few built-in missions have one and still work, so M
+                       lets you continue anyway.)
+
+There's no separate limit on scenery or on each side's starting buildings
+and units any more: the game raises its build limits to fit what a level
+starts with (and leaves room to build more).
 
 
 GETTING STARTED
@@ -92,7 +97,8 @@ GETTING STARTED
 2. Pick a terrain, paint tiles and drop units and buildings from the panels
    on the left. Select something to change its properties on the right.
 3. Missions are driven by triggers (conditions and actions), edited with
-   Settings > Triggers. Unit groups, switches, counters and mission text
+   Settings > Triggers. Unit groups (Ctrl+G; rename a group with the Rename
+   button, F2 or a double-click), switches, counters and mission text
    are in the Settings menu too. The built-in missions are the best
    examples.
 4. Press F5 to play it.
