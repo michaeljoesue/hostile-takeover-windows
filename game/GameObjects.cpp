@@ -1544,11 +1544,17 @@ bool GobMgr::IsBelowLimit(int nLimit, Player *pplr)
 	case knLimitStruct:
 		{
 			Assert(pplr != NULL);
-			int cQueued = BuilderGob::GetGlobalQueuedCount(pplr, kfUntcStructureBuilder);
 			if (pplr->GetFlags() & kfPlrComputer) {
-				int cStructGobsComputer = gplrm.GetUnitInstanceCountFromMask(kumStructures, kfPlrComputer);
-				return (cStructGobsComputer + cQueued) < gcStructGobsComputerLimitSP + gcStructGobsComputerDeltaSP;
+				// Each computer player has its own limit. (It used to be one
+				// limit shared by all computer players, including the neutral
+				// side, so one computer player with a big base or army stopped
+				// all the others from building.)
+
+				int cQueued = BuilderGob::GetQueuedCount(pplr, kfUntcStructureBuilder);
+				int cStructGobsComputer = pplr->GetUnitInstanceCountFromMask(kumStructures);
+				return (cStructGobsComputer + cQueued) < gcStructGobsComputerLimitSP;
 			} else {
+				int cQueued = BuilderGob::GetGlobalQueuedCount(pplr, kfUntcStructureBuilder);
 				int cStructGobsHuman = gplrm.GetUnitInstanceCountFromMask(kumStructures, 0);
 				return (cStructGobsHuman + cQueued) < gcStructGobsHumanLimitSP + gcStructGobsHumanDeltaSP;
 			}
@@ -1558,11 +1564,14 @@ bool GobMgr::IsBelowLimit(int nLimit, Player *pplr)
 	case knLimitMobileUnit:
 		{
 			Assert(pplr != NULL);
-			int cQueued = BuilderGob::GetGlobalQueuedCount(pplr, kfUntcMobileUnitBuilder);
 			if (pplr->GetFlags() & kfPlrComputer) {
-				int cMuntGobsComputer = gplrm.GetUnitInstanceCountFromMask(kumMobileUnits, kfPlrComputer);
+				// Per computer player, see above
+
+				int cQueued = BuilderGob::GetQueuedCount(pplr, kfUntcMobileUnitBuilder);
+				int cMuntGobsComputer = pplr->GetUnitInstanceCountFromMask(kumMobileUnits);
 				return (cMuntGobsComputer + cQueued) < gcMuntGobsComputerLimitSP;
 			} else {
+				int cQueued = BuilderGob::GetGlobalQueuedCount(pplr, kfUntcMobileUnitBuilder);
 				int cMuntGobsHuman = gplrm.GetUnitInstanceCountFromMask(kumMobileUnits, 0);
 				return (cMuntGobsHuman + cQueued) < gcMuntGobsHumanLimitSP;
 			}

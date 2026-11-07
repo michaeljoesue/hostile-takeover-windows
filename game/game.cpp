@@ -510,11 +510,13 @@ void Game::CalcUnitCountDeltas(Level *plvl)
 
 	// Give the rest to the human player
 
+	// (Computer players now each have their own structure limit, so the
+	// computer's limit isn't lowered by this any more.)
+
+	gcStructGobsComputerDeltaSP = 0;
 	if (cStructuresAvailable > 0) {
-		gcStructGobsComputerDeltaSP = -cStructuresAvailable;
 		gcStructGobsHumanDeltaSP = cStructuresAvailable;
 	} else {
-		gcStructGobsComputerDeltaSP = 0;
 		gcStructGobsHumanDeltaSP = 0;
 	}
 }
@@ -525,15 +527,27 @@ void Game::CalcUnitCountDeltas(Level *plvl)
 // more, so the starting units don't use up the whole limit. The original
 // limits stay the minimum, so the built-in missions play as before.
 
-#define kcStructGobsHeadroom 10
-#define kcMuntGobsHeadroom 20
+#define kcStructGobsHeadroom 20
+#define kcMuntGobsHeadroom 60
 
 void Game::FitLimitsToLevel()
 {
 	int cStructHuman = gplrm.GetUnitInstanceCountFromMask(kumStructures, 0);
-	int cStructComputer = gplrm.GetUnitInstanceCountFromMask(kumStructures, kfPlrComputer);
 	int cMuntHuman = gplrm.GetUnitInstanceCountFromMask(kumMobileUnits, 0);
-	int cMuntComputer = gplrm.GetUnitInstanceCountFromMask(kumMobileUnits, kfPlrComputer);
+
+	// Computer limits are per computer player; fit the biggest one
+
+	int cStructComputer = 0;
+	int cMuntComputer = 0;
+	for (int side = ksideNeutral; side < kcSides; side++) {
+		Player *pplr = gplrm.GetPlayer(side);
+		if (pplr == NULL || !(pplr->GetFlags() & kfPlrComputer))
+			continue;
+		cStructComputer = _max(cStructComputer,
+				pplr->GetUnitInstanceCountFromMask(kumStructures));
+		cMuntComputer = _max(cMuntComputer,
+				pplr->GetUnitInstanceCountFromMask(kumMobileUnits));
+	}
 
 	gcStructGobsHumanLimitSP = _max(kcStructGobsHumanMaxSP,
             cStructHuman - gcStructGobsHumanDeltaSP + kcStructGobsHeadroom);

@@ -1013,7 +1013,39 @@ buildings.
 - Ctrl+right click on empty ground does nothing (the engine has no
   attack-ground), nor on a Replicator. Units that can't attack ignore it.
 
-## File map
+## 42. Computer unit/building limits are per computer player
+
+The computer could stop building completely. The single-player limits for
+the computer (117 mobile units, 72 buildings) were one pool shared by every
+computer-controlled side, including the neutral side. So in a level with two
+computer opponents, or one with a big army or base, or neutral buildings,
+one side used up the pool and the others couldn't build anything until
+enough of those units died. On top of that, `CalcUnitCountDeltas` cut the
+computer's building limit to its starting buildings + 5 and gave the rest to
+the human player.
+
+- `GobMgr::IsBelowLimit` (GameObjects.cpp): for a computer player it counts
+  only that player's units/buildings (`Player::GetUnitInstanceCountFromMask`)
+  and that player's build queues (`BuilderGob::GetQueuedCount`), so each
+  computer side has its own 117 / 72. The human limits are unchanged.
+- `CalcUnitCountDeltas` no longer lowers the computer's building limit (the
+  human still gets the extra building room it got before).
+- `FitLimitsToLevel` fits the computer limits to the biggest computer side,
+  and the room left above the starting count is now 60 units and 20
+  buildings (was 20 / 10).
+- The overall object guard (`m_cpgobActive >= m_cpgobMax - 32`, kcpgobMax
+  2048) still applies.
+
+Effect on the built-in missions: a computer side that keeps ordering units
+or rebuilding buildings can now have up to the full limit on its own, so
+missions with two computer sides (e.g. C_04, S_09) or neutral buildings can
+field more enemy units than before.
+
+Tested with C_04 plus 120 extra units for computer side 1 (141 at the start;
+side 2 has 18). With logging, after about 4 minutes side 1 had 163 units and
+side 2 had 40, both still allowed to build: about 200 computer units in all,
+past the 179 the old shared limit would have allowed.
+
 
 | File | Purpose |
 | --- | --- |
