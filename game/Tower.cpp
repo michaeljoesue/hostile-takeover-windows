@@ -142,9 +142,10 @@ void TowerGob::SetTarget(Gid gid, WCoord wx, WCoord wy, WCoord wxCenter, WCoord 
 	if (pgobTarget == NULL)
 		return;
 
-	// If target is an ally, ignore
+	// If target is an ally, ignore (unless it's a Ctrl+click force attack)
 
-	if (IsAlly(pgobTarget->GetSide()))
+	m_gidForceTarget = (gfForceAttackCommand && gid != m_gid) ? gid : kgidNull;
+	if (IsAlly(pgobTarget->GetSide()) && m_gidForceTarget != gid)
 		return;
 
 	// Attack it!

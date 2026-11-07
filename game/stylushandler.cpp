@@ -62,6 +62,13 @@ void SimUIForm::StylusHandler::OnPenDown(Event *pevt)
     if (pevt->ff & kfEvtRightButton) {
         return;
     }
+
+    // Ctrl+left click with units selected is a force attack (done on
+    // release, see OnPenUp); it doesn't change the selection.
+
+    if ((pevt->ff & kfEvtForceAttack) && m_psui->HasSelectedMobileUnits()) {
+        return;
+    }
 #endif
 
     // Enter dragging mode; this'll cause OnPenDrag to be called until
@@ -104,6 +111,15 @@ void SimUIForm::StylusHandler::OnPenUp(Event *pevt)
     CancelModes();
 
 #ifdef _WIN32
+    // Ctrl + left or right click: force attack whatever is under the cursor,
+    // even your own units and buildings. On empty ground it does nothing.
+
+    if ((pevt->ff & kfEvtForceAttack) && pevt->dw != 1 &&
+            m_psui->HasSelectedMobileUnits()) {
+        m_psui->ForceAttack(pevt->x, pevt->y);
+        return;
+    }
+
     // Desktop RTS controls, right button:
     // - on one of your units/buildings: open its menu (the touch version's
     //   tap-and-hold), unless it's a Replicator and units are selected, in

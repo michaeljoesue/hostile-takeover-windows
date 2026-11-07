@@ -1575,6 +1575,8 @@ struct Event { // evt
 #define kfEvtFinger 0x00000001
 #define kfEvtCoalesce 0x00000002
 #define kfEvtRightButton 0x00000004 // desktop: pen event came from the right mouse button
+#define kfEvtForceAttack 0x00000008 // desktop: Ctrl was held (force attack)
+extern bool gfForceAttackCommand; // set by SimUIForm::ForceAttack while it gives orders
 extern dword gffPenEventCurrent; // flags (kfEvt*) of the pen event forms are processing now
 
 // Custom events
@@ -3386,6 +3388,8 @@ public:
     void MoveOrAttackOrSelect(Gob *pgobHit, WCoord wxTarget, WCoord wyTarget,
             dword ff);
     bool HasSelectedUnits();
+    bool HasSelectedMobileUnits();
+    bool ForceAttack(int x, int y) secSimUIForm;
     void ShowUnitMenu(Gob *pgob);
     void SelectSameUnitTypes(Gob *pgob, bool fSfx);
     bool IsSelectionCommand(Gob *pgobHit);
@@ -5756,6 +5760,9 @@ public:
 
 	bool IsAlly(Side side) secUnitGob;
 	void RevealFogAround() secUnitGob;
+	Gid GetForceTarget() {
+		return m_gidForceTarget;
+	}
 
 	fix GetHealth() {
 		return m_fxHealth;
@@ -5800,6 +5807,11 @@ protected:
 		MobileUnitBuilderConsts *m_pmubc;
 	};
 	Gid m_agidEnemyNearby[kcEnemyNearbyRemember];
+
+	// Desktop force attack (Ctrl+click): this target may be attacked even
+	// though it's an ally. Not saved; a loaded game forgets it.
+
+	Gid m_gidForceTarget;
 	fix m_fxHealth;
 	Animation m_ani;
     AnimSprite *m_panispr;

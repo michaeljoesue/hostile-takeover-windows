@@ -493,6 +493,10 @@ void MobileUnitGob::Idle()
 
 void MobileUnitGob::SetTarget(Gid gid, WCoord wx, WCoord wy, WCoord wxCenter, WCoord wyCenter, TCoord tcRadius, WCoord wcMoveDistPerUpdate)
 {
+	// Any new order ends a force attack; a Ctrl+click order starts one
+
+	m_gidForceTarget = (gfForceAttackCommand && gid != m_gid) ? gid : kgidNull;
+
 	if (gid == kgidNull) {
 		// Send formed command
 
@@ -553,9 +557,9 @@ void MobileUnitGob::SetTarget(Gid gid, WCoord wx, WCoord wy, WCoord wxCenter, WC
 		wy = wpt.wy;
 	}
 
-	// Friend or Foe? No special action for friends
+	// Friend or Foe? No special action for friends, unless forced
 
-	if (IsAlly(pgobTarget->GetSide()))
+	if (IsAlly(pgobTarget->GetSide()) && m_gidForceTarget != gid)
 		return;
 
 	// Foe -- attack!

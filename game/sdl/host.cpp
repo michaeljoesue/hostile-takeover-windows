@@ -210,6 +210,9 @@ bool ProcessSdlEvent(base::Message *pmsg, Event *pevt)
         } else if (event.button.button != SDL_BUTTON_LEFT) {
             return false;
         }
+        if (SDL_GetModState() & KMOD_CTRL) {
+            pevt->ff |= kfEvtForceAttack;
+        }
 #endif
 		break;
 		
@@ -223,6 +226,9 @@ bool ProcessSdlEvent(base::Message *pmsg, Event *pevt)
             pevt->ff |= kfEvtRightButton;
         } else if (event.button.button != SDL_BUTTON_LEFT) {
             return false;
+        }
+        if (SDL_GetModState() & KMOD_CTRL) {
+            pevt->ff |= kfEvtForceAttack;
         }
 #endif
 		break;

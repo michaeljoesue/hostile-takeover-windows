@@ -1227,6 +1227,54 @@ bool SimUIForm::IsSelectionCommand(Gob *pgobHit)
     return fSelection;
 }
 
+bool gfForceAttackCommand = false;
+
+bool SimUIForm::HasSelectedMobileUnits()
+{
+    Gob *pgobT = ggobm.GetFirstGob();
+	for (; pgobT != NULL; pgobT = ggobm.GetNextGob(pgobT)) {
+		if ((pgobT->GetFlags() & (kfGobMobileUnit | kfGobSelected)) !=
+                (kfGobMobileUnit | kfGobSelected)) {
+			continue;
+        }
+		if (((UnitGob *)pgobT)->GetOwner() == gpplrLocal) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Desktop force attack (Ctrl+click): the selected units attack whatever is
+// under the cursor, even the player's own (or allied) units and buildings.
+// Returns false if there's nothing there to attack.
+
+bool SimUIForm::ForceAttack(int x, int y)
+{
+	WCoord wxTarget, wyTarget;
+	bool fHitSurrounding;
+	Gob *pgobHit = HitTestGob(x, y, false, &wxTarget, &wyTarget,
+			&fHitSurrounding);
+	if (pgobHit == NULL || (pgobHit->GetFlags() & kfGobUnit) == 0)
+		return false;
+
+	// Units are sent into a Replicator, not shot at it
+
+	if (pgobHit->GetType() == kgtReplicator)
+		return false;
+
+	WPoint wptTarget;
+	((UnitGob *)pgobHit)->GetAttackPoint(&wptTarget);
+	gfForceAttackCommand = true;
+	MobileUnitGob *pmunt = SetSelectionTargets(pgobHit->GetId(),
+			wptTarget.wx, wptTarget.wy);
+	gfForceAttackCommand = false;
+	if (pmunt != NULL) {
+		gsndm.PlaySfx(SfxFromCategory(((MobileUnitConsts *)
+				gapuntc[pmunt->GetUnitType()])->sfxcAttack));
+	}
+	return true;
+}
+
 bool SimUIForm::HasSelectedUnits()
 {
     Gob *pgobT = ggobm.GetFirstGob();

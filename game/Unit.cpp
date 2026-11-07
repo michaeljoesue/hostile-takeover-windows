@@ -250,6 +250,7 @@ UnitGob::UnitGob(UnitConsts *puntc)
 
 	m_cupdLastHitNotify = -1000000;
     m_panispr = NULL;
+	m_gidForceTarget = kgidNull;
 }
 
 UnitGob::~UnitGob()
@@ -427,8 +428,16 @@ bool UnitGob::IsIdle()
 
 bool UnitGob::IsValidTarget(Gob *pgobTarget)
 {
-	return (pgobTarget->GetFlags() & (kfGobUnit | kfGobActive)) == (kfGobUnit | kfGobActive)
-			&& !IsAlly(pgobTarget->GetSide());
+	if ((pgobTarget->GetFlags() & (kfGobUnit | kfGobActive)) != (kfGobUnit | kfGobActive))
+		return false;
+
+	// A force attack (Ctrl+click) target is valid even if it's an ally
+
+	if (m_gidForceTarget != kgidNull && pgobTarget->GetId() == m_gidForceTarget
+			&& pgobTarget != this)
+		return true;
+
+	return !IsAlly(pgobTarget->GetSide());
 }
 
 void UnitGob::SetTarget(Gid gid, WCoord wxTarget, WCoord wyTarget, WCoord wxCenter, WCoord wyCenter, TCoord tcRange, WCoord wcMoveDistPerUpdate)
