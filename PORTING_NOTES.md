@@ -1047,6 +1047,37 @@ side 2 had 40, both still allowed to build: about 200 computer units in all,
 past the 179 the old shared limit would have allowed.
 
 
+## 43. Bigger limits on big maps
+
+Maps bigger than 64 x 64 tiles (the size of the original editor's maps; every
+built-in mission is 64 x 64 or smaller) get limits scaled by their area, up to
+4x. `Game::FitLimitsToLevel` works out
+`percent = map tiles * 100 / (64 * 64)`, clamped to 100..400, and scales the
+unit and building limits (human and per computer player), the shot
+(support) limit and the scorch-mark limit. The "starting count + headroom"
+rule from section 42 still applies on top, whichever is bigger.
+
+| Limit | 64 x 64 or smaller | 120 x 120 (351%) |
+|---|---|---|
+| Your units | 88 | 308 |
+| Your buildings | 55 (+ unused computer room) | 193 (+ unused computer room) |
+| Units per computer side | 117 | 410 |
+| Buildings per computer side | 72 | 252 |
+| Shots in flight | 50 | 175 |
+| Scorch marks | 30 | 105 |
+
+The shot limit matters in big fights: when it's reached, units hold fire.
+
+To make room, `kcpgobMax` (all objects in a level) went from 2048 to 6144.
+Gids are 15-bit indexes, so this is still well within range. The scratch
+buffer is now at least `kcpgobMax * 8` bytes, since it holds per-object
+arrays (the sprite sort, the nearby-enemy search).
+
+Checked on the 120 x 120 test map: the limits above are what the game uses,
+and the map plays normally.
+
+## File map
+
 | File | Purpose |
 | --- | --- |
 | `game/sdl/win/makefile` | Windows build (i686 MinGW, static linking) |

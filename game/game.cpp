@@ -526,6 +526,14 @@ void Game::CalcUnitCountDeltas(Level *plvl)
 // them). Raise a limit to fit what the level starts with, plus room to build
 // more, so the starting units don't use up the whole limit. The original
 // limits stay the minimum, so the built-in missions play as before.
+//
+// Maps bigger than the original 64 x 64 tiles also get bigger limits, in
+// proportion to their area (up to 4x): a 120 x 120 map has about 3.5x the
+// room of a 64 x 64 one, so it gets about 3.5x the units, buildings, shots
+// and scorch marks. All the built-in missions are 64 x 64 or smaller.
+
+#define kcMapTilesOriginal (64 * 64)
+#define knLimitScaleMaxPercent 400
 
 #define kcStructGobsHeadroom 20
 #define kcMuntGobsHeadroom 60
@@ -549,14 +557,25 @@ void Game::FitLimitsToLevel()
 				pplr->GetUnitInstanceCountFromMask(kumMobileUnits));
 	}
 
-	gcStructGobsHumanLimitSP = _max(kcStructGobsHumanMaxSP,
+	// Scale by map area (100% for 64 x 64 and smaller)
+
+	TCoord ctx, cty;
+	ggobm.GetMapSize(&ctx, &cty);
+	int nPercent = (int)ctx * (int)cty * 100 / kcMapTilesOriginal;
+	nPercent = _max(100, _min(knLimitScaleMaxPercent, nPercent));
+#define Scale(n) ((n) * nPercent / 100)
+
+	gcStructGobsHumanLimitSP = _max(Scale(kcStructGobsHumanMaxSP),
             cStructHuman - gcStructGobsHumanDeltaSP + kcStructGobsHeadroom);
-	gcStructGobsComputerLimitSP = _max(kcStructGobsComputerMaxSP,
+	gcStructGobsComputerLimitSP = _max(Scale(kcStructGobsComputerMaxSP),
             cStructComputer - gcStructGobsComputerDeltaSP + kcStructGobsHeadroom);
-	gcMuntGobsHumanLimitSP = _max(kcMuntGobsHumanMaxSP,
+	gcMuntGobsHumanLimitSP = _max(Scale(kcMuntGobsHumanMaxSP),
             cMuntHuman + kcMuntGobsHeadroom);
-	gcMuntGobsComputerLimitSP = _max(kcMuntGobsComputerMaxSP,
+	gcMuntGobsComputerLimitSP = _max(Scale(kcMuntGobsComputerMaxSP),
             cMuntComputer + kcMuntGobsHeadroom);
+	gcSupportGobsLimit = Scale(kcSupportGobsLimit);
+	gcScorchGobsLimit = Scale(kcScorchGobsLimit);
+#undef Scale
 	gcSceneryGobsLimit = _max(kcSceneryGobsLimit, ggobm.GetSceneryCount());
 }
 
@@ -608,7 +627,8 @@ bool Game::LoadGameData()
 		if (gcbScratch <= 10 * 1024) {
 			delete[] gpbScratch;
             if (gcxTile == 32) {
-                gcbScratch = 35 * 1024;
+                // Also holds per-gob arrays (up to kcpgobMax entries)
+                gcbScratch = _max(35 * 1024, kcpgobMax * 8 + 1024);
             } else {
                 gcbScratch = 23 * 1024;
             }

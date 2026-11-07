@@ -4559,7 +4559,7 @@ private:
 
 // Total game objects (units, buildings, scenery, effects). Was 768; raised so
 // levels made with the editor can hold many more units and scenery.
-#define kcpgobMax 2048
+#define kcpgobMax 6144
 #define kcpgobVisibleMax 200
 
 class Simulation : public TimerMgr // sim
