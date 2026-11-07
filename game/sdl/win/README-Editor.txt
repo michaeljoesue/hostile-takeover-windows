@@ -99,7 +99,10 @@ GETTING STARTED
 3. Missions are driven by triggers (conditions and actions), edited with
    Settings > Triggers. Unit groups (Ctrl+G; rename a group with the Rename
    button, F2 or a double-click), switches, counters and mission text
-   are in the Settings menu too. The built-in missions are the best
+   are in the Settings menu too. Rename an area by selecting it and
+   editing Name on the right; triggers and unit groups that use it are
+   updated, and copies of an area get their own name. The built-in
+   missions are the best
    examples.
 4. Press F5 to play it.
 

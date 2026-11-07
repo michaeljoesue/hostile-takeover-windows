@@ -956,7 +956,32 @@ of the player's units (all over the old limits): it passes the editor's
 checks, loads in the release and debug builds (no asserts), and the player
 can still order more units.
 
-## File map
+## 40. Renaming areas in the editor
+
+Triggers (the area argument of conditions and actions) and unit groups (the
+spawn area) store an area's *name*; only when the level is saved is it turned
+into a position in the sorted list of names. Renaming an area in the property
+grid therefore left every trigger that used it pointing at a name that no
+longer existed ("Area X in trigger Y doesn't exist!", and an index of -2 in
+the saved level). Nothing stopped two areas having the same name either, and
+every area dropped from the panel was called "New Area".
+
+- `Area.Name` (m/Area.cs) trims the new name and asks the level
+  (`LevelDoc.CheckAreaName`) whether it's allowed: empty names, names
+  starting with `[` (reserved for `[LastDiscovery]`) and names already used
+  by another area are refused with a message and the old name is kept.
+- `LevelDoc.OnAreaRenamed` then updates every `CaTypeArea` in every side's
+  trigger conditions and actions, and every `UnitGroup.SpawnArea`, and marks
+  the triggers, unit groups and level as changed.
+- Placing areas (dropping from the panel, Paste, Ctrl-drag copy) gives them
+  unused names (`LevelDoc.MakeAreaNamesUnique`: "New Area 2", "Base 3", ...).
+  A plain drag-move inside the map keeps the name (`LevelView.m_fDragSource`).
+- Validation reports areas that share a name, for older levels.
+
+Tested on C_05.ld: renaming area d1 (used 3 times) moved all 3 references to
+the new name, the level still validates with no area errors, and the
+references survive save and reload.
+
 
 | File | Purpose |
 | --- | --- |

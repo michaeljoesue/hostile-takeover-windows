@@ -88,7 +88,7 @@ namespace m
 			}
 		}
 
-		void SetModified() {
+		public void SetModified() {
 			m_fModified = true;
 		}
 

@@ -460,6 +460,98 @@ namespace m {
 				mi.PropertyChanged -= new PropertyChangedHandler(IMapItem_PropertyChanged);
 		}
 
+		public bool ContainsMapItem(IMapItem mi) {
+			return m_alsmi.Contains(mi);
+		}
+
+		bool IsAreaNameUsed(string strName, Area arExclude, ArrayList alsExtra) {
+			foreach (IMapItem mi in m_alsmi) {
+				Area ar = mi as Area;
+				if (ar != null && ar != arExclude && ar.Name == strName)
+					return true;
+			}
+			if (alsExtra != null) {
+				foreach (Area ar in alsExtra) {
+					if (ar != arExclude && ar.Name == strName)
+						return true;
+				}
+			}
+			return false;
+		}
+
+		// Returns null if strName is an acceptable new name for ar, otherwise
+		// the reason it isn't.
+
+		public string CheckAreaName(Area ar, string strName) {
+			if (strName == "")
+				return "Area names can't be empty.";
+			if (strName.StartsWith("["))
+				return "Area names can't start with '[' (that's reserved for built-in areas like [LastDiscovery]).";
+			if (IsAreaNameUsed(strName, ar, null))
+				return "There is already an area named \"" + strName + "\". Area names must be unique because triggers and unit groups refer to areas by name.";
+			return null;
+		}
+
+		// Point every trigger condition/action and unit group spawn area that
+		// used the old name at the new one.
+
+		public void OnAreaRenamed(string strOld, string strNew) {
+			bool fTriggersChanged = false;
+			foreach (Side side in Enum.GetValues(typeof(Side))) {
+				foreach (Trigger tgr in m_tgrm.GetTriggerList(side)) {
+					ArrayList alsCab = new ArrayList();
+					alsCab.AddRange(tgr.Conditions);
+					alsCab.AddRange(tgr.Actions);
+					foreach (CaBase cab in alsCab) {
+						foreach (CaType cat in cab.GetTypes()) {
+							CaTypeArea catArea = cat as CaTypeArea;
+							if (catArea != null && catArea.Area == strOld) {
+								catArea.Area = strNew;
+								fTriggersChanged = true;
+							}
+						}
+					}
+				}
+			}
+			if (fTriggersChanged)
+				m_tgrm.SetModified();
+
+			bool fGroupsChanged = false;
+			foreach (UnitGroup ug in m_ugm.Items) {
+				if (ug.SpawnArea == strOld) {
+					ug.SpawnArea = strNew;
+					fGroupsChanged = true;
+				}
+			}
+			if (fGroupsChanged)
+				m_ugm.SetModified();
+
+			SetModified(true);
+		}
+
+		// Give placed copies of areas names that aren't already taken
+		// ("Base" -> "Base 2", "New Area" -> "New Area 2", ...)
+
+		public void MakeAreaNamesUnique(IMapItem[] ami) {
+			ArrayList alsPlaced = new ArrayList();
+			foreach (IMapItem mi in ami) {
+				Area ar = mi as Area;
+				if (ar == null)
+					continue;
+				string strBase = ar.Name.Trim();
+				if (strBase == "")
+					strBase = "New Area";
+				Match m = Regex.Match(strBase, @"^(?<base>.*\S) (?<n>\d+)$");
+				if (m.Success)
+					strBase = m.Groups["base"].Value;
+				string strName = ar.Name.Trim();
+				for (int n = 2; strName == "" || IsAreaNameUsed(strName, ar, alsPlaced); n++)
+					strName = strBase + " " + n;
+				ar.SetNameNoFixup(strName);
+				alsPlaced.Add(ar);
+			}
+		}
+
 		void IMapItem_PropertyChanged(IMapItem mi, string strProperty) {
 			SetModified(true);
 			m_fUpdateDirty = true;
@@ -1003,6 +1095,21 @@ namespace m {
 						dgt(this, ValidateError.Error, tx + Bounds.Left, ty + Bounds.Top, null, String.Format("Terrain at {0},{1} is inaccessible due to structure blockage", tx + Bounds.Left, ty + Bounds.Top));
 						cError++;
 					}
+				}
+			}
+
+			// Area names must be unique; triggers refer to areas by name
+
+			Hashtable htAreaNames = new Hashtable();
+			foreach (IMapItem mi in m_alsmi) {
+				Area ar = mi as Area;
+				if (ar == null)
+					continue;
+				if (htAreaNames.ContainsKey(ar.Name)) {
+					dgt(this, ValidateError.Error, (int)ar.tx, (int)ar.ty, ar, "There is more than one area named " + ar.Name + "! Rename one of them.");
+					cError++;
+				} else {
+					htAreaNames[ar.Name] = ar;
 				}
 			}
 

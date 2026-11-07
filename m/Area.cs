@@ -278,9 +278,37 @@ namespace m
 				return m_strName;
 			}
 			set {
-				m_strName = value;
+				// Renaming: triggers and unit groups refer to areas by name, so
+				// the level fixes those references up. Empty, reserved and
+				// duplicate names are refused (the old name is kept).
+
+				string strNew = value == null ? "" : value.Trim();
+				if (strNew == m_strName)
+					return;
+				LevelDoc lvld = (LevelDoc)DocManager.GetActiveDocument(typeof(LevelDoc));
+				if (lvld != null && lvld.ContainsMapItem(this)) {
+					string strError = lvld.CheckAreaName(this, strNew);
+					if (strError != null) {
+						System.Windows.Forms.MessageBox.Show(strError, "Rename Area",
+								System.Windows.Forms.MessageBoxButtons.OK,
+								System.Windows.Forms.MessageBoxIcon.Warning);
+						OnPropertyChanged(this, "Bitmap");
+						return;
+					}
+					string strOld = m_strName;
+					m_strName = strNew;
+					lvld.OnAreaRenamed(strOld, strNew);
+				} else {
+					m_strName = strNew;
+				}
 				OnPropertyChanged(this, "Bitmap");
 			}
+		}
+
+		// Used when placing a copy so the copy doesn't share the original's name
+
+		internal void SetNameNoFixup(string strName) {
+			m_strName = strName;
 		}
 	}
 }

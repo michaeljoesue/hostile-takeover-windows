@@ -678,11 +678,20 @@ namespace m
 
 			Point ptClient = PointToClient(new Point(e.X, e.Y));
 			Point ptMouse = ViewToWorld(new Point(ptClient.X - AutoScrollPosition.X, ptClient.Y - AutoScrollPosition.Y));
-			PlaceMapItems(ptMouse, ldat);
+			bool fMove = m_fDragSource && (e.AllowedEffect & DragDropEffects.Move) != 0;
+			PlaceMapItems(ptMouse, ldat, fMove);
 			e.Effect = e.AllowedEffect;
 		}
 
+		// True while this view is the source of a drag, so a plain move
+		// (not a Ctrl-copy) keeps area names instead of renaming the copy
+		bool m_fDragSource;
+
 		void PlaceMapItems(Point ptMouse, LevelData ldat) {
+			PlaceMapItems(ptMouse, ldat, false);
+		}
+
+		void PlaceMapItems(Point ptMouse, LevelData ldat, bool fKeepAreaNames) {
 			// Figure out where we want to place these map items
 
 			PointF ptOrigin;
@@ -696,6 +705,12 @@ namespace m
 				ami[imi].tx = aptPlace[imi].X;
 				ami[imi].ty = aptPlace[imi].Y;
 			}
+
+			// Copies of areas get their own names; triggers and unit groups
+			// refer to areas by name so duplicates would be ambiguous
+
+			if (!fKeepAreaNames)
+				m_lvld.MakeAreaNamesUnique(ami);
 
 			// Add them to the level, make them selected
 
@@ -810,7 +825,13 @@ namespace m
 
 			// Perform the drag drop. If it was cancelled, nothing to do.
 
-			DragDropEffects effActual = DoDragDrop(ldat, eff);
+			DragDropEffects effActual;
+			m_fDragSource = true;
+			try {
+				effActual = DoDragDrop(ldat, eff);
+			} finally {
+				m_fDragSource = false;
+			}
 			if (effActual == DragDropEffects.None)
 				return;
 
