@@ -53,8 +53,9 @@ can see your allies' bases and armies.
 Sound is in stereo: fighting to the left of the screen comes from the
 left speaker (or headphone), fighting to the right from the right, and
 battles off screen sound quieter the farther away they are. Fights
-straight above or below the screen sound centered. The volume slider in
-Options adjusts the game's volume.
+straight above or below the screen sound centered. To change the volume,
+use the Volume slider in Options (main menu, or M in a game). 0% is
+silent; the setting is remembered.
 
 
 MAKING YOUR OWN MISSIONS

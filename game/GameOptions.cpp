@@ -313,10 +313,23 @@ bool InGameOptionsForm::Init(FormMgr *pfrmm, IniReader *pini, word idf)
 	m_tGameSpeed = gtGameSpeed;
 	m_wfHandicap = gwfHandicap;
     m_nScrollSpeed = gnScrollSpeed;
+	m_nVolumeSaved = gsndm.GetVolume();
+	m_fSoundEnabledSaved = gsndm.IsEnabled();
 
 #if defined(SDL)
     GetControlPtr(kidcLassoSelection)->Show(false);
 #endif
+
+	// Volume (0..255 in the sound manager, shown as 0..100%). Without a sound
+	// device there's nothing to adjust.
+
+	SliderControl *psldr = (SliderControl *)GetControlPtr(kidcInGameVolume);
+	psldr->SetRange(0, 20);
+	if (m_nVolumeSaved < 0) {
+		psldr->Show(false);
+		GetControlPtr(kidcInGameVolumeLabel)->Show(false);
+		GetControlPtr(kidcInGameVolumeString)->Show(false);
+	}
 
 	InitResettableControls();
 	return true;
@@ -367,7 +380,23 @@ void InGameOptionsForm::InitResettableControls()
 	SetControlChecked(kidcNormal, m_wfHandicap == kfHcapNormal);
 	SetControlChecked(kidcHard, m_wfHandicap == kfHcapHard);
 
+	// Volume, in steps of 5%. Sound turned off (the old Mute setting) shows
+	// as 0.
+
+	int nVolume = gsndm.IsEnabled() ? gsndm.GetVolume() : 0;
+	if (nVolume >= 0) {
+		psldr = (SliderControl *)GetControlPtr(kidcInGameVolume);
+		psldr->SetValue((nVolume * 20 + 127) / 255);
+	}
+
 	UpdateLabels();
+}
+
+// Volume slider position (0..20) to sound manager volume (0..255)
+
+static int VolumeFromSliderValue(int n)
+{
+	return n * 255 / 20;
 }
 
 void InGameOptionsForm::UpdateLabels()
@@ -382,6 +411,11 @@ void InGameOptionsForm::UpdateLabels()
     int cFrac = (m_nScrollSpeed - (int)m_nScrollSpeed) * 100;
     sprintf(szT, "%d.%dx", cWhole, cFrac);
     plbl->SetText(szT);
+
+	plbl = (LabelControl *)GetControlPtr(kidcInGameVolumeLabel);
+	SliderControl *psldr = (SliderControl *)GetControlPtr(kidcInGameVolume);
+	sprintf(szT, "%d%%", psldr->GetValue() * 5);
+	plbl->SetText(szT);
 }
 
 void InGameOptionsForm::OnControlSelected(word idc)
@@ -404,6 +438,20 @@ void InGameOptionsForm::OnControlSelected(word idc)
 			UpdateLabels();
         }
         break;
+
+	case kidcInGameVolume:
+		{
+			// Takes effect right away so it can be heard; Cancel puts it back
+
+			SliderControl *psldr =
+                    (SliderControl *)GetControlPtr(kidcInGameVolume);
+			int nVolume = VolumeFromSliderValue(psldr->GetValue());
+			gsndm.SetVolume(nVolume);
+			gsndm.Enable(true);
+			gsndm.PlaySfx(ksfxGuiButtonTap);
+			UpdateLabels();
+		}
+		break;
 
 	case kidcEasy:
 	case kidcNormal:
@@ -444,10 +492,18 @@ void InGameOptionsForm::OnControlSelected(word idc)
 		break;
 
 	case kidcCancel:
+		if (m_nVolumeSaved >= 0) {
+			gsndm.SetVolume(m_nVolumeSaved);
+			gsndm.Enable(m_fSoundEnabledSaved);
+		}
 		EndForm(idc);
 		break;
 
 	case kidcDefault:
+		if (m_nVolumeSaved >= 0) {
+			gsndm.SetVolume(255);
+			gsndm.Enable(true);
+		}
 		m_fLassoSelection = false;
 		m_tGameSpeed = kcmsUpdate / 20;
         m_nScrollSpeed = 1.0;

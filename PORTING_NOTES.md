@@ -1076,6 +1076,33 @@ arrays (the sprite sort, the nearby-enemy search).
 Checked on the 120 x 120 test map: the limits above are what the game uses,
 and the map plays normally.
 
+## 44. Volume slider in Options
+
+The Windows build only ever shows the GAME OPTIONS form
+(`DoModalGameOptionsForm` skips the old options menu with its SOUND
+button), so there was no way to change the volume, even though the sound
+manager, the SDL sound device and the saved preferences all support it.
+
+- `data/forms.ini.pp` `[kidfInGameOptions]`: a Volume label, slider and
+  percentage (new ids `kidcInGameVolume`, `kidcInGameVolumeLabel`,
+  `kidcInGameVolumeString` in res.h), with the other controls moved up a
+  little to fit.
+- `InGameOptionsForm` (GameOptions.cpp): the slider goes 0-100% in 5%
+  steps (sound manager volume 0-255). Moving it changes the volume at once
+  and plays a click so you can hear the level; Cancel puts back the old
+  volume, Default sets 100%, OK saves it with the other preferences
+  (`Preferences.nVolume`, already saved and loaded at start-up). Sound
+  that was turned off with the old Mute setting shows as 0% and is turned
+  back on when the slider moves. With no sound device the slider is hidden.
+- The forms.ini record in `game/htdata832.pdb` is rebuilt from
+  forms.ini.pp: `cpp -P -Wno-trigraphs -DTILESIZE=32 -I../game
+  forms.ini.pp ini.tmp`, then `inicrunch_linux ini.tmp forms.ini` (the
+  unchanged file rebuilds byte for byte), then replaced in the pdb.
+
+Tested with SDL's dummy audio driver (the test machine has no sound card):
+the slider shows 100% by default; setting 40% and OK is still 40% after
+restarting the game; moving it to 5% and pressing Cancel goes back to 40%.
+
 ## File map
 
 | File | Purpose |

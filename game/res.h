@@ -428,6 +428,9 @@
 #define kidc1Select2Scroll 1203
 #define kidcScrollSpeed 1204
 #define kidcScrollSpeedLabel 1205
+#define kidcInGameVolume 1206
+#define kidcInGameVolumeLabel 1207
+#define kidcInGameVolumeString 1208
 
 // SoundOptions constants
 

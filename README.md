@@ -45,8 +45,8 @@ The window can be resized or maximized; the 800×600 picture scales to fit and
 keeps its shape.
 
 Sound is in stereo: battles to the left of the screen come from the left
-speaker, and fighting off screen is quieter the farther away it is. The
-volume slider in Options works.
+speaker, and fighting off screen is quieter the farther away it is. Options (main menu,
+or M in a game) has a Volume slider.
 
 ### Saves
 

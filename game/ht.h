@@ -2620,6 +2620,8 @@ private:
 	long m_tGameSpeed;
 	word m_wfHandicap;
     double m_nScrollSpeed;
+	int m_nVolumeSaved;	// volume when the form opened, restored on Cancel
+	bool m_fSoundEnabledSaved;
 };
 
 // Control
