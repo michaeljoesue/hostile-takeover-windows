@@ -31,7 +31,7 @@ along with it.
 | Right click on the ground | Move the selected units there |
 | Right click on an enemy | Attack it with the selected units |
 | Right click on your own unit or building | Open its menu (the phone version's "tap and hold"; holding the left button for half a second also works) |
-| Ctrl + click (left or right) on anything | Force attack: the selected units attack it, even your own units and buildings |
+| Ctrl + right click on anything | Force attack: the selected units attack it, even your own units and buildings |
 | Right click in a build menu | Cancel one queued unit (on the unit's icon or the Order button); never queues a new one |
 | Arrow keys | Scroll the map |
 | Click the minimap | Jump to that part of the map |

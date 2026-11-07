@@ -982,6 +982,38 @@ Tested on C_05.ld: renaming area d1 (used 3 times) moved all 3 references to
 the new name, the level still validates with no area errors, and the
 references survive save and reload.
 
+Unit groups for Crimson: the Side list in Settings > Unit Groups
+(m/UnitGroupsForm.cs) only offered sides 1-4, so a group couldn't be given
+to Crimson (side 5). Crimson is now the fifth entry; the group is saved as
+`Side=kside5`, which the game already maps to the Crimson player.
+
+## 41. Force attack (Ctrl+right click)
+
+Holding Ctrl while right clicking with units selected makes them attack
+whatever is under the cursor, including the player's own or allied units and
+buildings.
+
+- `sdl/host.cpp` adds `kfEvtForceAttack` to mouse button events while Ctrl is
+  down. `stylushandler.cpp` calls `SimUIForm::ForceAttack` when a Ctrl+right
+  click is released. Ctrl+left click is an ordinary left click.
+- `SimUIForm::ForceAttack` hit-tests, then calls `SetSelectionTargets` with
+  `gfForceAttackCommand` set.
+- `UnitGob::m_gidForceTarget`: `MobileUnitGob::SetTarget` and
+  `TowerGob::SetTarget` set it to the target for a forced order and clear it
+  for any other order, and skip the "ignore allies" check for it.
+  `UnitGob::IsValidTarget` accepts that one target even if it's an ally, so
+  the attack state keeps attacking it until it dies or a new order is given.
+  A unit never targets itself. Allies hit this way don't fight back (their
+  return fire still fails `IsValidTarget`).
+- Not saved: after loading a game, a forced attack on an ally stops.
+- Kill statistics: a unit or building destroyed by its own side or an ally
+  doesn't count as an enemy kill for the attacker (the `kmidHit` handlers in
+  MobileUnit.cpp and Struct.cpp check `IsAlly(sideAssailant)`). It still
+  counts as lost for its owner.
+- Ctrl+right click on empty ground does nothing (the engine has no
+  attack-ground), nor on a Replicator. Units that can't attack ignore it.
+
+## File map
 
 | File | Purpose |
 | --- | --- |

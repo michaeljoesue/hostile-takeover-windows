@@ -897,8 +897,13 @@ BeginStateMachine
 			fxDamage = (fix)mulfx(fxDamage, (itofx(knDecreasedDamagePercent) / 100));
 		SetHealth(subfx(m_fxHealth, fxDamage));
 		if (m_fxHealth <= 0) {
-			Player *pplr = gplrm.GetPlayer(pmsg->Hit.sideAssailant);
-			pplr->IncEnemyStructuresKilled();
+			// Own / allied buildings destroyed by a force attack (Ctrl+right
+			// click) aren't enemy kills
+
+			if (!IsAlly(pmsg->Hit.sideAssailant)) {
+				Player *pplr = gplrm.GetPlayer(pmsg->Hit.sideAssailant);
+				pplr->IncEnemyStructuresKilled();
+			}
 			m_pplr->IncStructuresLost();
 
 			SetState(kstDying);

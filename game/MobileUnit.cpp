@@ -797,8 +797,13 @@ lbAttackCommand:
 		}
 
 		if (m_fxHealth <= 0) {
-			Player *pplr = gplrm.GetPlayer(pmsg->Hit.sideAssailant);
-			pplr->IncEnemyMobileUnitsKilled();
+			// Own / allied units destroyed by a force attack (Ctrl+right
+			// click) aren't enemy kills
+
+			if (!IsAlly(pmsg->Hit.sideAssailant)) {
+				Player *pplr = gplrm.GetPlayer(pmsg->Hit.sideAssailant);
+				pplr->IncEnemyMobileUnitsKilled();
+			}
 			m_pplr->IncMobileUnitsLost();
 
 			SetState(kstDying);

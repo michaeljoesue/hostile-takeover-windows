@@ -30,7 +30,7 @@ CONTROLS
                         Open its menu (same as "tap and hold" on the
                         phone version; holding the left button for half
                         a second also works)
-  Ctrl + click (left or right) on anything
+  Ctrl + right click on anything
                         Force attack: the selected units attack it even
                         if it's your own unit or building
   Right click in a build menu

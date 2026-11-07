@@ -151,7 +151,7 @@ bool EventMgr::GetEvent(Event *pevt, long ctWait, bool fCheckPaints)
 				// (Desktop right-button presses are handled as clicks,
 				// never as holds.)
 
-				m_fTimingPenHold = (pevt->ff & (kfEvtRightButton | kfEvtForceAttack)) == 0;
+				m_fTimingPenHold = (pevt->ff & kfEvtRightButton) == 0;
 				m_tPenDown = gtimm.GetTickCount();
 				m_xHold = pevt->x;
 				m_yHold = pevt->y;
