@@ -810,6 +810,7 @@ namespace m
 			comboBoxSide.Items.Add(Helper.GetDisplayName(typeof(Side), "side2"));
 			comboBoxSide.Items.Add(Helper.GetDisplayName(typeof(Side), "side3"));
 			comboBoxSide.Items.Add(Helper.GetDisplayName(typeof(Side), "side4"));
+			comboBoxSide.Items.Add(Helper.GetDisplayName(typeof(Side), "side5"));	// Crimson
 
 			if (m_ugSelected != null)
 				comboBoxSide.SelectedIndex = (int)m_ugSelected.Side - 1;
