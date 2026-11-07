@@ -3212,6 +3212,8 @@ public:
 	void Update() secMiniMapControl;
 	bool CalcPoweredRadar() secMiniMapControl;
 	static int CalcWidth() secMiniMapControl;
+	static void CalcSizes(int *pnScale, int *pcxContent, int *pcyContent,
+            int *pcxDisplay, int *pcyDisplay) secMiniMapControl;
 
 private:
     void OnPenEvent2(Event *pevt);
@@ -3223,6 +3225,9 @@ private:
 	int m_cyInputUI;
 	int m_cxyBorder;
 	DibBitmap *m_pbm;
+	DibBitmap *m_pbmDisplay;    // scaled-down copy shown on screen, or NULL
+	int m_cxContent, m_cyContent; // minimap picture in m_pbm, in pixels
+	int m_cxDisplay, m_cyDisplay; // size shown on screen
 	word m_wfMm;
 	int m_xOff;
 	int m_yOff;

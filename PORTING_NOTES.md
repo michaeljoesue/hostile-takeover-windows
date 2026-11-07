@@ -516,10 +516,14 @@ a handful of things sized for 64:
   maps"). On a 120 × 120 map it reaches about 28000, still below the
   `0x7fff` starting value, so release builds were fine; the assert now
   checks the real bound for 127 tiles. The debug build found this one.
-- The minimap uses one pixel per tile when either side of the map is bigger
-  than 64, so it stays at most 127 pixels. Both scales of mini-tiles were
-  always in the data (`m/OutputTools.cs` writes 2 × 2 and 1 × 1 sets), so
-  no data change was needed.
+- The minimap first used one pixel per tile on maps bigger than 64 tiles,
+  so it stayed at most 127 pixels. That was too small to read on a 120 × 120
+  map, so it now always uses the normal 2 × 2 pixels per tile and, when that
+  is more than 180 pixels (maps over 90 tiles), is shown scaled down to 180
+  pixels (`MiniMapControl::CalcSizes` in `game/SimUI.cpp`). A 120 × 120 map
+  gets a 180-pixel minimap; clicks and drags on it are scaled back. Both
+  scales of mini-tiles were always in the data (`m/OutputTools.cs` writes
+  2 × 2 and 1 × 1 sets), so no data change was needed.
 
 What was checked and left alone: gob gid map (2 bytes per tile, 32 KB at
 127 × 127, inside one memory chunk), the fog and terrain maps (one byte per

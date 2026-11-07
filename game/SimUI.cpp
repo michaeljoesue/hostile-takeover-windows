@@ -1312,6 +1312,8 @@ MiniMapControl *gpmm;
 MiniMapControl::MiniMapControl()
 {
 	m_pbm = NULL;
+	m_pbmDisplay = NULL;
+	m_cxContent = m_cyContent = m_cxDisplay = m_cyDisplay = 0;
 	m_cxyBorder = 0;
 	m_wfMm = 0;
 	m_xOff = 0;
@@ -1323,23 +1325,55 @@ MiniMapControl::~MiniMapControl()
 {
 	gpmm = NULL;
 	delete m_pbm;
+	delete m_pbmDisplay;
 }
 
-int MiniMapControl::CalcWidth()
+// Largest minimap shown on screen, in pixels. Maps bigger than this at 2
+// pixels per tile (more than 90 x 90 tiles) are drawn at 2 pixels per tile
+// and shown scaled down to this size (a 120 x 120 map is 180 pixels).
+
+#define kcxyMiniMapDisplayMax 180
+
+void MiniMapControl::CalcSizes(int *pnScale, int *pcxContent, int *pcyContent,
+        int *pcxDisplay, int *pcyDisplay)
 {
 	// Figure out scale based on playfield size
 
 	Size siz;
 	ggame.GetPlayfieldSize(&siz);
 	int nScale = 1;
-	if (siz.cx >= 240)
+	if (siz.cx >= 240 && siz.cx < 320) {
+		if (siz.cy > siz.cx)
+			nScale = 2;
+	}
+	if (siz.cx >= 320)
 		nScale = 2;
-
-	// Width
 
 	Size sizMap;
 	gsim.GetLevel()->GetTileMap()->GetMapSize(&sizMap);
-	return sizMap.cx / (gcxTile / nScale) + 1;
+	int cxContent = sizMap.cx / (gcxTile / nScale);
+	int cyContent = sizMap.cy / (gcyTile / nScale);
+
+	int cxDisplay = cxContent;
+	int cyDisplay = cyContent;
+	int cMax = _max(cxContent, cyContent);
+	if (nScale == 2 && cMax > kcxyMiniMapDisplayMax) {
+		cxDisplay = (cxContent * kcxyMiniMapDisplayMax / cMax) & ~1;
+		cyDisplay = cyContent * kcxyMiniMapDisplayMax / cMax;
+	}
+
+	*pnScale = nScale;
+	*pcxContent = cxContent;
+	*pcyContent = cyContent;
+	*pcxDisplay = cxDisplay;
+	*pcyDisplay = cyDisplay;
+}
+
+int MiniMapControl::CalcWidth()
+{
+	int nScale, cxContent, cyContent, cxDisplay, cyDisplay;
+	CalcSizes(&nScale, &cxContent, &cyContent, &cxDisplay, &cyDisplay);
+	return cxDisplay + 1;
 }
 
 bool MiniMapControl::Init(Form *pfrm, IniReader *pini, FindProp *pfind)
@@ -1364,64 +1398,65 @@ bool MiniMapControl::Init(Form *pfrm, IniReader *pini, FindProp *pfind)
 
 	m_cxyBorder = 1;
 
-	// Figure out scale based on playfield size
+	// Scale and size. Big maps are drawn at the normal scale and shown
+	// scaled down (see CalcSizes).
 
-	Size siz;
-	ggame.GetPlayfieldSize(&siz);
-	m_nScale = 1;
-	if (siz.cx >= 240 && siz.cx < 320) {
-		if (siz.cy > siz.cx)
-			m_nScale = 2;
-	}
-	if (siz.cx >= 320)
-		m_nScale = 2;
-
-	// Size. Maps bigger than the original 64 x 64 limit use 1 pixel per tile
-	// so the minimap stays the size players know (at most 127 pixels).
-
-	Size sizMap;
-	gsim.GetLevel()->GetTileMap()->GetMapSize(&sizMap);
-	if (sizMap.cx / gcxTile > ktcMapOriginal || sizMap.cy / gcyTile > ktcMapOriginal)
-		m_nScale = 1;
+	CalcSizes(&m_nScale, &m_cxContent, &m_cyContent, &m_cxDisplay,
+            &m_cyDisplay);
 	gsim.SetMiniMapScale(m_nScale);
-	m_rc.left = m_rc.right - ((sizMap.cx / (gcxTile / m_nScale)) + m_cxyBorder);
-	m_rc.bottom = m_rc.top + (sizMap.cy / (gcyTile / m_nScale)) + m_cxyBorder;
+	m_rc.left = m_rc.right - (m_cxDisplay + m_cxyBorder);
+	m_rc.bottom = m_rc.top + m_cyDisplay + m_cxyBorder;
 
-	// The map is aligned to an edge. The edge is even, and the dib starts on
-	// an even address, so we want the width to be even so our blts are aligned.
-	// If the map is odd, draw the border inside the dib to make it even. If the
-	// map is even, draw the border outside the dib.
+	if (m_cxDisplay != m_cxContent || m_cyDisplay != m_cyContent) {
+		// Draw into a full size picture without borders; OnPaint shows it
+		// scaled down and draws the borders on screen.
 
-	int cx = m_rc.Width();
-	if (cx & 1) {
 		m_wfMm &= ~kfMmVertBorderInside;
-		cx -= m_cxyBorder;
 		m_xOff = 0;
-		m_yOff = m_cxyBorder;
+		m_yOff = 0;
+		m_pbm = CreateDibBitmap(NULL, (m_cxContent + 1) & ~1, m_cyContent);
+		m_pbmDisplay = CreateDibBitmap(NULL, m_cxDisplay, m_cyDisplay);
+		if (m_pbm == NULL || m_pbmDisplay == NULL)
+			return false;
+		m_pbm->Fill(0, 0, (m_cxContent + 1) & ~1, m_cyContent,
+                GetColor(kiclrBlack));
 	} else {
-		m_wfMm |= kfMmVertBorderInside;
-		m_xOff = m_cxyBorder;
-		m_yOff = m_cxyBorder;
-	}
+		// The map is aligned to an edge. The edge is even, and the dib starts on
+		// an even address, so we want the width to be even so our blts are aligned.
+		// If the map is odd, draw the border inside the dib to make it even. If the
+		// map is even, draw the border outside the dib.
 
-	// Alloc a dib to hold it
-
-	m_pbm = CreateDibBitmap(NULL, cx, m_rc.Height());
-	if (m_pbm == NULL)
-		return false;
-
-	// Draw internal borders
-
-	int x = 0;
-	int y = 0;
-	if (m_cxyBorder != 0) {
-		Color clrBorder = GetColor(kiclr0CyanSide);
-		if (m_wfMm & kfMmVertBorderInside) {
-			m_pbm->Fill(x + m_cxyBorder, y, m_rc.Width() - m_cxyBorder, m_cxyBorder, clrBorder);
-			m_pbm->Fill(x, y, m_cxyBorder, m_rc.Height() - m_cyInputUI + 1, clrBorder);
-			m_pbm->Fill(x, y + m_rc.Height() - m_cyInputUI + 1, m_cxyBorder, m_rc.Height(), GetColor(kiclrBlack));
+		int cx = m_rc.Width();
+		if (cx & 1) {
+			m_wfMm &= ~kfMmVertBorderInside;
+			cx -= m_cxyBorder;
+			m_xOff = 0;
+			m_yOff = m_cxyBorder;
 		} else {
-			m_pbm->Fill(x, y, m_rc.Width(), m_cxyBorder, clrBorder);
+			m_wfMm |= kfMmVertBorderInside;
+			m_xOff = m_cxyBorder;
+			m_yOff = m_cxyBorder;
+		}
+
+		// Alloc a dib to hold it
+
+		m_pbm = CreateDibBitmap(NULL, cx, m_rc.Height());
+		if (m_pbm == NULL)
+			return false;
+
+		// Draw internal borders
+
+		int x = 0;
+		int y = 0;
+		if (m_cxyBorder != 0) {
+			Color clrBorder = GetColor(kiclr0CyanSide);
+			if (m_wfMm & kfMmVertBorderInside) {
+				m_pbm->Fill(x + m_cxyBorder, y, m_rc.Width() - m_cxyBorder, m_cxyBorder, clrBorder);
+				m_pbm->Fill(x, y, m_cxyBorder, m_rc.Height() - m_cyInputUI + 1, clrBorder);
+				m_pbm->Fill(x, y + m_rc.Height() - m_cyInputUI + 1, m_cxyBorder, m_rc.Height(), GetColor(kiclrBlack));
+			} else {
+				m_pbm->Fill(x, y, m_rc.Width(), m_cxyBorder, clrBorder);
+			}
 		}
 	}
 
@@ -1465,7 +1500,26 @@ void MiniMapControl::OnPaint(DibBitmap *pbm)
 	Rect rcSrc;
 	rcSrc.Set(0, 0, siz.cx, siz.cy);
 
-	if (m_wfMm & kfMmVertBorderInside) {
+	if (m_pbmDisplay != NULL) {
+		// Big map: scale the picture down (nearest pixel) and draw the
+		// borders here
+
+		byte *pbSrc = m_pbm->GetBits();
+		int cbSrc = m_pbm->GetRowBytes();
+		byte *pbDst = m_pbmDisplay->GetBits();
+		int cbDst = m_pbmDisplay->GetRowBytes();
+		for (int yT = 0; yT < m_cyDisplay; yT++) {
+			byte *pbRow = pbSrc + (long)(yT * m_cyContent / m_cyDisplay) * cbSrc;
+			for (int xT = 0; xT < m_cxDisplay; xT++)
+				pbDst[xT] = pbRow[xT * m_cxContent / m_cxDisplay];
+			pbDst += cbDst;
+		}
+		rcSrc.Set(0, 0, m_cxDisplay, m_cyDisplay);
+		pbm->Blt(m_pbmDisplay, &rcSrc, x + m_cxyBorder, y + m_cxyBorder);
+		pbm->Fill(x, y, m_rc.Width(), m_cxyBorder, GetColor(kiclr0CyanSide));
+		pbm->Fill(x, y, m_cxyBorder, m_rc.Height() - m_cyInputUI + 1, GetColor(kiclr0CyanSide));
+		pbm->Fill(x, y + m_rc.Height() - m_cyInputUI + 1, m_cxyBorder, m_cyInputUI - 1, GetColor(kiclrBlack));
+	} else if (m_wfMm & kfMmVertBorderInside) {
 		pbm->Blt(m_pbm, &rcSrc, x, y);
 	} else {
 		pbm->Blt(m_pbm, &rcSrc, x + m_cxyBorder, y);
@@ -1485,12 +1539,18 @@ void MiniMapControl::OnPaint(DibBitmap *pbm)
 	int cxTile = gcxTile / m_nScale;
 	int cyTile = gcyTile / m_nScale;
 
-	Rect rc;
-	rc.left = x + m_cxyBorder + PcFromUwc(wxView) / cxTile;
-	rc.top = y + m_cxyBorder + PcFromUwc(wyView) / cyTile;
+	// In minimap picture pixels, then scaled to the size shown
+
 	ggame.GetPlayfieldSize(&siz);
-	rc.right = rc.left + (siz.cx + cxTile - 1) / cxTile;
-	rc.bottom = rc.top + (siz.cy + cyTile - 1) / cyTile;
+	int xView1 = PcFromUwc(wxView) / cxTile;
+	int yView1 = PcFromUwc(wyView) / cyTile;
+	int cxView1 = (siz.cx + cxTile - 1) / cxTile;
+	int cyView1 = (siz.cy + cyTile - 1) / cyTile;
+	Rect rc;
+	rc.left = x + m_cxyBorder + xView1 * m_cxDisplay / m_cxContent;
+	rc.top = y + m_cxyBorder + yView1 * m_cyDisplay / m_cyContent;
+	rc.right = rc.left + cxView1 * m_cxDisplay / m_cxContent;
+	rc.bottom = rc.top + cyView1 * m_cyDisplay / m_cyContent;
 	DrawBorder(pbm, &rc, 1, GetColor(kiclrWhite));
 }
 
@@ -1586,6 +1646,11 @@ void MiniMapControl::OnPenEvent2(Event *pevt)
 
 	int xPen = pevt->x - (rcForm.left + m_rc.left + m_cxyBorder);
 	int yPen = pevt->y - (rcForm.top + m_rc.top + m_cxyBorder);
+
+	// Into minimap picture pixels (big maps are shown scaled down)
+
+	xPen = xPen * m_cxContent / m_cxDisplay;
+	yPen = yPen * m_cyContent / m_cyDisplay;
 
 	WCoord wxView, wyView;
 	gsim.GetViewPos(&wxView, &wyView);
