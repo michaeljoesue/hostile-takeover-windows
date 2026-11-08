@@ -1576,7 +1576,9 @@ struct Event { // evt
 #define kfEvtCoalesce 0x00000002
 #define kfEvtRightButton 0x00000004 // desktop: pen event came from the right mouse button
 #define kfEvtForceAttack 0x00000008 // desktop: Ctrl was held (force attack)
-extern bool gfForceAttackCommand; // set by SimUIForm::ForceAttack while it gives orders
+extern bool gfForceAttackCommand;
+extern long gmsLastSimUpdate;
+extern bool gfSmoothRender; // set by SimUIForm::ForceAttack while it gives orders
 extern dword gffPenEventCurrent; // flags (kfEvt*) of the pen event forms are processing now
 
 // Custom events
@@ -4608,6 +4610,8 @@ public:
 	void DrawBackground(UpdateMap *pupd, DibBitmap *pbm) secSimulation;
 	void DrawFog(UpdateMap *pupd, DibBitmap *pbm) secSimulation;
 	bool SetViewPos(WCoord wx, WCoord wy, bool fInit = false) secSimulation;
+	int BeginInterpolatedDraw() secSimulation;
+	void EndInterpolatedDraw() secSimulation;
 	void GetViewPos(WCoord *pwx, WCoord *pwy) secSimulation;
 	bool HitTest(Enum *penm, WCoord wx, WCoord wy, word wf, Gob **ppgob) secSimulation;
     Gob *FingerHitTest(WCoord wx, WCoord wy, word wf, bool *pfHitSurrounding) secSimulation;
@@ -5258,10 +5262,23 @@ public:
 
 	TRectSmall m_trcBoundingLast;
 
+	// Smooth rendering: frames are drawn between Simulation updates with
+	// moving gobs placed part way between their position before the last
+	// update and their current one. See Simulation::BeginInterpolatedDraw.
+
+	void SavePrevPosition() {
+		m_wxPrev = m_wx;
+		m_wyPrev = m_wy;
+	}
+	bool BeginInterpolatedPosition(int nAlpha256) secGob;
+	void EndInterpolatedPosition() secGob;
+
 protected:
 	Gid m_gid;
 	dword m_ff;
 	WCoord m_wx, m_wy;
+	WCoord m_wxPrev, m_wyPrev;	// kwxInvalid if not known yet
+	WCoord m_wxReal, m_wyReal;	// real position while interpolated
 	Player *m_pplr;
 
 private:
@@ -7828,6 +7845,7 @@ long HostGetTickCount() secHost;
 long HostGetMillisecondCount() secHost;
 long HostRunSpeedTests(DibBitmap *pbmSrc) secHost;
 dword HostGetCurrentKeyState(dword keyBit) secHost;
+void HostGetScrollKeys(int *pdx, int *pdy) secHost;
 void HostMessageBox(TCHAR *pszFormat, ...) secHost;
 Display *HostCreateDisplay() secDisplay;
 bool HostIsPenDown() secHost;

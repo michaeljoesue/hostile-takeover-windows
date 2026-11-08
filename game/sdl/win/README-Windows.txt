@@ -36,7 +36,9 @@ CONTROLS
   Right click in a build menu
                         Cancel one queued unit (click the unit's icon
                         or the Order button). It never orders a new one.
-  Arrow keys            Scroll the map
+  Arrow keys            Scroll the map (smoothly, while held; the Scroll
+                        Speed option sets how fast)
+  F                     Show / hide the frames-per-second counter
   Click the minimap     Jump to that part of the map (bottom right)
   M                     Open the in-game menu (save / load / options)
   F11  or  Alt+Enter    Toggle fullscreen

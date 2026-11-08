@@ -134,6 +134,10 @@ bool Display::Init()
     SDL_RenderSetLogicalSize(m_renderer, m_cx, m_cy);
     SDL_SetWindowMinimumSize(m_window, m_cx / 2, m_cy / 2);
 #endif
+    // Wait for the monitor's refresh when presenting, so frames are evenly
+    // paced and don't tear (see SetVSync)
+    m_nVSync = -1;
+    SetVSync(true);
     this->SetShouldRender(true);
 
     // Keep the screen size around
@@ -338,6 +342,20 @@ void Display::RenderGameSurface() {
     SDL_RenderClear(m_renderer);
     SDL_RenderCopy(m_renderer, m_texture, NULL, NULL);
     SDL_RenderPresent(m_renderer);
+}
+
+// Smooth rendering draws a frame for every 10 ms timer tick while things
+// move; vsync paces those frames to the monitor. At the fastest game speed
+// (100 updates a second) waiting for the refresh would slow the game down,
+// so vsync is turned off there (SmoothRenderTimer in SimUI.cpp decides).
+
+void Display::SetVSync(bool fVSync)
+{
+    int nVSync = fVSync ? 1 : 0;
+    if (m_renderer == NULL || nVSync == m_nVSync)
+        return;
+    if (SDL_RenderSetVSync(m_renderer, nVSync) == 0)
+        m_nVSync = nVSync;
 }
 
 void Display::ToggleFullscreen()

@@ -195,6 +195,42 @@ Gob::Gob()
 	m_trcBoundingLast.tyTop = 0x7fff;
 	m_trcBoundingLast.txRight = -0x7fff;
 	m_trcBoundingLast.tyBottom = -0x7fff;
+	m_wxPrev = kwxInvalid;
+	m_wyPrev = kwxInvalid;
+	m_wxReal = 0;
+	m_wyReal = 0;
+}
+
+// Smooth rendering. Put the gob part way (nAlpha256 / 256) between where it
+// was before the last Simulation update and where it is now, for drawing
+// only. Returns false (and changes nothing) if it didn't move, or moved so
+// far it must have jumped (e.g., came out of a transport). Must be paired
+// with EndInterpolatedPosition before anything but drawing happens.
+
+#define kwcInterpolateMax (kwcTile * 3)
+
+bool Gob::BeginInterpolatedPosition(int nAlpha256)
+{
+	if (m_wxPrev == kwxInvalid)
+		return false;
+	int dx = m_wx - m_wxPrev;
+	int dy = m_wy - m_wyPrev;
+	if (dx == 0 && dy == 0)
+		return false;
+	if (abs(dx) > kwcInterpolateMax || abs(dy) > kwcInterpolateMax)
+		return false;
+	m_wxReal = m_wx;
+	m_wyReal = m_wy;
+	m_wx = (WCoord)(m_wxPrev + dx * nAlpha256 / 256);
+	m_wy = (WCoord)(m_wyPrev + dy * nAlpha256 / 256);
+	MarkRedraw();
+	return true;
+}
+
+void Gob::EndInterpolatedPosition()
+{
+	m_wx = m_wxReal;
+	m_wy = m_wyReal;
 }
 
 Gob::~Gob()

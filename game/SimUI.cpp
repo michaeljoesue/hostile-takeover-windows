@@ -62,10 +62,89 @@ SimUIForm::SimUIForm()
     m_ppenh = new StylusHandler(this);
 }
 
+// Smooth rendering (desktop): this timer runs every tick (10 ms) while the
+// Simulation is up. It keeps frames coming while gobs are being drawn between
+// updates (see Simulation::BeginInterpolatedDraw), and scrolls the map
+// smoothly while an arrow key is held.
+
+bool gfInterpolatedLastPaint;
+
+#define kpxKeyScrollPerSec 1000
+
+class SmoothRenderTimer : public Timer
+{
+public:
+	SmoothRenderTimer() {
+		m_msLast = 0;
+		m_nxScrollFrac = 0;
+		m_nyScrollFrac = 0;
+	}
+	virtual void OnTimer(long tCurrent);
+
+private:
+	long m_msLast;
+	long m_nxScrollFrac;	// sub-pixel scroll remainders, 1/1000 pixel
+	long m_nyScrollFrac;
+};
+
+static SmoothRenderTimer s_srtmr;
+static bool s_fSmoothRenderTimerAdded;
+
+void SmoothRenderTimer::OnTimer(long tCurrent)
+{
+	long ms = HostGetMillisecondCount();
+	long dms = ms - m_msLast;
+	m_msLast = ms;
+	if (dms < 0 || dms > 100)
+		dms = 0;
+
+	if (!gfSmoothRender)
+		return;
+
+	// Pace frames to the monitor, except at the fastest game speed where
+	// waiting for the refresh would slow the game itself down
+
+	gpdisp->SetVSync(gtGameSpeed >= 2);
+
+	// Arrow keys scroll the map smoothly while held (only while the game
+	// itself has the input focus, not a menu)
+
+	int dxKeys = 0, dyKeys = 0;
+	HostGetScrollKeys(&dxKeys, &dyKeys);
+	if ((dxKeys != 0 || dyKeys != 0) && gpmfrmm->GetFocus() ==
+			ggame.GetInputUIForm()) {
+		long nSpeed = (long)(kpxKeyScrollPerSec * gnScrollSpeed);
+		m_nxScrollFrac += dxKeys * nSpeed * dms;
+		m_nyScrollFrac += dyKeys * nSpeed * dms;
+		int dx = (int)(m_nxScrollFrac / 1000);
+		int dy = (int)(m_nyScrollFrac / 1000);
+		m_nxScrollFrac -= dx * 1000;
+		m_nyScrollFrac -= dy * 1000;
+		if (dx != 0 || dy != 0) {
+			WCoord wxView, wyView;
+			gsim.GetViewPos(&wxView, &wyView);
+			gsim.SetViewPos(wxView + WcFromPc(dx), wyView + WcFromPc(dy));
+		}
+	} else {
+		m_nxScrollFrac = 0;
+		m_nyScrollFrac = 0;
+	}
+
+	// Keep drawing while something is part way between updates
+
+	if (gfInterpolatedLastPaint)
+		gevm.SetRedrawFlags(kfRedrawDirty);
+}
+
 SimUIForm::~SimUIForm()
 {
 	if (m_fTimerAdded)
 		gtimm.RemoveTimer(this);
+	if (s_fSmoothRenderTimerAdded) {
+		gtimm.RemoveTimer(&s_srtmr);
+		s_fSmoothRenderTimerAdded = false;
+	}
+	gfInterpolatedLastPaint = false;
 
     delete m_ppenh;
 }
@@ -79,6 +158,10 @@ bool SimUIForm::Init(FormMgr *pfrmm, IniReader *pini, word idf)
 
     gtimm.AddTimer(this, gtGameSpeed);
     m_fTimerAdded = true;
+	if (!s_fSmoothRenderTimerAdded) {
+		gtimm.AddTimer(&s_srtmr, 1);
+		s_fSmoothRenderTimerAdded = true;
+	}
 
 	// Let the base Form initialize the controls
 

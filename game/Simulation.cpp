@@ -406,6 +406,15 @@ void Simulation::Update(CommandQueue *pcmdq)
     m_tCurrent += kcmsUpdate / 10;
     m_cUpdates++;
 
+    // Smooth rendering: remember where everything is before this update
+    // moves it, and when the update happened
+
+    for (Gob *pgobPrev = ggobm.GetFirstGob(); pgobPrev != NULL;
+            pgobPrev = ggobm.GetNextGob(pgobPrev)) {
+        pgobPrev->SavePrevPosition();
+    }
+    gmsLastSimUpdate = HostGetMillisecondCount();
+
     // Update triggers. This is done here so the triggers act on what the
     // player is currently seeing (e.g., Credits will show >= NNNN when
     // >= NNNN Credits condition is satisfied).
@@ -868,6 +877,49 @@ void Simulation::DrawFog(UpdateMap *pupd, DibBitmap *pbm)
     short yView = PcFromUwc(m_wyView) & 0xfffe;
     m_plvl->GetFogMap()->Draw(pbm, xView, yView, pupd);
     HostSoundServiceProc();
+}
+
+// Smooth rendering (desktop). The Simulation updates 12.5 times a second at
+// normal speed (gtGameSpeed ticks apart), but frames are drawn much more
+// often than that. For each frame, moving gobs are drawn part way between
+// their position before the last update and their current position,
+// according to how much of the update interval has passed. Only drawing
+// sees these positions; EndInterpolatedDraw puts the real ones back.
+
+long gmsLastSimUpdate;
+bool gfSmoothRender = true;
+static Gob *s_apgobInterpolated[kcpgobMax];
+static int s_cgobInterpolated;
+
+int Simulation::BeginInterpolatedDraw()
+{
+    s_cgobInterpolated = 0;
+    if (!gfSmoothRender || m_fPaused || m_plvl == NULL)
+        return 0;
+
+    long msInterval = (long)gtGameSpeed * 10;
+    if (msInterval <= 0)
+        return 0;
+    long msSince = HostGetMillisecondCount() - gmsLastSimUpdate;
+    if (msSince < 0)
+        msSince = 0;
+    int nAlpha256 = (int)(msSince * 256 / msInterval);
+    if (nAlpha256 >= 256)
+        return 0;
+
+    for (Gob *pgob = ggobm.GetFirstGob(); pgob != NULL;
+            pgob = ggobm.GetNextGob(pgob)) {
+        if (pgob->BeginInterpolatedPosition(nAlpha256))
+            s_apgobInterpolated[s_cgobInterpolated++] = pgob;
+    }
+    return s_cgobInterpolated;
+}
+
+void Simulation::EndInterpolatedDraw()
+{
+    for (int i = 0; i < s_cgobInterpolated; i++)
+        s_apgobInterpolated[i]->EndInterpolatedPosition();
+    s_cgobInterpolated = 0;
 }
 
 bool Simulation::SetViewPos(WCoord wx, WCoord wy, bool fInit)

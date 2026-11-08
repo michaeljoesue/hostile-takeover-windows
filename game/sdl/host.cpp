@@ -560,6 +560,25 @@ dword HostGetCurrentKeyState(dword keyBit)
     return 0;
 }
 
+// Arrow keys held right now, as a direction (-1, 0 or 1 on each axis)
+
+void HostGetScrollKeys(int *pdx, int *pdy)
+{
+    const Uint8 *pkeys = SDL_GetKeyboardState(NULL);
+    *pdx = 0;
+    *pdy = 0;
+    if (pkeys == NULL)
+        return;
+    if (pkeys[SDL_SCANCODE_LEFT])
+        (*pdx)--;
+    if (pkeys[SDL_SCANCODE_RIGHT])
+        (*pdx)++;
+    if (pkeys[SDL_SCANCODE_UP])
+        (*pdy)--;
+    if (pkeys[SDL_SCANCODE_DOWN])
+        (*pdy)++;
+}
+
 bool HostIsPenDown()
 {
     return false;

@@ -1133,6 +1133,52 @@ every side (317 triggers for side 1): a "Mission loaded" trigger sets switch
 51 and the last trigger, number 302 of its side, shows an alert when switch 51
 is on. The alert appears, and the mission's own triggers still run.
 
+## 46. Smooth rendering (frame rate no longer tied to game updates)
+
+What held performance back on a PC (measured on a level with 300 units:
+drawing a frame took about 2 ms and a game update under 0.1 ms):
+
+- The screen was only redrawn when the Simulation updated, 12.5 times a
+  second at normal speed (`gtGameSpeed` ticks of 10 ms; 25 at 2x), so the
+  game ran at 12.5-25 FPS and units jumped from spot to spot.
+- Arrow-key scrolling jumped 64 pixels per key repeat.
+- The SDL event wait slept in 10 ms steps.
+
+Changes:
+
+- **Drawing between updates.** `Simulation::Update` saves every gob's
+  position (`Gob::SavePrevPosition`) and the time (`gmsLastSimUpdate`)
+  before moving anything. For each frame (`gamePaintEvent` in
+  game.cpp), `Simulation::BeginInterpolatedDraw` puts each gob that moved
+  part way from its old to its new position, by the fraction of the update
+  interval that has passed, and marks it for redraw; after `DrawFrame`,
+  `EndInterpolatedDraw` puts the real positions back. Only drawing sees the
+  in-between positions, so game logic, timing and save games are unchanged.
+  Moves longer than 3 tiles in one update (units coming out of transports
+  and the like) aren't smoothed. The normal dirty-rectangle invalidation
+  handles the rest (`Gob::Invalidate` unions the last drawn rect).
+- **Frames between updates.** `SmoothRenderTimer` (SimUI.cpp) runs every
+  10 ms tick while a mission is up and asks for a redraw while something was
+  drawn in between (`gfInterpolatedLastPaint`), so frames come up to 100 a
+  second while things move and stop when nothing does.
+- **VSync.** `Display::SetVSync` (sdl/display.cpp) makes presenting wait
+  for the monitor's refresh, so frames are evenly paced and don't tear.
+  It's off at the fastest game speed (an update every 10 ms), where waiting
+  would slow the game.
+- **Smooth arrow-key scrolling.** `HostGetScrollKeys` (sdl/host.cpp) reads
+  the held arrow keys; the timer scrolls 1000 pixels a second times the
+  Scroll Speed option, with sub-pixel remainders kept. The key events
+  themselves no longer scroll.
+- **Event wait** (sdl/sdleventserver.h) sleeps 1 ms at a time instead of 10.
+- **F** shows / hides the existing FPS counter.
+
+Checked under Wine: 100 FPS on C_05 while units move (was 25 at 2x speed),
+the game still makes exactly 25 updates a second at 2x, a moving tank's
+health bar moves about 1 pixel every 20 ms frame instead of jumping, holding
+an arrow key scrolls about 20 pixels per 20 ms frame, and no drawing
+leftovers. VSync pacing can't be seen here (no real display); on Windows it
+caps frames at the monitor's refresh rate.
+
 ## File map
 
 | File | Purpose |

@@ -118,6 +118,7 @@ public:
     float Density();
     void SetShouldRender(bool fsr);
     void ToggleFullscreen();
+    void SetVSync(bool fVSync);
 
 private:
     int m_imode;
@@ -132,6 +133,7 @@ private:
 
     SDL_Window *m_window;
     SDL_Renderer *m_renderer;
+    int m_nVSync;
     SDL_Texture *m_texture;
 
     byte *m_gamePixels;

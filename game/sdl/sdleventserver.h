@@ -59,9 +59,10 @@ public:
                     return true;
                 }
 
-                // This is how SDL_WaitEventTimeout() does waiting.
-                // 10ms is fine for this game.
-                SDL_Delay(10);
+                // This is how SDL_WaitEventTimeout() does waiting. 1 ms
+                // steps so frames and timers aren't delayed by up to 10 ms
+                // (smooth rendering draws a frame every 10 ms tick).
+                SDL_Delay(1);
                 break;
             }
         }

@@ -1989,9 +1989,19 @@ bool Game::FilterEvent(Event *pevt)
 		extern short gcPaint;
 		gcPaint++;
 
-		// Draw
+		// Draw. While the Simulation runs, moving gobs are drawn part way
+		// between updates (smooth rendering; see
+		// Simulation::BeginInterpolatedDraw).
 
-		gpmfrmm->DrawFrame(false);
+		{
+			extern bool gfInterpolatedLastPaint;
+			int cInterpolated = 0;
+			if (ggame.GetSimUIForm() != NULL && gsim.GetLevel() != NULL)
+				cInterpolated = gsim.BeginInterpolatedDraw();
+			gpmfrmm->DrawFrame(false);
+			gsim.EndInterpolatedDraw();
+			gfInterpolatedLastPaint = cInterpolated != 0;
+		}
 		return true;
 
 	case gameSuspendEvent:

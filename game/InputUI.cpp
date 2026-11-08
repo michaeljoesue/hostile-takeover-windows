@@ -184,6 +184,11 @@ bool InputUIForm::EventProc(Event *pevt)
 				dwy = kwcKeyScroll;
 				break;
 			}
+			if ((dwx != 0 || dwy != 0) && gfSmoothRender) {
+				// Held arrow keys scroll smoothly (SmoothRenderTimer in
+				// SimUI.cpp), so the key events themselves do nothing
+				return true;
+			}
 			if (dwx != 0 || dwy != 0) {
 				WCoord wxView, wyView;
 				gsim.GetViewPos(&wxView, &wyView);
@@ -198,6 +203,18 @@ bool InputUIForm::EventProc(Event *pevt)
         case 'm':
 			OnControlSelected(kidcMenuButton);
 			break;
+
+#if defined(SDL)
+		case 'f':
+		case 'F':
+			// Show / hide the frames per second counter (upper right)
+			{
+				extern bool gfShowFPS;
+				gfShowFPS = !gfShowFPS;
+				ggame.GetSimUIForm()->GetControlPtr(kidcFps)->Show(gfShowFPS);
+			}
+			break;
+#endif
 
 #ifdef DEBUG
 		case ' ':
