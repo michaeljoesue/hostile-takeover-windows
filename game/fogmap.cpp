@@ -554,10 +554,13 @@ void FogMap::IncGalaxite(TCoord tx, TCoord ty)
 		gpmm->RedrawTile(tx, ty);
 }
 
-// Galaxite regrowth: grow this tile one size toward nOriginal (its amount at
-// the start of the level). Amounts 1-5, 6-10 and 11-15 are three patch looks
-// with five sizes each; a mined-out tile (0) comes back as the smallest size
-// of its original look. Returns true if the tile changed.
+// Galaxite regrowth: grow this tile one size toward what it grows back to.
+// nOriginal is its amount at the start of the level. Amounts 1-5, 6-10 and
+// 11-15 are three patch looks with five sizes each; a mined-out tile (0)
+// comes back as the smallest size of its original look and grows back to
+// knGalaxiteRegrowPercent of its starting size (a full size 5 patch to size
+// 3), so regrown fields are worth less than the original ones. Returns true
+// if the tile changed.
 
 bool FogMap::RegrowGalaxite(TCoord tx, TCoord ty, int nOriginal)
 {
@@ -567,9 +570,14 @@ bool FogMap::RegrowGalaxite(TCoord tx, TCoord ty, int nOriginal)
 
 	byte *pb = &m_pbMap[(ty * m_ctxMap) + tx];
 	int nCurrent = (*pb & kbfGalaxiteMask) >> kcGalaxiteShift;
-	if (nCurrent >= nOriginal)
-		return false;
 	int nBase = ((nOriginal - 1) / 5) * 5 + 1;
+	int cSizes = nOriginal - nBase + 1;
+	int cSizesRegrow = (cSizes * knGalaxiteRegrowPercent + 99) / 100;
+	if (cSizesRegrow < 1)
+		cSizesRegrow = 1;
+	int nRegrowMax = nBase + cSizesRegrow - 1;
+	if (nCurrent >= nRegrowMax)
+		return false;
 	int nNew;
 	if (nCurrent == 0) {
 		nNew = nBase;

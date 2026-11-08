@@ -381,8 +381,9 @@ bool Level::LoadGalaxiteRegrowth(IniReader *pini)
 	return true;
 }
 
-// Galaxite regrowth. Each tile with less Galaxite than it started with grows
-// one size every 60 (Slow) or 30 (Normal) seconds of game time. The map is
+// Galaxite regrowth. Each mined tile grows one size every 90 (Slow) or 45
+// (Normal) seconds of game time, up to part of its starting size (see
+// FogMap::RegrowGalaxite). The map is
 // done in 16 interleaved slices so tiles don't all grow at once. Runs from
 // Simulation::Update, so it follows game time and game speed, and needs
 // nothing saved: the current amounts are in the saved FogMap and the update
@@ -397,7 +398,8 @@ void Level::UpdateGalaxiteRegrowth(long cUpdates)
 		return;
 
 	long cUpdatesPerGrowth = (m_nGalaxiteRegrowth == knGalaxiteRegrowthSlow ?
-			60000L : 30000L) / kcmsUpdate;
+			kcsecGalaxiteRegrowSlow : kcsecGalaxiteRegrowNormal) * 1000L /
+			kcmsUpdate;
 	long cUpdatesPerSlice = cUpdatesPerGrowth / kcRegrowSlices;
 	if (cUpdatesPerSlice < 1)
 		cUpdatesPerSlice = 1;

@@ -4791,8 +4791,15 @@ private:
 
 // [General] GalaxiteRegrowth= in a level file
 const int knGalaxiteRegrowthOff = 0;
-const int knGalaxiteRegrowthSlow = 1;	// one size per tile every 60 seconds
-const int knGalaxiteRegrowthNormal = 2;	// one size per tile every 30 seconds
+const int knGalaxiteRegrowthSlow = 1;	// one size per tile every 90 seconds
+const int knGalaxiteRegrowthNormal = 2;	// one size per tile every 45 seconds
+
+// TUNE: regrowth balance. Seconds of game time per size, and how big a
+// patch grows back to, as a percentage of its starting size (rounded up, at
+// least the smallest size)
+const int kcsecGalaxiteRegrowSlow = 90;
+const int kcsecGalaxiteRegrowNormal = 45;
+const int knGalaxiteRegrowPercent = 60;
 
 // Structure/Unit type values and masks
 
