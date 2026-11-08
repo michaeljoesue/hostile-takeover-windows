@@ -1395,6 +1395,37 @@ select was handled 526 ms / 116 ms after it happened before, 67 / 27 ms
 after; clicks after hovering 11-13 ms before, 0 after. A real high-rate
 mouse with real vsync lagged much more than that before.
 
+## 54. Mouse map scrolling, bigger build queues
+
+Scrolling (`game/SimUI.cpp` `SmoothRenderTimer`, `game/sdl/display.cpp`
+`Display::GetMouseScrollState`): the 10 ms render timer polls the mouse
+(`SDL_GetMouseState`, mapped to game pixels with
+`SDL_RenderWindowToLogical`; only while the game window has the input
+focus, the mouse is over it and the game, not a menu, has the focus).
+
+- Mouse within a few pixels (3 game pixels, at least 6 window pixels) of a
+  window edge scrolls that way like the arrow keys, same speed setting.
+  Not while over the minimap, which sits in the bottom right corner.
+- Middle button held: the map follows the mouse (view = view at press -
+  mouse movement since). Middle button events and moves never reach the
+  game's pen input (`ProcessSdlEvent` ignores other buttons, and drops
+  moves with no left / right button), so this can't select or order.
+
+Build queue (`game/ht.h`, `game/Builder.cpp`): `kcBuildQueueMax` 10 -> 99
+(the queue holds all unit types together, so a few of each filled it).
+Saves keep working both ways: `BuildQueue::LoadState` reads the saved
+length, clears the rest and gives loaded queues (other than the HQ's
+1-long one) the new size. Also fixed on the way:
+
+- `BuilderGob::Build` ignores an order when the queue is full (orders are
+  queued commands; several could arrive after the UI checked), instead of
+  `Enqueue` writing past the array.
+- `BuildQueue::RemoveUnit` returns when the unit isn't queued (the comment
+  says that can happen) instead of `memmove`-ing to index -1, and no
+  longer reads one byte past the array.
+
+`BuilderGob`'s size changed: clean rebuild (`rm -rf release`).
+
 ## File map
 
 | File | Purpose |

@@ -119,6 +119,8 @@ public:
     void SetShouldRender(bool fsr);
     void ToggleFullscreen();
     void SetVSync(bool fVSync);
+    bool GetMouseScrollState(int *px, int *py, int *pdxEdge, int *pdyEdge,
+            bool *pfMiddle);
 
 private:
     int m_imode;

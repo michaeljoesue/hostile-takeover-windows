@@ -40,10 +40,17 @@ CONTROLS
                         Cancel placing it (same as its X button)
   Arrow keys            Scroll the map (smoothly, while held; the Scroll
                         Speed option sets how fast)
+  Mouse at a window edge
+                        Scroll the map that way (same speed as the arrow
+                        keys; not over the minimap)
+  Middle button drag    Grab and move the map with the mouse
   F                     Show / hide the frames-per-second counter
   Click the minimap     Jump to that part of the map (bottom right)
   M  or  Escape         Open the in-game menu (save / load / options);
                         Escape also closes menus and dialogs
+
+Each factory / barracks can queue up to 99 units of any mix of types
+(it was 10 in all).
 
 The in-game tutorial was written for phones: when it says "tap on grass
 to move", right click instead.

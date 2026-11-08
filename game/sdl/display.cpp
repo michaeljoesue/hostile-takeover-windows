@@ -355,6 +355,53 @@ void Display::SetVSync(bool fVSync)
         m_nVSync = nVSync;
 }
 
+// For map scrolling with the mouse (SimUI.cpp): where the mouse is in game
+// coordinates, whether it's at a window edge (-1 / 0 / 1 on each axis) and
+// whether the middle button is held. Returns false if the game window
+// doesn't have the input focus or the mouse isn't over it.
+
+bool Display::GetMouseScrollState(int *px, int *py, int *pdxEdge,
+        int *pdyEdge, bool *pfMiddle)
+{
+    *px = 0;
+    *py = 0;
+    *pdxEdge = 0;
+    *pdyEdge = 0;
+    *pfMiddle = false;
+    if (m_window == NULL || m_renderer == NULL)
+        return false;
+    if (!(SDL_GetWindowFlags(m_window) & SDL_WINDOW_INPUT_FOCUS))
+        return false;
+    if (SDL_GetMouseFocus() != m_window)
+        return false;
+
+    int xWindow, yWindow;
+    Uint32 ffButtons = SDL_GetMouseState(&xWindow, &yWindow);
+    int cxWindow, cyWindow;
+    SDL_GetWindowSize(m_window, &cxWindow, &cyWindow);
+
+    // Edge band: a few game pixels, at least 6 window pixels
+
+    int cpEdge = 3 * HostGetGameScale();
+    if (cpEdge < 6)
+        cpEdge = 6;
+    if (xWindow < cpEdge)
+        *pdxEdge = -1;
+    else if (xWindow >= cxWindow - cpEdge)
+        *pdxEdge = 1;
+    if (yWindow < cpEdge)
+        *pdyEdge = -1;
+    else if (yWindow >= cyWindow - cpEdge)
+        *pdyEdge = 1;
+
+    float x, y;
+    SDL_RenderWindowToLogical(m_renderer, xWindow, yWindow, &x, &y);
+    *px = (int)x;
+    *py = (int)y;
+    *pfMiddle = (ffButtons & SDL_BUTTON_MMASK) != 0;
+    return true;
+}
+
 void Display::ToggleFullscreen()
 {
     // The window setup is fixed (see Init): nothing to do

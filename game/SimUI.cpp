@@ -78,6 +78,7 @@ public:
 		m_msLast = 0;
 		m_nxScrollFrac = 0;
 		m_nyScrollFrac = 0;
+		m_fMiddleDrag = false;
 	}
 	virtual void OnTimer(long tCurrent);
 
@@ -85,6 +86,11 @@ private:
 	long m_msLast;
 	long m_nxScrollFrac;	// sub-pixel scroll remainders, 1/1000 pixel
 	long m_nyScrollFrac;
+	bool m_fMiddleDrag;		// middle button drag in progress
+	int m_xDragStart;		// where it started (game pixels)
+	int m_yDragStart;
+	WCoord m_wxDragStart;	// view position when it started
+	WCoord m_wyDragStart;
 };
 
 static SmoothRenderTimer s_srtmr;
@@ -106,13 +112,55 @@ void SmoothRenderTimer::OnTimer(long tCurrent)
 
 	gpdisp->SetVSync(gtGameSpeed >= 2);
 
-	// Arrow keys scroll the map smoothly while held (only while the game
-	// itself has the input focus, not a menu)
+	// Arrow keys scroll the map smoothly while held, and so does the mouse
+	// at an edge of the window. Dragging with the middle mouse button moves
+	// the map along with the mouse. (Only while the game itself has the
+	// input focus, not a menu.)
 
+	bool fGameFocus = gpmfrmm->GetFocus() == ggame.GetInputUIForm();
 	int dxKeys = 0, dyKeys = 0;
 	HostGetScrollKeys(&dxKeys, &dyKeys);
-	if ((dxKeys != 0 || dyKeys != 0) && gpmfrmm->GetFocus() ==
-			ggame.GetInputUIForm()) {
+
+	int xMouse, yMouse, dxEdge, dyEdge;
+	bool fMiddle;
+	bool fMouse = fGameFocus && gpdisp->GetMouseScrollState(&xMouse, &yMouse,
+			&dxEdge, &dyEdge, &fMiddle);
+
+	if (fMouse && fMiddle) {
+		if (!m_fMiddleDrag) {
+			m_fMiddleDrag = true;
+			m_xDragStart = xMouse;
+			m_yDragStart = yMouse;
+			gsim.GetViewPos(&m_wxDragStart, &m_wyDragStart);
+		} else {
+			gsim.SetViewPos(m_wxDragStart - WcFromPc(xMouse - m_xDragStart),
+					m_wyDragStart - WcFromPc(yMouse - m_yDragStart));
+		}
+		dxEdge = 0;
+		dyEdge = 0;
+	} else {
+		m_fMiddleDrag = false;
+	}
+
+	if (fMouse && (dxEdge != 0 || dyEdge != 0)) {
+		// Not over the minimap (it sits in the bottom right corner)
+
+		Form *pfrmMiniMap = gpmfrmm->GetFormPtr(kidfMiniMap);
+		if (pfrmMiniMap != NULL && (pfrmMiniMap->GetFlags() & kfFrmVisible)) {
+			Rect rcMiniMap;
+			pfrmMiniMap->GetRect(&rcMiniMap);
+			if (rcMiniMap.PtIn(xMouse, yMouse)) {
+				dxEdge = 0;
+				dyEdge = 0;
+			}
+		}
+		if (dxKeys == 0)
+			dxKeys = dxEdge;
+		if (dyKeys == 0)
+			dyKeys = dyEdge;
+	}
+
+	if ((dxKeys != 0 || dyKeys != 0) && fGameFocus) {
 		long nSpeed = (long)(kpxKeyScrollPerSec * gnScrollSpeed);
 		m_nxScrollFrac += dxKeys * nSpeed * dms;
 		m_nyScrollFrac += dyKeys * nSpeed * dms;

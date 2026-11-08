@@ -35,6 +35,8 @@ along with it.
 | Right click in a build menu | Cancel one queued unit (on the unit's icon or the Order button); never queues a new one |
 | Right click or Escape while placing a building | Cancel placing it (same as its X button) |
 | Arrow keys | Scroll the map (smoothly, while held) |
+| Mouse at the edge of the window | Scroll the map that way (not over the minimap) |
+| Middle mouse button drag | Grab and move the map with the mouse |
 | F | Show / hide the frames-per-second counter |
 | Click the minimap | Jump to that part of the map |
 | M or Escape | In-game menu (save, load, options); Escape also closes menus and dialogs |
@@ -69,8 +71,8 @@ beside `HostileTakeover.exe`.
   servers are gone. Add-on mission packs are installed with the editor (see
   below). The multiplayer maps (`M_*`) are still in the game data and the
   editor, but the game doesn't play them.
-- Arrow keys are the only keyboard scrolling; there is no edge-of-screen
-  mouse scrolling.
+- Each factory / barracks can queue up to 99 units, any mix of types
+  (it was 10 in all).
 
 ## Map & mission editor
 

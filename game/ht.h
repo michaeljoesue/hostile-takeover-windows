@@ -6177,7 +6177,9 @@ const int knMoveWaiting = 3;
 const int kxInvalid = -1000;
 const WCoord kwxInvalid = -1000;
 const TCoord ktxInvalid = -100;
-const word kcBuildQueueMax = 10;
+// Units that can be queued at one factory / barracks (was 10, all types
+// together)
+const word kcBuildQueueMax = 99;
 
 class BuildQueue
 {
