@@ -117,6 +117,16 @@ BeginStateMachine
 				if (pgobMiner->GetType() != kgtGalaxMiner)
 					continue;
 
+				// Only idle miners. The Overmind isn't saved, so after a saved
+				// game is loaded this runs again while the computer's miners
+				// are busy. A miner inside a Processor being emptied is hidden
+				// and inactive, and must not be told to drive off.
+
+				if (!(pgobMiner->GetFlags() & kfGobActive))
+					continue;
+				if (!((MobileUnitGob *)pgobMiner)->IsIdle())
+					continue;
+
 				// Send the Miner off to mine
 				// NOTE: We send a message rather than call MinerGob::Mine method directly 
 				// so the state change will occur immediately.

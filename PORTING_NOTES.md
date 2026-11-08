@@ -1238,6 +1238,40 @@ starts it again):
   attackers that get blocked retarget the target's current position; units
   waiting at a Replicator re-check every update.
 
+## 49. Save game review
+
+Went through what is and isn't saved (all `SaveState` / `LoadState`
+code, the raw-written structures and the stream handling).
+
+- **Fixed: a save game could vanish.** `HostOpenSaveGameStream`
+  (sdl/savegame.cpp) renamed the file to `htsavetemp` while loading and
+  renamed it back afterwards, but only if every read succeeded; if the game
+  crashed or a read came up short during loading, the save game was gone
+  from the list. It's now read where it is (and deleted afterwards only
+  for the "resume where you left off" save). Checked: loading a save game
+  leaves it in the list; leaving a mission with Exit and starting the game
+  again resumes the mission and removes the resume save.
+- **Fixed: the Overmind** (the optional computer AI that a level can choose
+  per side; none of the built-in missions use it) isn't saved, so after
+  loading it starts again and sends its miners to mine. It now only does
+  that for idle, active miners: a miner inside a Processor being emptied is
+  hidden and inactive and must not be sent off. Found by reading the code,
+  not seen in a game.
+- **Fixed earlier:** computer unit groups waiting for units (section 48),
+  switch count (section 45, older save games still load), miner retry flag
+  (section 47, older save games still load).
+- **Checked, compatible:** save games made by builds of this port since
+  multiplayer was removed load (the only format changes since then are
+  version-checked). Older save games are refused with "out of date" by the
+  existing version check rather than misread.
+- **Not saved, left alone:** shots in flight (bullets and rockets vanish, so
+  that damage is lost); smoke and other effects; the Overmind's attack
+  timers; force attacks on allies (section 41); the computer's ordered-units
+  list itself (rebuilt, section 48).
+- A save game is tied to the exact version of its mission; editing a custom
+  mission in the editor and then loading an older save of it shows "This
+  saved game is based on an older version of this mission!" (by design).
+
 ## File map
 
 | File | Purpose |
