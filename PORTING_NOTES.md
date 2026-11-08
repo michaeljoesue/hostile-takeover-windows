@@ -1318,6 +1318,30 @@ stays empty. Tested on the C_04 copy with the Normal time shortened to 10 s
 for the test: mined-out tiles next to remaining Galaxite came back and the
 fields filled in again.
 
+## 51. Placing a structure near the right side / edge of the map got stuck
+
+Symptom: dragging a building's placement indicator toward the right of the
+screen (most easily at the right or bottom-right edge of the map) left it
+stuck: it couldn't be grabbed again and its OK / X buttons didn't respond,
+so the only way out was to wait or open the menu.
+
+Causes and fixes (`game/Headquarters.cpp`, `PlaceStructureForm`):
+
+- The form is loaded from `forms.ini` at `(0 0 320 320)`, i.e. 640 x 640
+  here, a size made for square handheld screens. On 800 x 600 everything
+  at x >= 640 was outside the form, so `FormMgr::CookPenEvent` gave those
+  clicks to `SimUIForm` instead. `SetOwner` now sizes the form to the sim
+  DIB (the whole playfield), as `SimUIForm::Init` does for itself.
+- The minimap always covers the bottom right of the screen, and at the
+  map's bottom-right corner the view can't scroll that area out from under
+  it. `UpdatePlacementIndicator` now keeps the indicator plus its button
+  margin out of the minimap's screen rect, moving it up or left (the
+  shorter move). Building under the minimap needs the map scrolled first.
+- Desktop extras: right click while placing cancels it
+  (`PlaceStructureForm::OnPenEvent`), and Escape (now mapped to `vchrBack`
+  in `sdl/host.cpp`) cancels placement in `InputUIForm::EventProc`, or
+  otherwise opens the in-game menu / closes the top dialog.
+
 ## File map
 
 | File | Purpose |

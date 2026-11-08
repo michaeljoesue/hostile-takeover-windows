@@ -609,6 +609,23 @@ void PlaceStructureForm::SetOwner(BuilderGob *pgobOwner, UnitType ut)
 {
 	gtimm.AddTimer(this, kctMapScrollRate);
 
+	// The form comes from forms.ini sized 320 x 320 (640 x 640 here), made
+	// for square handheld screens. On a wider screen that left the right
+	// part of the playfield (x >= 640 on 800 x 600) outside the form: a
+	// placement indicator moved there couldn't be grabbed again, and its OK
+	// and X buttons couldn't be clicked, so placing a structure near the
+	// right side of the screen (e.g. at the right edge of the map) got
+	// stuck. Cover the whole playfield, like SimUIForm does.
+
+	DibBitmap *pbmSim = gpfrmmSim->GetDib();
+	if (pbmSim != NULL) {
+		Size sizSim;
+		pbmSim->GetSize(&sizSim);
+		Rect rcSim;
+		rcSim.Set(0, 0, sizSim.cx, sizSim.cy);
+		SetRect(&rcSim);
+	}
+
 	// form is loaded as the size of the whole playfield
 	// draw the structure placement indicator near the HQ
 	m_pgobOwner = pgobOwner;
@@ -751,6 +768,43 @@ void PlaceStructureForm::UpdatePlacementIndicator(WCoord wxViewStart, WCoord wyV
 	if (m_ty + m_pstruc->ctyReserve >= siz.cy)
 		m_ty = siz.cy - m_pstruc->ctyReserve;
 
+	// Keep it, and its OK / X buttons, out from under the minimap. The
+	// minimap always covers the bottom right of the screen, so a placement
+	// dragged there (most of all near the bottom right edge of the map,
+	// which can't be scrolled out from under it) couldn't be seen, dragged
+	// back, confirmed or cancelled: placing the structure got stuck.
+	// Move it up or left, whichever is the shorter move. To build there,
+	// scroll the map so that spot isn't under the minimap.
+
+	Form *pfrmMiniMap = gpmfrmm->GetFormPtr(kidfMiniMap);
+	if (pfrmMiniMap != NULL && (pfrmMiniMap->GetFlags() & kfFrmVisible)) {
+		Rect rcMiniMap;
+		pfrmMiniMap->GetRect(&rcMiniMap);
+		Rect rcBtn;
+		GetControlPtr(kidcCancel)->GetRect(&rcBtn);
+		int cxBtn = rcBtn.Width();
+		int xLeft = m_rc.left + PcFromWc(WcFromTc(m_tx) - wxView) - cxBtn;
+		int xRight = m_rc.left + PcFromWc(WcFromTc(m_tx +
+				m_pstruc->ctxReserve) - wxView) + cxBtn;
+		int yTop = m_rc.top + PcFromWc(WcFromTc(m_ty) - wyView);
+		int yBottom = m_rc.top + PcFromWc(WcFromTc(m_ty +
+				m_pstruc->ctyReserve) - wyView);
+		if (xRight > rcMiniMap.left && xLeft < rcMiniMap.right &&
+				yBottom > rcMiniMap.top && yTop < rcMiniMap.bottom) {
+			int ctyUp = (yBottom - rcMiniMap.top + PcFromTc(1) - 1) /
+					PcFromTc(1);
+			int ctxLeft = (xRight - rcMiniMap.left + PcFromTc(1) - 1) /
+					PcFromTc(1);
+			if (ctyUp <= ctxLeft && m_ty - ctyUp >= 0) {
+				m_ty -= ctyUp;
+			} else if (m_tx - ctxLeft >= 0) {
+				m_tx -= ctxLeft;
+			} else if (m_ty - ctyUp >= 0) {
+				m_ty -= ctyUp;
+			}
+		}
+	}
+
 	// Invalidate our new location
     
     GetSubRects(wxView, wyView, &rcInside, &rcOutside);
@@ -830,6 +884,20 @@ bool PlaceStructureForm::FingerHitTest(Event *pevt) {
 
 bool PlaceStructureForm::OnPenEvent(Event *pevt)
 {
+#if defined(SDL)
+	// Desktop: right click cancels placing the structure (Escape does too,
+	// see InputUIForm)
+
+	if ((pevt->ff & kfEvtRightButton) && pevt->eType == penDownEvent &&
+			m_pctlCapture == NULL) {
+		m_fDragging = false;
+		OnControlSelected(kidcCancel);
+		return true;
+	}
+	if (pevt->ff & kfEvtRightButton)
+		return true;
+#endif
+
     // If captured, do regular processing
     if (m_pctlCapture != NULL) {
         return Form::OnPenEvent(pevt);

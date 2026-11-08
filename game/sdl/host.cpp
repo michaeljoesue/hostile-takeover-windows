@@ -283,6 +283,9 @@ bool ProcessSdlEvent(base::Message *pmsg, Event *pevt)
 			break;
 
         case SDLK_AC_BACK:
+        case SDLK_ESCAPE:
+            // Escape: closes dialogs and menus, cancels placing a
+            // structure, opens the game menu
             pevt->chr = vchrBack;
             break;
 

@@ -33,10 +33,11 @@ along with it.
 | Right click on your own unit or building | Open its menu (the phone version's "tap and hold"; holding the left button for half a second also works) |
 | Ctrl + right click on anything | Force attack: the selected units attack it, even your own units and buildings |
 | Right click in a build menu | Cancel one queued unit (on the unit's icon or the Order button); never queues a new one |
+| Right click or Escape while placing a building | Cancel placing it (same as its X button) |
 | Arrow keys | Scroll the map (smoothly, while held) |
 | F | Show / hide the frames-per-second counter |
 | Click the minimap | Jump to that part of the map |
-| M | In-game menu (save, load, options) |
+| M or Escape | In-game menu (save, load, options); Escape also closes menus and dialogs |
 | F11 or Alt+Enter | Toggle fullscreen |
 
 These are modern-RTS style controls. The in-game tutorial was written for

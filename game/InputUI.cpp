@@ -198,8 +198,17 @@ bool InputUIForm::EventProc(Event *pevt)
 		}
 #endif
 		switch (pevt->chr) {
-		case vchrMenu:
         case vchrBack:
+			// Escape / Back while placing a structure cancels the placement
+
+			if (gpfrmPlace != NULL && gpfrmPlace->IsBusy()) {
+				gpfrmPlace->OnControlSelected(kidcCancel);
+				break;
+			}
+			OnControlSelected(kidcMenuButton);
+			break;
+
+		case vchrMenu:
         case 'm':
 			OnControlSelected(kidcMenuButton);
 			break;

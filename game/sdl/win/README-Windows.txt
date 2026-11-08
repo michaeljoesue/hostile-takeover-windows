@@ -36,11 +36,14 @@ CONTROLS
   Right click in a build menu
                         Cancel one queued unit (click the unit's icon
                         or the Order button). It never orders a new one.
+  Right click or Escape while placing a building
+                        Cancel placing it (same as its X button)
   Arrow keys            Scroll the map (smoothly, while held; the Scroll
                         Speed option sets how fast)
   F                     Show / hide the frames-per-second counter
   Click the minimap     Jump to that part of the map (bottom right)
-  M                     Open the in-game menu (save / load / options)
+  M  or  Escape         Open the in-game menu (save / load / options);
+                        Escape also closes menus and dialogs
   F11  or  Alt+Enter    Toggle fullscreen
 
 The in-game tutorial was written for phones: when it says "tap on grass
