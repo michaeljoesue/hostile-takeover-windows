@@ -1302,12 +1302,12 @@ grew back one size about every 29 seconds (one step per 368 updates), never
 above their starting amount; the setting survived saving and reopening the
 level in the editor.
 
-Rebalanced afterwards: Slow 90 s and Normal 45 s per size
+Rebalanced afterwards: Slow 200 s and Normal 100 s per size
 (`kcsecGalaxiteRegrowSlow` / `Normal` in ht.h), and patches only grow back
 to `knGalaxiteRegrowPercent` (60%) of their starting size, rounded up: a
 size 5 patch to 3, 4 to 3, 3 to 2, 2 to 2, 1 to 1. A full patch (about 500
 credits) mined out on Slow is back to size 3 (about 300 credits) after
-4.5 minutes.
+10 minutes (5 minutes on Normal).
 
 ## File map
 

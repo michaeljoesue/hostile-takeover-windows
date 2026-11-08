@@ -381,7 +381,7 @@ bool Level::LoadGalaxiteRegrowth(IniReader *pini)
 	return true;
 }
 
-// Galaxite regrowth. Each mined tile grows one size every 90 (Slow) or 45
+// Galaxite regrowth. Each mined tile grows one size every 200 (Slow) or 100
 // (Normal) seconds of game time, up to part of its starting size (see
 // FogMap::RegrowGalaxite). The map is
 // done in 16 interleaved slices so tiles don't all grow at once. Runs from

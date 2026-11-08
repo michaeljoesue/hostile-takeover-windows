@@ -99,8 +99,8 @@ GETTING STARTED
    on the left. Select something to change its properties on the right.
    Settings > Level shows the level's own properties, including
    GalaxiteRegrowth: Off (the default, like the original missions), Slow
-   (mined Galaxite grows back one size every 90 seconds) or Normal (every
-   45 seconds). Patches grow back to about 60% of their starting size (a
+   (mined Galaxite grows back one size every 200 seconds) or Normal (every
+   100 seconds). Patches grow back to about 60% of their starting size (a
    full patch to size 3 of 5).
 3. Missions are driven by triggers (conditions and actions), edited with
    Settings > Triggers. Unit groups (Ctrl+G; rename a group with the Rename
