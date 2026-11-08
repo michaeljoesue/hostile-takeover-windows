@@ -1342,6 +1342,30 @@ Causes and fixes (`game/Headquarters.cpp`, `PlaceStructureForm`):
   in `sdl/host.cpp`) cancels placement in `InputUIForm::EventProc`, or
   otherwise opens the in-game menu / closes the top dialog.
 
+## 52. Sharp, fixed screen size
+
+Before, the game always drew 800x600 and the resizable window stretched it
+with linear filtering, and the exe wasn't DPI aware, so Windows display
+scaling (125%, 150%) stretched it again: the picture was blurry on most
+monitors.
+
+Now (`game/sdl/win/hosthelpers.cpp` `CalcGameSize`, `game/sdl/display.cpp`):
+
+- The game resolution comes from the desktop size: divide by the largest
+  whole number n that keeps it at least 720x540 (1920x1080 -> 960x540 x2,
+  2560x1440 -> 1280x720 x2, 3840x2160 -> 960x540 x4, 1366x768 x1). The game
+  already handles any screen size (the Android build used the phone's), so
+  forms, the minimap and the playfield lay themselves out for it.
+- The window is `SDL_WINDOW_FULLSCREEN_DESKTOP`, not resizable, scaled with
+  `nearest` filtering and `SDL_RenderSetIntegerScale`, so each game pixel
+  is an exact n x n block.
+- `SDL_HINT_WINDOWS_DPI_AWARENESS=permonitorv2` is set before SDL video
+  starts, so the desktop size is in real pixels and Windows doesn't
+  bitmap-stretch the window.
+- F11 / Alt+Enter (fullscreen toggle) are swallowed and
+  `Display::ToggleFullscreen` does nothing: by request there's no way to
+  change the screen setup.
+
 ## File map
 
 | File | Purpose |

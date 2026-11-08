@@ -7,6 +7,9 @@
 
 namespace wi {
 
+// Whole number the game picture is scaled up by on screen (Windows)
+int HostGetGameScale();
+
 struct SurfaceProperties {
     int cxWidth;
     int cyHeight;

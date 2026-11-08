@@ -62,9 +62,12 @@ Note that this overwrites the checked-in `game/htdata832.pdb`.
 * **Desktop input/display** (`game/sdl/host.cpp`, `display.cpp`,
   `game/event.cpp`, `game/InputUI.cpp`). Mouse input is enabled for
   Windows with modern RTS controls (left click selects or deselects, right
-  click moves, attacks or opens the unit menu; see `game/stylushandler.cpp`); the window is
-  resizable with aspect-correct scaling (`SDL_RenderSetLogicalSize`);
-  F11 / Alt+Enter toggles fullscreen; arrow keys scroll the map.
+  click moves, attacks or opens the unit menu; see `game/stylushandler.cpp`); the game runs
+  fixed borderless fullscreen; its resolution is the desktop's divided by
+  the largest whole number that keeps it at least 720x540
+  (`win/hosthelpers.cpp`), scaled up with nearest-neighbour integer scaling
+  (`SDL_RenderSetIntegerScale`) and per-monitor DPI awareness; arrow keys
+  scroll the map.
 * **Manifest** (`app.manifest`). UTF-8 active code page so `fopen()` works
   with non-ASCII user folder names, plus Windows 10/11 compatibility.
 * **Release data file.** Release builds check the version stamped into

@@ -83,11 +83,13 @@ bool Display::Init()
 	// screen mode! (ssh from another machine and kill the Xcode process)
     videoflags = SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_SHOWN;
 
-    // Desktop Windows: resizable window, the 800x600 game image is scaled to
-    // fit (keeping its aspect ratio). F11 / Alt+Enter toggles fullscreen.
+    // Desktop Windows: fixed fullscreen (borderless, desktop resolution). The
+    // game picture size is picked from the monitor so it's a whole number of
+    // times smaller than the screen (see GetSurfaceProperties in
+    // win/hosthelpers.cpp), and it's scaled up with sharp, square pixels.
     #if defined(_WIN32)
-    videoflags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE;
-    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
+    videoflags = SDL_WINDOW_SHOWN | SDL_WINDOW_FULLSCREEN_DESKTOP;
+    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
     SDL_SetHint(SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0");
     #endif
 
@@ -104,18 +106,9 @@ bool Display::Init()
     int cxWindow = m_cx;
     int cyWindow = m_cy;
 #if defined(_WIN32)
-    // Start at the largest whole multiple of 800x600 that comfortably fits
-    // the desktop work area.
-    SDL_Rect rcUsable;
-    if (SDL_GetDisplayUsableBounds(0, &rcUsable) == 0) {
-        int nScale = 1;
-        while (m_cx * (nScale + 1) <= rcUsable.w - 40 &&
-                m_cy * (nScale + 1) <= rcUsable.h - 60) {
-            nScale++;
-        }
-        cxWindow = m_cx * nScale;
-        cyWindow = m_cy * nScale;
-    }
+    int nScale = HostGetGameScale();
+    cxWindow = m_cx * nScale;
+    cyWindow = m_cy * nScale;
 #endif
     if ((m_window = SDL_CreateWindow("Hostile Takeover", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, cxWindow, cyWindow, videoflags)) == NULL) {
         LOG() << "Couldn't create window: " << m_cx << "x" << m_cy << " \nError: " << SDL_GetError();
@@ -129,10 +122,10 @@ bool Display::Init()
         // Fall back to whatever renderer is available
         m_renderer = SDL_CreateRenderer(m_window, -1, SDL_RENDERER_TARGETTEXTURE);
     }
-    // Scale the game image to the window, letterboxing as needed. SDL also
-    // maps mouse coordinates back into 800x600 game space.
+    // Scale the game image up by a whole number (sharp pixels), centered.
+    // SDL also maps mouse coordinates back into game space.
     SDL_RenderSetLogicalSize(m_renderer, m_cx, m_cy);
-    SDL_SetWindowMinimumSize(m_window, m_cx / 2, m_cy / 2);
+    SDL_RenderSetIntegerScale(m_renderer, SDL_TRUE);
 #endif
     // Wait for the monitor's refresh when presenting, so frames are evenly
     // paced and don't tear (see SetVSync)
@@ -360,15 +353,7 @@ void Display::SetVSync(bool fVSync)
 
 void Display::ToggleFullscreen()
 {
-    if (m_window == NULL)
-        return;
-    Uint32 ff = SDL_GetWindowFlags(m_window);
-    if (ff & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_FULLSCREEN_DESKTOP)) {
-        SDL_SetWindowFullscreen(m_window, 0);
-    } else {
-        SDL_SetWindowFullscreen(m_window, SDL_WINDOW_FULLSCREEN_DESKTOP);
-    }
-    RenderGameSurface();
+    // The screen setup is fixed (always fullscreen, see Init): nothing to do
 }
 
 void Display::ResetScrollOffset()

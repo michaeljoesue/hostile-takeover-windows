@@ -44,13 +44,17 @@ CONTROLS
   Click the minimap     Jump to that part of the map (bottom right)
   M  or  Escape         Open the in-game menu (save / load / options);
                         Escape also closes menus and dialogs
-  F11  or  Alt+Enter    Toggle fullscreen
 
 The in-game tutorial was written for phones: when it says "tap on grass
 to move", right click instead.
 
-The window can be resized or maximized; the picture scales to fit and
-keeps its shape.
+The game always runs fullscreen at a fixed size picked for your monitor,
+so the picture is sharp (each game pixel is an exact square block of
+screen pixels, no blurry stretching):
+  1920x1080 -> 960x540 shown at 2x      2560x1440 -> 1280x720 at 2x
+  3840x2160 -> 960x540 at 4x            1366x768  -> 1366x768 at 1x
+Wider screens show more of the map. There is no setting to change it.
+Alt+Tab switches to other programs as usual.
 
 Your allies' units and buildings lift the fog of war for you too, so you
 can see your allies' bases and armies.

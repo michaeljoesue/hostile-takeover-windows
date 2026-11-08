@@ -181,10 +181,56 @@ void HostHelpers::Break()
     Log("BREAK!!");
 }
 
+// The game picture's size is picked once from the monitor and fixed (no
+// resizing, no fullscreen toggle): the game always fills the whole screen
+// and each game pixel is drawn as an exact n x n block of screen pixels, so
+// the picture is sharp (no blurry stretching). n is the largest whole number
+// that still leaves the game at least kcyGameMin pixels tall (about the old
+// 800x600), e.g.
+//   1920x1080 -> 960x540 x2    2560x1440 -> 1280x720 x2
+//   3840x2160 -> 960x540 x4    1366x768  -> 1366x768 x1
+// The process is per-monitor DPI aware so Windows display scaling (125%,
+// 150%...) doesn't stretch (blur) the window either.
+
+#define kcxGameMin 720
+#define kcyGameMin 540
+
+static int s_cxGame, s_cyGame, s_nGameScale;
+
+static void CalcGameSize()
+{
+    if (s_cxGame != 0)
+        return;
+    s_cxGame = 800;
+    s_cyGame = 600;
+    s_nGameScale = 1;
+
+    SDL_SetHint(SDL_HINT_WINDOWS_DPI_AWARENESS, "permonitorv2");
+    if (!SDL_WasInit(SDL_INIT_VIDEO) && SDL_InitSubSystem(SDL_INIT_VIDEO) < 0)
+        return;
+    SDL_DisplayMode mode;
+    if (SDL_GetDesktopDisplayMode(0, &mode) != 0 || mode.w <= 0 || mode.h <= 0)
+        return;
+    int n = 1;
+    while (mode.w / (n + 1) >= kcxGameMin && mode.h / (n + 1) >= kcyGameMin)
+        n++;
+    // Game widths are kept even (some blits work in pairs of pixels)
+    s_cxGame = (mode.w / n) & ~1;
+    s_cyGame = (mode.h / n) & ~1;
+    s_nGameScale = n;
+}
+
+int HostGetGameScale()
+{
+    CalcGameSize();
+    return s_nGameScale;
+}
+
 void HostHelpers::GetSurfaceProperties(SurfaceProperties *pprops)
 {
-    pprops->cxWidth = 800;
-    pprops->cyHeight = 600;
+    CalcGameSize();
+    pprops->cxWidth = s_cxGame;
+    pprops->cyHeight = s_cyGame;
     pprops->cbxPitch = 1;
     pprops->cbyPitch = pprops->cxWidth;
     pprops->density = 1.0f;

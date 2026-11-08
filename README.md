@@ -38,13 +38,16 @@ along with it.
 | F | Show / hide the frames-per-second counter |
 | Click the minimap | Jump to that part of the map |
 | M or Escape | In-game menu (save, load, options); Escape also closes menus and dialogs |
-| F11 or Alt+Enter | Toggle fullscreen |
 
 These are modern-RTS style controls. The in-game tutorial was written for
 phones, so when it says "tap on grass to move", right click instead.
 
-The window can be resized or maximized; the 800×600 picture scales to fit and
-keeps its shape.
+The game always runs fullscreen at a fixed size picked for your monitor, so the
+picture is sharp: the game is drawn at the screen's resolution divided by a whole
+number and every game pixel becomes an exact square block (1920×1080 → 960×540
+shown at 2×, 2560×1440 → 1280×720 at 2×, 3840×2160 → 960×540 at 4×,
+1366×768 → 1366×768 at 1×). Wider screens show more of the map. There is no
+setting to change it.
 
 Sound is in stereo: battles to the left of the screen come from the left
 speaker, and fighting off screen is quieter the farther away it is. Options (main menu,

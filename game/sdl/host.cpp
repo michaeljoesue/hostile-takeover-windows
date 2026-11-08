@@ -150,7 +150,7 @@ void CheckTouchTracking() {
 
 #ifdef _WIN32
 // Mouse clicks in the letterbox bars around the scaled game image come in
-// outside of 800x600 game space; pin them to the edge.
+// outside of game space; pin them to the edge.
 static void ClampToGameSurface(Event *pevt) {
     SurfaceProperties props;
     HostHelpers::GetSurfaceProperties(&props);
@@ -245,14 +245,12 @@ bool ProcessSdlEvent(base::Message *pmsg, Event *pevt)
 		
 	case SDL_KEYDOWN:
 #ifdef _WIN32
-        // F11 or Alt+Enter: toggle fullscreen
+        // F11 / Alt+Enter used to toggle fullscreen. The screen setup is
+        // fixed now (always fullscreen, sharp scaling), so swallow them.
         if (event.key.keysym.sym == SDLK_F11 ||
                 ((event.key.keysym.sym == SDLK_RETURN ||
                   event.key.keysym.sym == SDLK_KP_ENTER) &&
                  (event.key.keysym.mod & KMOD_ALT))) {
-            if (event.key.repeat == 0 && gpdisp != NULL) {
-                gpdisp->ToggleFullscreen();
-            }
             return false;
         }
 #endif
