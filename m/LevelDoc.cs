@@ -1933,7 +1933,7 @@ namespace m {
 			}
 		}
 
-		[Description("Whether mined Galaxite grows back, one size per patch at a time, to about 60% of its starting size (a full patch grows back to size 3 of 5). Off: never (like the original missions). Slow: one size every 200 seconds. Normal: one size every 100 seconds.")]
+		[Description("Whether mined Galaxite spreads back over the places it started on, from Galaxite that is left next to it, one size at a time, to about 60% of its starting size (a full patch grows back to size 3 of 5). A field mined out completely does not come back. Off: never (like the original missions). Slow: one size every 200 seconds. Normal: one size every 100 seconds.")]
 		public GalaxiteRegrowth GalaxiteRegrowth {
 			get {
 				return m_gxr;

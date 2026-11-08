@@ -1309,6 +1309,15 @@ size 5 patch to 3, 4 to 3, 3 to 2, 2 to 2, 1 to 1. A full patch (about 500
 credits) mined out on Slow is back to size 3 (about 300 credits) after
 10 minutes (5 minutes on Normal).
 
+Changed to spreading: a mined-out tile only comes back when one of its 8
+neighbors has Galaxite (`Level::UpdateGalaxiteRegrowth`), so fields fill
+back in from what's left of them, only over tiles that had Galaxite at the
+start, and stop at the regrowth size. Tiles that still have some Galaxite
+grow as before. A completely mined-out field has nothing to spread from and
+stays empty. Tested on the C_04 copy with the Normal time shortened to 10 s
+for the test: mined-out tiles next to remaining Galaxite came back and the
+fields filled in again.
+
 ## File map
 
 | File | Purpose |

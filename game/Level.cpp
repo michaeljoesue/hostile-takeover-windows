@@ -381,9 +381,15 @@ bool Level::LoadGalaxiteRegrowth(IniReader *pini)
 	return true;
 }
 
-// Galaxite regrowth. Each mined tile grows one size every 200 (Slow) or 100
-// (Normal) seconds of game time, up to part of its starting size (see
-// FogMap::RegrowGalaxite). The map is
+// Galaxite regrowth, spreading style. Galaxite spreads back over the places
+// it started on: every 200 (Slow) or 100 (Normal) seconds of game time each
+// such tile that still has some Galaxite grows one size, and each mined-out
+// one that touches Galaxite (any of its 8 neighbors) starts again at the
+// smallest size, so a field fills back in from what's left of it. It only
+// grows on tiles that had Galaxite at the start, up to part of their
+// starting size (see FogMap::RegrowGalaxite), and stops when they're all
+// there. A field that has been mined out completely has nothing left to
+// spread from and doesn't come back. The map is
 // done in 16 interleaved slices so tiles don't all grow at once. Runs from
 // Simulation::Update, so it follows game time and game speed, and needs
 // nothing saved: the current amounts are in the saved FogMap and the update
@@ -419,6 +425,23 @@ void Level::UpdateGalaxiteRegrowth(long cUpdates)
 
 		if (m_ptrmap->IsOccupied(tx, ty, 1, 1, kbfStructure | kbfReserved))
 			continue;
+
+		// A mined-out tile only comes back next to Galaxite
+
+		if (m_pfogm->GetGalaxite(tx, ty) == 0) {
+			bool fNextToGalaxite = false;
+			for (int dir = 0; dir < 8 && !fNextToGalaxite; dir++) {
+				int txT = tx + g_mpDirToDx[dir];
+				int tyT = ty + g_mpDirToDy[dir];
+				if (txT < 0 || tyT < 0 || txT >= m_ctxGalaxite ||
+						tyT >= m_ctyGalaxite)
+					continue;
+				if (m_pfogm->GetGalaxite(txT, tyT) != 0)
+					fNextToGalaxite = true;
+			}
+			if (!fNextToGalaxite)
+				continue;
+		}
 		m_pfogm->RegrowGalaxite(tx, ty, nOriginal);
 	}
 }
