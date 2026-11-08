@@ -79,8 +79,9 @@ Output window:
                        Most of the game's own missions have some of these
                        and play fine, so you can continue.
   Errors               For example scenery partly off the map, more than
-                       64 areas, more than 16 switches or more than 1600
-                       units, buildings and scenery in total. These can
+                       64 areas, more than 64 switches, more than 512
+                       triggers for one side or more than 5000 units,
+                       buildings and scenery in total. These can
                        make a level misbehave, so fix them if you can. (A
                        few built-in missions have one and still work, so M
                        lets you continue anyway.)

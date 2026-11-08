@@ -4213,8 +4213,9 @@ private:
 	char m_szAlert[80];
 };
 
-#define kcTriggersPerSide 128
-#define kcSwitchMax 16
+#define kcTriggersPerSide 512
+#define kcSwitchMax 64
+#define kcSwitchMaxOld 16 // switches in save games from before kcSwitchMax was 64
 #define kcTriggerTimersMax 16
 #define kctTimerNotStarted -100000
 
@@ -4274,7 +4275,7 @@ private:
 
 	int m_ctgr;
 	Trigger *m_atgr;
-	byte m_mpSide2nTrigger[kcSides][kcTriggersPerSide];
+	word m_mpSide2nTrigger[kcSides][kcTriggersPerSide];
 	SideMask m_asidmCondition[knConditionMax];
 	byte m_abSwitch[kcSwitchMax];
 	int m_cTimers;
@@ -4562,7 +4563,7 @@ private:
 // Total game objects (units, buildings, scenery, effects). Was 768; raised so
 // levels made with the editor can hold many more units and scenery.
 #define kcpgobMax 6144
-#define kcpgobVisibleMax 200
+#define kcpgobVisibleMax 1024
 
 class Simulation : public TimerMgr // sim
 {

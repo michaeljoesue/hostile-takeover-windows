@@ -1103,6 +1103,36 @@ Tested with SDL's dummy audio driver (the test machine has no sound card):
 the slider shows 100% by default; setting 40% and OK is still 40% after
 restarting the game; moving it to 5% and pressing Cancel goes back to 40%.
 
+## 45. Other limits raised: objects on screen, switches, triggers
+
+- **Objects drawn on screen** (`kcpgobVisibleMax`, ht.h): 200 -> 1024. Each
+  frame `Simulation::FindVisibleGobs` collects the objects in view into an
+  array of this size; anything past the end wasn't drawn and couldn't be
+  clicked (`HitTestGob` uses the same list), though it was still in the game.
+  300 infantry placed on one screen of C_05: the old build stopped drawing
+  about halfway down the screen (units, the HQ and scenery missing), the new
+  one draws all of it.
+- **Switches** (`kcSwitchMax`): 16 -> 64. The switch states are in the save
+  game, so `TriggerMgr` state is now version 3 (writes 64); version 2 save
+  games (16 switches) still load (`kcSwitchMaxOld`). Checked: a game saved by
+  the previous build loads and continues in the new one, and a new save loads.
+- **Triggers per side** (`kcTriggersPerSide`): 128 -> 512.
+  `m_mpSide2nTrigger` held each side's trigger numbers as bytes with 0xff as
+  the end marker, which also limited a level to 255 triggers in total (the
+  editor didn't check that). It's now words with 0xffff as the end marker, and
+  the loop that runs a side's triggers stops at the end of the row (with
+  exactly 128 triggers it used to run on into the next side's row).
+  Not saved, so no save game change.
+- **Editor checks** (m/LevelDoc.cs): switches 64, triggers per side 512, and
+  the total of placed units, buildings and scenery 5000 (was 1600, set when
+  the game's object list was 2048; it's 6144 now, and room is kept for units
+  built, shots and scorch marks).
+
+Checked with a C_05 copy with 60 extra switches and 301 extra triggers for
+every side (317 triggers for side 1): a "Mission loaded" trigger sets switch
+51 and the last trigger, number 302 of its side, shows an alert when switch 51
+is on. The alert appears, and the mission's own triggers still run.
+
 ## File map
 
 | File | Purpose |

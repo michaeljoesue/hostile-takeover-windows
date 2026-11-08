@@ -93,11 +93,14 @@ bool TriggerMgr::Init(IniReader *pini)
 	return true;
 }
 
-#define knVerTriggerMgrState 2
+// Version 3: kcSwitchMax switches are saved (version 2 saved 16)
+
+#define knVerTriggerMgrState 3
+#define knVerTriggerMgrStateOld 2
 bool TriggerMgr::LoadState(Stream *pstm)
 {
 	byte nVer = pstm->ReadByte();
-	if (nVer != knVerTriggerMgrState)
+	if (nVer != knVerTriggerMgrState && nVer != knVerTriggerMgrStateOld)
 		return false;
 
 	// Read Triggers
@@ -109,7 +112,12 @@ bool TriggerMgr::LoadState(Stream *pstm)
 
 	// Read Switch state
 
-	pstm->ReadBytesRLE(m_abSwitch, sizeof(m_abSwitch));
+	memset(m_abSwitch, 0, sizeof(m_abSwitch));
+	if (nVer == knVerTriggerMgrStateOld) {
+		pstm->ReadBytesRLE(m_abSwitch, kcSwitchMaxOld);
+	} else {
+		pstm->ReadBytesRLE(m_abSwitch, sizeof(m_abSwitch));
+	}
 
 	// Read one-update conditions
 
@@ -175,7 +183,7 @@ bool TriggerMgr::AssignTriggerSides(int ntgr, char *psz)
 		Assert(side >= ksideNeutral && side < kcSides);
 		Assert(nIndex >= 0 && nIndex < kcTriggersPerSide);
 		if (nIndex < kcTriggersPerSide)
-			m_mpSide2nTrigger[side][nIndex] = (byte)ntgr;
+			m_mpSide2nTrigger[side][nIndex] = (word)ntgr;
 		if (cArgs == 2)
 			break;
 	}
@@ -207,8 +215,9 @@ void TriggerMgr::Update()
 	for (Side side = ksideNeutral; side < kcSides; side++) {
 		// Execute per-side triggers in the per-side specified order 
 
-		byte *pntgr = &m_mpSide2nTrigger[side][0];
-		for (; *pntgr != 0xff; pntgr++) {
+		word *pntgr = &m_mpSide2nTrigger[side][0];
+		word *pntgrMax = &m_mpSide2nTrigger[side][kcTriggersPerSide];
+		for (; pntgr < pntgrMax && *pntgr != 0xffff; pntgr++) {
 			Assert(*pntgr < m_ctgr);
 
             // Subsequent triggers may have been disabled by the prior trigger

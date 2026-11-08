@@ -919,7 +919,7 @@ namespace m {
 
 			// Validate switch count
 
-			int cSwitchesMax = 16;
+			int cSwitchesMax = 64;	// kcSwitchMax in game/ht.h
 			if (m_swm.Items.Count > cSwitchesMax) {
 				dgt(this, ValidateError.Error, 0, 0, null, String.Format("Max switches is {0}, this mission has {1}", cSwitchesMax, m_swm.Items.Count));
 				cError++;
@@ -1176,7 +1176,7 @@ namespace m {
 
 			// Validate triggers per side limit
 
-			int cTriggersPerSideMax = 128;
+			int cTriggersPerSideMax = 512;	// kcTriggersPerSide in game/ht.h
 			foreach (Side side in Enum.GetValues(typeof(Side))) {
 				Trigger[] atgr = m_tgrm.GetTriggerList(side);
 				if (atgr == null)
@@ -1192,7 +1192,7 @@ namespace m {
 			// Validate the total number of objects. The game used to limit
 			// scenery (100) and each side's starting buildings and units;
 			// it now raises those limits to fit the level, so only the size
-			// of its object list (2048, with room kept for units built,
+			// of its object list (6144, with room kept for units built,
 			// shots and effects during play) is a real limit.
 
 			int cObjects = 0;
@@ -1200,7 +1200,7 @@ namespace m {
 				if (mi is Unit || mi is Scenery)
 					cObjects++;
 			}
-			int cObjectsMax = 1600;
+			int cObjectsMax = 5000;	// kcpgobMax (6144) less room for built units, shots, scorch marks
 			if (cObjects > cObjectsMax) {
 				string strT = String.Format("{0} units, buildings and scenery; at most {1} fit in the game", cObjects, cObjectsMax);
 				dgt(this, ValidateError.Error, 0, 0, null, strT);
