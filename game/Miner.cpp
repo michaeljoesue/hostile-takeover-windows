@@ -60,13 +60,21 @@ MinerGob::MinerGob() : MobileUnitGob(&gConsts)
 	m_wfMunt &= ~kfMuntAggressivenessBits;
 	m_fHidden = false;
 	m_fAttemptingToDeliver = false;
+	m_fKeepMining = false;
+	m_cRetryCountdown = 0;
 }
 
-#define knVerMinerGobState 2
+// TUNE: how long an idle miner that should be mining waits before trying
+// again, in updates (about 3 seconds at normal speed)
+#define kcMinerRetryUpdates 40
+
+// Version 3 adds m_fKeepMining
+#define knVerMinerGobState 3
+#define knVerMinerGobStateOld 2
 bool MinerGob::LoadState(Stream *pstm)
 {
 	byte nVer = pstm->ReadByte();
-	if (nVer != knVerMinerGobState)
+	if (nVer != knVerMinerGobState && nVer != knVerMinerGobStateOld)
 		return false;
 	m_nGalaxiteAmount = pstm->ReadWord();
 	m_cDelay = (char)pstm->ReadByte();
@@ -76,6 +84,13 @@ bool MinerGob::LoadState(Stream *pstm)
 	m_fMinerUnderAttack = pstm->ReadByte() != 0 ? true : false;
 	m_fHidden = pstm->ReadByte() != 0 ? true : false;
 	m_fAttemptingToDeliver = pstm->ReadByte() != 0 ? true : false;
+	if (nVer >= 3) {
+		m_fKeepMining = pstm->ReadByte() != 0 ? true : false;
+	} else {
+		// Older save games: a miner that has mined before keeps mining
+		m_fKeepMining = m_tptGalaxite.tx != kxInvalid;
+	}
+	m_cRetryCountdown = kcMinerRetryUpdates;
 	return MobileUnitGob::LoadState(pstm);
 }
 
@@ -90,6 +105,7 @@ bool MinerGob::SaveState(Stream *pstm)
 	pstm->WriteByte(m_fMinerUnderAttack);
 	pstm->WriteByte(m_fHidden);
 	pstm->WriteByte(m_fAttemptingToDeliver);
+	pstm->WriteByte(m_fKeepMining);
 	return MobileUnitGob::SaveState(pstm);
 }
 
@@ -235,8 +251,10 @@ void MinerGob::SetTarget(Gid gid, WCoord wx, WCoord wy, WCoord wxCenter, WCoord 
 			return;
 		}
 
-		// If target is not Galaxite let the MobileUnitGob handle command
+		// If target is not Galaxite let the MobileUnitGob handle command.
+		// The player moved the miner somewhere, so it stops mining.
 
+		m_fKeepMining = false;
 		MobileUnitGob::SetTarget(gid, wx, wy, wxCenter, wyCenter, tcRadius, wcMoveDistPerUpdate);
 		return;
 	}
@@ -250,6 +268,7 @@ void MinerGob::SetTarget(Gid gid, WCoord wx, WCoord wy, WCoord wxCenter, WCoord 
 	// If target is not a friendly processor let the MobileUnitGob handle command differentiation
 
 	if (pgobTarget->GetType() != kgtProcessor || !IsAlly(pgobTarget->GetSide())) {
+		m_fKeepMining = false;
 		MobileUnitGob::SetTarget(gid, wx, wy, wxCenter, wyCenter, tcRadius, wcMoveDistPerUpdate);
 		return;
 	}
@@ -282,6 +301,8 @@ if (!(m_ff & kfGobActive)) {
     Assert();
 }
 
+	m_fKeepMining = true;
+
 	// If we aren't being told to where to mine and we don't already
 	// have a previous mining location then find a new place to mine.
 
@@ -306,6 +327,7 @@ if (!(m_ff & kfGobActive)) {
 				gsim.GetLevel()->GetTriggerMgr()->SetConditionTrue(knMinerCantFindGalaxiteCondition, GetSideMask(GetSide()));
 				if (m_pplr == gpplrLocal)
 					ShowAlert(kidsMinerNeedsGalaxite);
+				m_fKeepMining = false;
 				SetState(kstGuard);
 			}
 		}
@@ -332,6 +354,10 @@ void MinerGob::PerformAction(char *szAction)
 		SendMineCommand(m_gid, kwxInvalid, kwxInvalid);
 		return;
 	}
+
+	// Told to do something else
+
+	m_fKeepMining = false;
 
 	// Don't override this action, let base handle it
 
@@ -452,6 +478,7 @@ BeginStateMachine
 
 			if (pgobTarget != NULL && !(pgobTarget->GetFlags() & kfGobBeingBuilt)) {
 				m_gidFavoriteProcessor = pgobTarget->GetId();
+				m_fKeepMining = true;
 
 				// Adjust target x/y to point to the center of the tile 
 				// closest to the Processor's entrance.
@@ -483,6 +510,42 @@ BeginStateMachine
 		// their auto-response impulses to chase their attacker
 
 		// DO NOTHING (override Unit's Attack response)
+
+	//-----------------------------------------------------------------------
+
+	// Idle. A miner that should be mining can end up here and, originally,
+	// stay forever: when its path to Galaxite or to its Processor was
+	// blocked for a while (knMoveStuck, e.g. by other miners or units), when
+	// it was waiting for a busy Processor that never told it to come, or
+	// when its Processor was destroyed. So if it should be mining it tries
+	// again every few seconds: delivers if it's full or was on its way to
+	// deliver, otherwise goes back to mining near where it last mined.
+
+	State(kstGuard)
+		OnEnter
+			m_cRetryCountdown = kcMinerRetryUpdates;
+			return MobileUnitGob::ProcessStateMachineMessage(st, pmsg);
+
+		OnExit
+			return MobileUnitGob::ProcessStateMachineMessage(st, pmsg);
+
+		OnUpdate
+			if (m_fKeepMining && !m_fHidden && (m_ff & kfGobActive) &&
+					!(m_wfMunt & kfMuntCommandPending)) {
+				m_cRetryCountdown -= m_unvl.GetUpdateCount();
+				if (m_cRetryCountdown < 0) {
+					m_cRetryCountdown = kcMinerRetryUpdates;
+					if (m_nGalaxiteAmount == knMinerGalaxiteMax ||
+							m_fAttemptingToDeliver) {
+						SendDeliverCommand(m_gidFavoriteProcessor);
+					} else {
+						SendMineCommand(m_gid, kwxInvalid, kwxInvalid);
+					}
+					return knHandled;
+				}
+				m_unvl.MinSkip(m_cRetryCountdown);
+			}
+			return MobileUnitGob::ProcessStateMachineMessage(st, pmsg);
 		
 	//-----------------------------------------------------------------------
 
@@ -621,6 +684,7 @@ if (!(m_ff & kfGobActive)) {
 							gsim.GetLevel()->GetTriggerMgr()->SetConditionTrue(knMinerCantFindGalaxiteCondition, GetSideMask(GetSide()));
 							if (m_pplr == gpplrLocal)
 								ShowAlert(kidsMinerNeedsGalaxite);
+							m_fKeepMining = false;
 							SetState(kstGuard);
 						} else {
 							SendDeliverCommand(m_gidFavoriteProcessor);

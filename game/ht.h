@@ -6471,6 +6471,14 @@ private:
 	static AnimationData *s_panidVacuum;
 	bool m_fAttemptingToDeliver;
 	bool m_fHidden;
+
+	// Set while the miner is supposed to be mining (it was told to mine, or
+	// is delivering). If it ends up idle anyway (its path was blocked, its
+	// processor was busy or gone, ...) it tries again every few seconds.
+	// Cleared when it's ordered to do something else.
+
+	bool m_fKeepMining;
+	int m_cRetryCountdown;
 };
 
 inline void MinerGob::SetGalaxiteAmount(int nAmount)

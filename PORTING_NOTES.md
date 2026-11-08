@@ -1179,6 +1179,36 @@ an arrow key scrolls about 20 pixels per 20 ms frame, and no drawing
 leftovers. VSync pacing can't be seen here (no real display); on Windows it
 caps frames at the monitor's refresh rate.
 
+## 47. Miners (Bullpups) that stop mining
+
+Two causes, found by logging every miner state change in test games:
+
+1. **Storage full (by design).** A Processor only takes Galaxite while the
+   player's credits fit in storage (3000 per Processor, 5000 per
+   Warehouse). When they don't, the miner waits *inside* the Processor
+   (`kstProcessorTakeGalaxite`) until credits are spent, the next miner
+   queues at the door, and the "warehouse too full" alert plays at most every
+   30 seconds. In C_04 and C_05 the computer starts with more credits than
+   it can store, so its miners park in the Processor for good. This is how
+   the original game works and is unchanged, except: when the credits were
+   just under the limit (e.g. 2990 of 3000) the step (+20) never fit, so the
+   miner waited even though storage wasn't full. Now storage is filled up to
+   the limit (Processor.cpp).
+2. **Stuck after a blocked path (bug).** Several miner states end in
+   `kstGuard` with nothing to start them again: approaching Galaxite or
+   stepping aside when the path stays blocked (`knMoveStuck`), reaching a
+   Processor that was destroyed meanwhile with none left, and waiting at a
+   busy Processor whose "come in now" notification never arrives (e.g. the
+   door was blocked by another unit rather than a miner). Such a miner sat
+   idle forever. Now `MinerGob` keeps `m_fKeepMining` (set by mine and
+   deliver orders, cleared by any other order from the player or a trigger
+   and when no Galaxite can be found at all) and overrides `kstGuard`:
+   while idle and supposed to be mining, every ~3 seconds (40 updates) it
+   delivers if it's full or was trying to deliver, otherwise goes back to
+   mining near its last spot. A miner inside a Processor is hidden and
+   isn't touched. Miner save state is version 3 (adds the flag); version 2
+   save games load, with the flag set for miners that have mined before.
+
 ## File map
 
 | File | Purpose |
