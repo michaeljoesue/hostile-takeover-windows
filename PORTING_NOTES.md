@@ -1209,6 +1209,35 @@ Two causes, found by logging every miner state change in test games:
    isn't touched. Miner save state is version 3 (adds the flag); version 2
    save games load, with the flag set for miners that have mined before.
 
+## 48. Other "stops for good" problems: path search budget, AI builds after loading
+
+Looking for the same pattern as the miners (something gives up and nothing
+starts it again):
+
+- **Path search ran out of budget.** `TerrainMap::FindPath` stopped after
+  map width * 9 path heads (a 2003 handheld budget) and returned a path to
+  the closest point found so far; the unit walked there and stopped short of
+  where it was sent (`knMoveStuck`, then Guard). Measured with a temporary
+  test that pathed between 400 random reachable tile pairs per map: 7 of 400
+  paths on C_02 (49 x 55) and 2 of 400 on the 120 x 120 test map came up
+  short. `CNodesLimit` is now one path head per map tile: all 1200 test paths
+  reached their destination; the slowest took 14 ms on the 120 x 120 map,
+  most well under 1 ms.
+- **Computer stopped sending a unit group after loading a save game.** The
+  BuildMgr's list of units the computer has ordered isn't saved ("UNDONE:
+  load/save" in BuildMgr.cpp), so a unit group that was still waiting for
+  units when the game was saved waited forever after loading, e.g. a
+  repeating attack wave never came again. `UnitGroupMgr::LoadState` now asks
+  for those units again (`UnitGroup::RequestMissingUnits`). Tested on C_04:
+  saved after 45 seconds, loaded, and one side 2 group re-ordered its 11
+  missing units. A unit that was already in a factory queue when the game
+  was saved is still finished, so the group may get one extra unit.
+- Looked at and left alone: ordinary move orders that are blocked end in
+  Guard where the unit is (visible to the player, as in the original); group
+  Move actions treat a blocked unit as arrived, so the group carries on;
+  attackers that get blocked retarget the target's current position; units
+  waiting at a Replicator re-check every update.
+
 ## File map
 
 | File | Purpose |

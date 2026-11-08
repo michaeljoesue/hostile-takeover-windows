@@ -56,6 +56,14 @@ bool UnitGroupMgr::LoadState(Stream *pstm)
 	for (int i = 0; i < m_cug; i++)
 		m_aug[i].LoadState(pstm);
 
+	// The BuildMgr's list of units the computer wants built isn't saved, so
+	// a group that was still waiting for units when the game was saved would
+	// wait forever after loading it (and, e.g., a repeating attack wave would
+	// never come again). Ask for those units again.
+
+	for (int i = 0; i < m_cug; i++)
+		m_aug[i].RequestMissingUnits();
+
 	return pstm->IsSuccess();
 }
 
@@ -496,6 +504,20 @@ void UnitGroup::AddUnit(UnitGob *punt, bool fReplicant)
 	m_aule[m_cule].ut = punt->GetConsts()->ut;
 	m_aule[m_cule].bf = fReplicant ? kfUleBuilt | kfUleReplicant : kfUleBuilt;
 	m_cule++;
+}
+
+void UnitGroup::RequestMissingUnits()
+{
+	if ((m_wf & (kfUgActive | kfUgNeedsUnit)) != (kfUgActive | kfUgNeedsUnit))
+		return;
+	if (m_wf & kfUgSpawn)
+		return;
+	BuildMgr *pbldm = gsim.GetBuildMgr();
+	UnitListEntry *pule = m_aule;
+	for (int iule = 0; iule < m_cule; iule++, pule++) {
+		if (!(pule->bf & kfUleBuilt))
+			pbldm->BuildUnit(pule->ut, this, m_nSpawnArea);
+	}
 }
 
 void UnitGroup::RemoveReplicants()

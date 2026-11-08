@@ -4320,6 +4320,7 @@ public:
 	void OnBuilt(UnitGob *punt) secUnitGroup;
 	void AddUnit(UnitGob *punt, bool fReplicant) secUnitGroup;
 	void RemoveReplicants() secUnitGroup;
+	void RequestMissingUnits() secUnitGroup;
 
 	word GetFlags() {
 		return m_wf;
