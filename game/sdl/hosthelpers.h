@@ -9,6 +9,8 @@ namespace wi {
 
 // Whole number the game picture is scaled up by on screen (Windows)
 int HostGetGameScale();
+// Where to put the game window's client area (Windows)
+void HostGetGameWindowPos(int *px, int *py);
 
 struct SurfaceProperties {
     int cxWidth;

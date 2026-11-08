@@ -63,8 +63,9 @@ Note that this overwrites the checked-in `game/htdata832.pdb`.
   `game/event.cpp`, `game/InputUI.cpp`). Mouse input is enabled for
   Windows with modern RTS controls (left click selects or deselects, right
   click moves, attacks or opens the unit menu; see `game/stylushandler.cpp`); the game runs
-  fixed borderless fullscreen; its resolution is the desktop's divided by
-  the largest whole number that keeps it at least 720x540
+  in a fixed-size (not resizable) window filling the work area; its
+  resolution is the room left (minus title bar and borders) divided by the
+  largest whole number that keeps it at least 640x480
   (`win/hosthelpers.cpp`), scaled up with nearest-neighbour integer scaling
   (`SDL_RenderSetIntegerScale`) and per-monitor DPI awareness; arrow keys
   scroll the map.

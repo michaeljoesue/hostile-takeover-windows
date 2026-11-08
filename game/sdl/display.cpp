@@ -83,12 +83,13 @@ bool Display::Init()
 	// screen mode! (ssh from another machine and kill the Xcode process)
     videoflags = SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_SHOWN;
 
-    // Desktop Windows: fixed fullscreen (borderless, desktop resolution). The
-    // game picture size is picked from the monitor so it's a whole number of
-    // times smaller than the screen (see GetSurfaceProperties in
-    // win/hosthelpers.cpp), and it's scaled up with sharp, square pixels.
+    // Desktop Windows: a fixed-size window (not resizable, no fullscreen)
+    // that fills the work area. The game picture size is picked from the
+    // monitor so it's a whole number of times smaller than the window (see
+    // CalcGameSize in win/hosthelpers.cpp), and it's scaled up with sharp,
+    // square pixels.
     #if defined(_WIN32)
-    videoflags = SDL_WINDOW_SHOWN | SDL_WINDOW_FULLSCREEN_DESKTOP;
+    videoflags = SDL_WINDOW_SHOWN;
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
     SDL_SetHint(SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0");
     #endif
@@ -103,14 +104,17 @@ bool Display::Init()
     m_density = props.density;
     
     // Create window
+    int xWindow = SDL_WINDOWPOS_CENTERED;
+    int yWindow = SDL_WINDOWPOS_CENTERED;
     int cxWindow = m_cx;
     int cyWindow = m_cy;
 #if defined(_WIN32)
     int nScale = HostGetGameScale();
     cxWindow = m_cx * nScale;
     cyWindow = m_cy * nScale;
+    HostGetGameWindowPos(&xWindow, &yWindow);
 #endif
-    if ((m_window = SDL_CreateWindow("Hostile Takeover", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, cxWindow, cyWindow, videoflags)) == NULL) {
+    if ((m_window = SDL_CreateWindow("Hostile Takeover", xWindow, yWindow, cxWindow, cyWindow, videoflags)) == NULL) {
         LOG() << "Couldn't create window: " << m_cx << "x" << m_cy << " \nError: " << SDL_GetError();
         return false;
     }
@@ -353,7 +357,7 @@ void Display::SetVSync(bool fVSync)
 
 void Display::ToggleFullscreen()
 {
-    // The screen setup is fixed (always fullscreen, see Init): nothing to do
+    // The window setup is fixed (see Init): nothing to do
 }
 
 void Display::ResetScrollOffset()

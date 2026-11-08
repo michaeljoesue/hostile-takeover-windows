@@ -1342,7 +1342,7 @@ Causes and fixes (`game/Headquarters.cpp`, `PlaceStructureForm`):
   in `sdl/host.cpp`) cancels placement in `InputUIForm::EventProc`, or
   otherwise opens the in-game menu / closes the top dialog.
 
-## 52. Sharp, fixed screen size
+## 52. Sharp, fixed window size
 
 Before, the game always drew 800x600 and the resizable window stretched it
 with linear filtering, and the exe wasn't DPI aware, so Windows display
@@ -1351,20 +1351,25 @@ monitors.
 
 Now (`game/sdl/win/hosthelpers.cpp` `CalcGameSize`, `game/sdl/display.cpp`):
 
-- The game resolution comes from the desktop size: divide by the largest
-  whole number n that keeps it at least 720x540 (1920x1080 -> 960x540 x2,
-  2560x1440 -> 1280x720 x2, 3840x2160 -> 960x540 x4, 1366x768 x1). The game
-  already handles any screen size (the Android build used the phone's), so
-  forms, the minimap and the playfield lay themselves out for it.
-- The window is `SDL_WINDOW_FULLSCREEN_DESKTOP`, not resizable, scaled with
-  `nearest` filtering and `SDL_RenderSetIntegerScale`, so each game pixel
-  is an exact n x n block.
+- Room for the game = the monitor's work area (`SDL_GetDisplayUsableBounds`,
+  i.e. without the taskbar) minus the window's title bar and borders,
+  measured with `SDL_GetWindowBordersSize` on a hidden probe window.
+- The game resolution is that room divided by the largest whole number n
+  that keeps it at least 640x480 (1920x1080 -> about 952x496 x2,
+  2560x1440 -> about 1272x676 x2, 3840x2160 -> about 952x516 x4,
+  1366x768 x1). The game already handles any screen size (the Android
+  build used the phone's), so forms, the minimap and the playfield lay
+  themselves out for it. Its tallest form is 320 px, so 480 is plenty.
+- The window is a normal window, not resizable (so no maximize), placed so
+  its client area is centered in the work area, scaled with `nearest`
+  filtering and `SDL_RenderSetIntegerScale`, so each game pixel is an exact
+  n x n block.
 - `SDL_HINT_WINDOWS_DPI_AWARENESS=permonitorv2` is set before SDL video
-  starts, so the desktop size is in real pixels and Windows doesn't
-  bitmap-stretch the window.
+  starts, so sizes are in real pixels and Windows doesn't bitmap-stretch
+  the window.
 - F11 / Alt+Enter (fullscreen toggle) are swallowed and
   `Display::ToggleFullscreen` does nothing: by request there's no way to
-  change the screen setup.
+  change the window setup.
 
 ## File map
 

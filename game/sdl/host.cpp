@@ -245,8 +245,8 @@ bool ProcessSdlEvent(base::Message *pmsg, Event *pevt)
 		
 	case SDL_KEYDOWN:
 #ifdef _WIN32
-        // F11 / Alt+Enter used to toggle fullscreen. The screen setup is
-        // fixed now (always fullscreen, sharp scaling), so swallow them.
+        // F11 / Alt+Enter used to toggle fullscreen. The window setup is
+        // fixed now (sized for the monitor, sharp scaling), so swallow them.
         if (event.key.keysym.sym == SDLK_F11 ||
                 ((event.key.keysym.sym == SDLK_RETURN ||
                   event.key.keysym.sym == SDLK_KP_ENTER) &&

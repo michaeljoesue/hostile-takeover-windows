@@ -181,21 +181,26 @@ void HostHelpers::Break()
     Log("BREAK!!");
 }
 
-// The game picture's size is picked once from the monitor and fixed (no
-// resizing, no fullscreen toggle): the game always fills the whole screen
-// and each game pixel is drawn as an exact n x n block of screen pixels, so
-// the picture is sharp (no blurry stretching). n is the largest whole number
-// that still leaves the game at least kcyGameMin pixels tall (about the old
-// 800x600), e.g.
-//   1920x1080 -> 960x540 x2    2560x1440 -> 1280x720 x2
-//   3840x2160 -> 960x540 x4    1366x768  -> 1366x768 x1
+// The game runs in a fixed-size window (it can't be resized or maximized,
+// and there's no fullscreen) whose size is picked once for the monitor so
+// the picture is as large and as sharp as possible: the window fills the
+// screen's work area (the desktop minus the taskbar and the window's own
+// title bar and borders), and each game pixel is drawn as an exact n x n
+// block of screen pixels (no blurry stretching). n is the largest whole
+// number that still leaves the game at least kcxGameMin x kcyGameMin, e.g.
+// (100% display scaling, taskbar at the bottom)
+//   1920x1080 -> about 952x496 shown at 2x
+//   2560x1440 -> about 1272x676 at 2x
+//   3840x2160 -> about 952x516 at 4x
+//   1366x768  -> about 1350x690 at 1x
 // The process is per-monitor DPI aware so Windows display scaling (125%,
 // 150%...) doesn't stretch (blur) the window either.
 
-#define kcxGameMin 720
-#define kcyGameMin 540
+#define kcxGameMin 640
+#define kcyGameMin 480
 
 static int s_cxGame, s_cyGame, s_nGameScale;
+static int s_xWindow = SDL_WINDOWPOS_CENTERED, s_yWindow = SDL_WINDOWPOS_CENTERED;
 
 static void CalcGameSize()
 {
@@ -208,16 +213,67 @@ static void CalcGameSize()
     SDL_SetHint(SDL_HINT_WINDOWS_DPI_AWARENESS, "permonitorv2");
     if (!SDL_WasInit(SDL_INIT_VIDEO) && SDL_InitSubSystem(SDL_INIT_VIDEO) < 0)
         return;
-    SDL_DisplayMode mode;
-    if (SDL_GetDesktopDisplayMode(0, &mode) != 0 || mode.w <= 0 || mode.h <= 0)
+
+    // Room on screen: the work area (no taskbar)
+
+    SDL_Rect rcUsable;
+    if (SDL_GetDisplayUsableBounds(0, &rcUsable) != 0 || rcUsable.w <= 0 ||
+            rcUsable.h <= 0) {
+        SDL_DisplayMode mode;
+        if (SDL_GetDesktopDisplayMode(0, &mode) != 0)
+            return;
+        rcUsable.w = mode.w;
+        rcUsable.h = mode.h - 48;
+    }
+
+    // Minus the window's title bar and borders, measured on a hidden window
+    // of the same kind
+
+    int cyTop = 0, cxLeft = 0, cyBottom = 0, cxRight = 0;
+    SDL_Window *pwndProbe = SDL_CreateWindow("", SDL_WINDOWPOS_CENTERED,
+            SDL_WINDOWPOS_CENTERED, 320, 240, SDL_WINDOW_HIDDEN);
+    if (pwndProbe != NULL) {
+        if (SDL_GetWindowBordersSize(pwndProbe, &cyTop, &cxLeft, &cyBottom,
+                &cxRight) != 0) {
+            cyTop = cxLeft = cyBottom = cxRight = 0;
+        }
+        SDL_DestroyWindow(pwndProbe);
+    }
+    if (cyTop <= 0) {
+        // Couldn't measure: assume a title bar of about 32 points
+        float ddpi = 96.0f;
+        if (SDL_GetDisplayDPI(0, &ddpi, NULL, NULL) != 0 || ddpi <= 0)
+            ddpi = 96.0f;
+        cyTop = (int)(32 * ddpi / 96.0f + 0.5f);
+        cxLeft = cxRight = cyBottom = (int)(4 * ddpi / 96.0f + 0.5f);
+    }
+    int cxRoom = rcUsable.w - cxLeft - cxRight;
+    int cyRoom = rcUsable.h - cyTop - cyBottom;
+    if (cxRoom < kcxGameMin || cyRoom < kcyGameMin) {
+        // Tiny screen: just use what there is
+        s_cxGame = (cxRoom > 320 ? cxRoom : 320) & ~1;
+        s_cyGame = (cyRoom > 240 ? cyRoom : 240) & ~1;
         return;
+    }
+
     int n = 1;
-    while (mode.w / (n + 1) >= kcxGameMin && mode.h / (n + 1) >= kcyGameMin)
+    while (cxRoom / (n + 1) >= kcxGameMin && cyRoom / (n + 1) >= kcyGameMin)
         n++;
-    // Game widths are kept even (some blits work in pairs of pixels)
-    s_cxGame = (mode.w / n) & ~1;
-    s_cyGame = (mode.h / n) & ~1;
+    // Game sizes are kept even (some blits work in pairs of pixels)
+    s_cxGame = (cxRoom / n) & ~1;
+    s_cyGame = (cyRoom / n) & ~1;
     s_nGameScale = n;
+
+    // Window client area centered in the room left for it
+    s_xWindow = rcUsable.x + cxLeft + (cxRoom - s_cxGame * n) / 2;
+    s_yWindow = rcUsable.y + cyTop + (cyRoom - s_cyGame * n) / 2;
+}
+
+void HostGetGameWindowPos(int *px, int *py)
+{
+    CalcGameSize();
+    *px = s_xWindow;
+    *py = s_yWindow;
 }
 
 int HostGetGameScale()

@@ -42,12 +42,13 @@ along with it.
 These are modern-RTS style controls. The in-game tutorial was written for
 phones, so when it says "tap on grass to move", right click instead.
 
-The game always runs fullscreen at a fixed size picked for your monitor, so the
-picture is sharp: the game is drawn at the screen's resolution divided by a whole
-number and every game pixel becomes an exact square block (1920×1080 → 960×540
-shown at 2×, 2560×1440 → 1280×720 at 2×, 3840×2160 → 960×540 at 4×,
-1366×768 → 1366×768 at 1×). Wider screens show more of the map. There is no
-setting to change it.
+The game runs in a window of fixed size picked for your monitor: it fills the
+screen above the taskbar, and every game pixel is drawn as an exact square
+block of screen pixels, so the picture is sharp (no blurry stretching). On a
+1920×1080 screen the game is about 952×496 shown at 2×; 2560×1440 → about
+1272×676 at 2×; 3840×2160 → about 952×516 at 4×; 1366×768 → about 1350×690 at
+1×. The window can't be resized or made fullscreen, and there's no setting to
+change it.
 
 Sound is in stereo: battles to the left of the screen come from the left
 speaker, and fighting off screen is quieter the farther away it is. Options (main menu,

@@ -48,13 +48,13 @@ CONTROLS
 The in-game tutorial was written for phones: when it says "tap on grass
 to move", right click instead.
 
-The game always runs fullscreen at a fixed size picked for your monitor,
-so the picture is sharp (each game pixel is an exact square block of
-screen pixels, no blurry stretching):
-  1920x1080 -> 960x540 shown at 2x      2560x1440 -> 1280x720 at 2x
-  3840x2160 -> 960x540 at 4x            1366x768  -> 1366x768 at 1x
-Wider screens show more of the map. There is no setting to change it.
-Alt+Tab switches to other programs as usual.
+The game runs in a window of fixed size picked for your monitor: it fills
+the screen above the taskbar, and each game pixel is an exact square block
+of screen pixels, so the picture is sharp (no blurry stretching):
+  1920x1080 -> about 952x496 shown at 2x   2560x1440 -> about 1272x676 at 2x
+  3840x2160 -> about 952x516 at 4x         1366x768  -> about 1350x690 at 1x
+The window can't be resized or made fullscreen; there is no setting to
+change it.
 
 Your allies' units and buildings lift the fog of war for you too, so you
 can see your allies' bases and armies.
