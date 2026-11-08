@@ -234,6 +234,40 @@ bool ProcessSdlEvent(base::Message *pmsg, Event *pevt)
 		break;
 		
 	case SDL_MOUSEMOTION:
+#ifdef _WIN32
+        // A desktop mouse reports motion hundreds (gaming mice: up to 1000)
+        // times a second, even with no button down. Each move used to be
+        // handled as a separate pen move and forced a full redraw (waiting
+        // for the monitor's refresh) before the next input was read, so
+        // moves piled up in the queue and the cursor, clicks, selection and
+        // box select lagged behind, more the more the mouse moved.
+        //
+        // - With no button held, moves mean nothing to the game (it was
+        //   made for touch screens): drop them.
+        // - Otherwise only the newest position matters: skip ahead to the
+        //   last of the moves already queued.
+
+        if ((event.motion.state & (SDL_BUTTON_LMASK | SDL_BUTTON_RMASK)) == 0)
+            return false;
+        while (true) {
+            SDL_Event eventNext;
+            if (SDL_PeepEvents(&eventNext, 1, SDL_PEEKEVENT, SDL_MOUSEMOTION,
+                    SDL_MOUSEMOTION) != 1) {
+                break;
+            }
+
+            // Only skip ahead if the move is next in line (keep the order
+            // with clicks and keys)
+
+            SDL_Event eventFirst;
+            if (SDL_PeepEvents(&eventFirst, 1, SDL_PEEKEVENT, SDL_FIRSTEVENT,
+                    SDL_LASTEVENT) != 1 || eventFirst.type != SDL_MOUSEMOTION) {
+                break;
+            }
+            SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_MOUSEMOTION,
+                    SDL_MOUSEMOTION);
+        }
+#endif
         pevt->eType = penMoveEvent;
 		pevt->x = event.motion.x;
 		pevt->y = event.motion.y;

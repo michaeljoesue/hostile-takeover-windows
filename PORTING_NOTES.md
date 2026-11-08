@@ -1371,6 +1371,30 @@ Now (`game/sdl/win/hosthelpers.cpp` `CalcGameSize`, `game/sdl/display.cpp`):
   `Display::ToggleFullscreen` does nothing: by request there's no way to
   change the window setup.
 
+## 53. Mouse lag (moving, clicking, box select)
+
+Symptom: moving the mouse made the game lag; clicks, selection and box
+select reacted late, more so the more the mouse moved.
+
+Cause: every `SDL_MOUSEMOTION` became a `penMoveEvent`, even with no button
+down (a desktop mouse reports 125-1000 moves a second). `EventMgr::GetEvent`
+sets `kfRedrawBeforeInput` on each pen move, so a full redraw (waiting for
+vsync) happened before the next input was read: about 60 moves handled a
+second, the rest piling up in SDL's queue ahead of clicks and key presses.
+
+Fix (`game/sdl/host.cpp`, `ProcessSdlEvent`):
+
+- Moves with no left / right button held are dropped; the game (made for
+  touch screens) has no use for hover moves.
+- With a button held, moves already queued right behind are skipped so only
+  the newest position is handled (only while the next queued event is a
+  move, so the order with clicks and keys is kept).
+
+Measured under Wine with bursts of 1500 synthetic moves: release of a box
+select was handled 526 ms / 116 ms after it happened before, 67 / 27 ms
+after; clicks after hovering 11-13 ms before, 0 after. A real high-rate
+mouse with real vsync lagged much more than that before.
+
 ## File map
 
 | File | Purpose |
