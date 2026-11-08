@@ -20,6 +20,9 @@ namespace m {
 	[Flags]
 	public enum LayerFlags { Templates = 1, Gobs = 2, Areas = 4, Default = (Templates | Gobs | Areas) };
 
+	// Values match knGalaxiteRegrowth* in game/ht.h
+	public enum GalaxiteRegrowth { Off = 0, Slow = 1, Normal = 2 };
+
 	[Serializable]
 	public class LevelDoc : Document, ISerializable, IDeserializationCallback {
 		string m_strOutputFilename = null;
@@ -30,6 +33,7 @@ namespace m {
 		string m_strTitle = null;
 		Rectangle m_trcBounds = new Rectangle(1, 1, 62, 62);
 		int m_nPlayersMin = 1;
+		GalaxiteRegrowth m_gxr = GalaxiteRegrowth.Off;
 		int m_nPlayersMax = 1;
 		ArrayList m_alsmi = new ArrayList();
 		ArrayList m_alsidi = new ArrayList();
@@ -86,6 +90,14 @@ namespace m {
 
 				m_nPlayersMin = info.GetInt32("MinPlayers");
 				m_nPlayersMax = info.GetInt32("MaxPlayers");
+			} catch (SerializationException) {
+			}
+
+			// Galaxite regrowth (newer levels only)
+
+			m_gxr = GalaxiteRegrowth.Off;
+			try {
+				m_gxr = (GalaxiteRegrowth)info.GetInt32("GalaxiteRegrowth");
 			} catch (SerializationException) {
 			}
 
@@ -217,6 +229,7 @@ namespace m {
 			info.AddValue("BoundsHeight", Bounds.Height);
 			info.AddValue("MinPlayers", MinPlayers);
 			info.AddValue("MaxPlayers", MaxPlayers);
+			info.AddValue("GalaxiteRegrowth", (int)m_gxr);
 			info.AddValue("SideInfos", GetSideInfos());
 			info.AddValue("Width", Width);
 			info.AddValue("Height", Height);
@@ -1400,6 +1413,8 @@ namespace m {
 			sec.Add(new Ini.Property("MinPlayers", m_nPlayersMin.ToString()));
 			sec.Add(new Ini.Property("MaxPlayers", m_nPlayersMax.ToString()));
 			sec.Add(new Ini.Property("UnitGroupCount", m_ugm.Items.Count.ToString()));
+			if (m_gxr != GalaxiteRegrowth.Off)
+				sec.Add(new Ini.Property("GalaxiteRegrowth", ((int)m_gxr).ToString()));
 
 			// < 0 means use the current version, otherwise use the passed version
 			// This is the "level file format" version
@@ -1548,6 +1563,9 @@ namespace m {
 			m_strTitle = secGen["Title"].Value;
 			m_nPlayersMin = int.Parse(secGen["MinPlayers"].Value);
 			m_nPlayersMax = int.Parse(secGen["MaxPlayers"].Value);
+			m_gxr = GalaxiteRegrowth.Off;
+			if (secGen["GalaxiteRegrowth"] != null)
+				m_gxr = (GalaxiteRegrowth)int.Parse(secGen["GalaxiteRegrowth"].Value);
 
 			// SideInfo
 
@@ -1911,6 +1929,19 @@ namespace m {
 				if (m_nPlayersMin == value)
 					return;
 				m_nPlayersMin = value;
+				SetModified(true);
+			}
+		}
+
+		[Description("Whether mined Galaxite grows back, one size per patch at a time, up to how much there was at the start. Off: never (like the original missions). Slow: one size every 60 seconds. Normal: one size every 30 seconds.")]
+		public GalaxiteRegrowth GalaxiteRegrowth {
+			get {
+				return m_gxr;
+			}
+			set {
+				if (m_gxr == value)
+					return;
+				m_gxr = value;
 				SetModified(true);
 			}
 		}

@@ -1183,6 +1183,7 @@ public:
 	void SetGalaxite(int nGx, TCoord tx, TCoord ty) secFogMap;
 	bool DecGalaxite(TCoord tx, TCoord ty) secFogMap;
 	void IncGalaxite(TCoord tx, TCoord ty) secFogMap;
+	bool RegrowGalaxite(TCoord tx, TCoord ty, int nOriginal) secFogMap;
 	bool FindNearestGalaxite(TCoord tx, TCoord ty, TPoint *ptpt, bool fIgnoreFog) secFogMap;
 
 	// Wall methods
@@ -4740,8 +4741,15 @@ public:
 		return m_dwRevision;
 	}
 
+	// Galaxite regrowth (knGalaxiteRegrowth*), a per-level setting
+	int GetGalaxiteRegrowth() {
+		return m_nGalaxiteRegrowth;
+	}
+	void UpdateGalaxiteRegrowth(long cUpdates) secLevel;
+
 private:
 	bool LoadSideInfo(IniReader *pini, char *pszSideName, SideInfo *psidi) secLevel;
+	bool LoadGalaxiteRegrowth(IniReader *pini) secLevel;
 	bool LoadLevelConstants(const char *pszLevelName, IniReader *pini) secLevel;
 	bool LoadLevelVariables(IniReader *pini) secLevel;
 
@@ -4771,7 +4779,20 @@ private:
 	// mark that every mission has.
 
 	dword m_dwRevision;
+
+	// Galaxite regrowth: the setting, and each tile's Galaxite amount at the
+	// start of the level (what it grows back to), read from the level file
+	// both when a level starts and when a saved game is loaded
+
+	int m_nGalaxiteRegrowth;
+	byte *m_pbGalaxiteOriginal;
+	int m_ctxGalaxite, m_ctyGalaxite;
 };
+
+// [General] GalaxiteRegrowth= in a level file
+const int knGalaxiteRegrowthOff = 0;
+const int knGalaxiteRegrowthSlow = 1;	// one size per tile every 60 seconds
+const int knGalaxiteRegrowthNormal = 2;	// one size per tile every 30 seconds
 
 // Structure/Unit type values and masks
 
@@ -6460,6 +6481,7 @@ public:
 
 private:
 	void Mine(WCoord wx, WCoord wy) secMiner;
+	void OnNoGalaxite() secMiner;
 	Gid FindClosestProcessor() secMiner;
 
 private:
@@ -6480,6 +6502,7 @@ private:
 
 	bool m_fKeepMining;
 	int m_cRetryCountdown;
+	bool m_fAlertedNoGalaxite;	// "miner needs Galaxite" shown, until it mines again
 };
 
 inline void MinerGob::SetGalaxiteAmount(int nAmount)

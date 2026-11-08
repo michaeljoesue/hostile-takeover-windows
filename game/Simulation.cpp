@@ -442,6 +442,10 @@ void Simulation::Update(CommandQueue *pcmdq)
 
     m_pbldm->Update();
 
+    // Galaxite regrowth (if the level has it turned on)
+
+    m_plvl->UpdateGalaxiteRegrowth(m_cUpdates);
+
     // Process all queued commands
 
     int cmsg = pcmdq->GetCount();

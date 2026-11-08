@@ -1272,6 +1272,36 @@ code, the raw-written structures and the stream handling).
   mission in the editor and then loading an older save of it shows "This
   saved game is based on an older version of this mission!" (by design).
 
+## 50. Galaxite regrowth (per-level setting)
+
+A level can make mined Galaxite grow back, slowly, to its starting amount.
+
+- **Editor:** `LevelDoc.GalaxiteRegrowth` (Off / Slow / Normal) in
+  Settings > Level. Saved in the .ld and, when not Off, written to the level
+  file as `[General] GalaxiteRegrowth=1` (Slow) or `2` (Normal). Levels
+  without it (all the built-in missions) are Off and unchanged.
+- **Game:** `Level::LoadGalaxiteRegrowth` reads the setting and each tile's
+  starting Galaxite (the level's `Galaxite` lines) from the level file. It
+  runs in `LoadLevelConstants`, so also when a saved game is loaded; nothing
+  new is saved (the current amounts are in the saved FogMap, timing comes
+  from the saved update count). `Level::UpdateGalaxiteRegrowth`, called from
+  `Simulation::Update`, grows every tile below its starting amount by one
+  size every 60 s (Slow) or 30 s (Normal) of game time, the map split into
+  16 interleaved slices so patches don't all grow at the same moment. Tiles
+  with a building on them are skipped.
+- `FogMap::RegrowGalaxite`: amounts 1-5, 6-10 and 11-15 are three patch looks
+  with five sizes each; a mined-out tile (0) comes back as the smallest size
+  of its original look, then grows one size at a time up to the start amount.
+- **Miners:** with regrowth on, a miner that finds no Galaxite keeps trying
+  every ~3 seconds (the retry from section 47) instead of giving up, and the
+  "miner needs Galaxite" alert is shown once until it mines again
+  (`MinerGob::OnNoGalaxite`).
+
+Tested on a copy of C_04 set to Normal: tiles the computer's miners mined
+grew back one size about every 29 seconds (one step per 368 updates), never
+above their starting amount; the setting survived saving and reopening the
+level in the editor.
+
 ## File map
 
 | File | Purpose |

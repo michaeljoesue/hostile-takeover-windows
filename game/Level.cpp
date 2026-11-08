@@ -16,6 +16,10 @@ Level::Level()
 	m_szFileLevel[0] = 0;
 	m_nVersion = 0;
 	m_dwRevision = 0;
+	m_nGalaxiteRegrowth = knGalaxiteRegrowthOff;
+	m_pbGalaxiteOriginal = NULL;
+	m_ctxGalaxite = 0;
+	m_ctyGalaxite = 0;
 }
 
 Level::~Level()
@@ -42,6 +46,8 @@ Level::~Level()
 
 		MobileUnitGob::FreeCachedPaths();
 	}
+	delete[] m_pbGalaxiteOriginal;
+	m_pbGalaxiteOriginal = NULL;
 }
 
 bool Level::LoadLevelInfo(const char *pszLevelName, IniReader *piniLoaded)
@@ -259,6 +265,14 @@ bool Level::LoadLevelConstants(const char *pszLevelName, IniReader *pini)
 		return false;
 	}
 
+	// Galaxite regrowth setting and the starting Galaxite (constant, so it's
+	// read for saved games too)
+
+	m_ctxGalaxite = sizMap.cx / sizTile.cx;
+	m_ctyGalaxite = sizMap.cy / sizTile.cy;
+	if (!LoadGalaxiteRegrowth(pini))
+		return false;
+
 	// Load palette
 
 	if (!pini->GetPropertyValue("General", "Palette", szT, sizeof(szT))) {
@@ -331,6 +345,81 @@ bool Level::LoadLevelConstants(const char *pszLevelName, IniReader *pini)
 
 	return true;
 }	
+
+bool Level::LoadGalaxiteRegrowth(IniReader *pini)
+{
+	m_nGalaxiteRegrowth = knGalaxiteRegrowthOff;
+	if (pini->GetPropertyValue("General", "GalaxiteRegrowth", "%d",
+			&m_nGalaxiteRegrowth) == 0) {
+		m_nGalaxiteRegrowth = knGalaxiteRegrowthOff;
+	}
+	if (m_nGalaxiteRegrowth < knGalaxiteRegrowthOff ||
+			m_nGalaxiteRegrowth > knGalaxiteRegrowthNormal) {
+		m_nGalaxiteRegrowth = knGalaxiteRegrowthOff;
+	}
+	delete[] m_pbGalaxiteOriginal;
+	m_pbGalaxiteOriginal = NULL;
+	if (m_nGalaxiteRegrowth == knGalaxiteRegrowthOff)
+		return true;
+
+	int cTiles = m_ctxGalaxite * m_ctyGalaxite;
+	m_pbGalaxiteOriginal = new byte[cTiles];
+	if (m_pbGalaxiteOriginal == NULL)
+		return false;
+	memset(m_pbGalaxiteOriginal, 0, cTiles);
+
+	FindProp find;
+	char szName[64];
+	while (pini->FindNextProperty(&find, "Galaxite", szName, sizeof(szName))) {
+		int nGx, tx, ty;
+		if (pini->GetPropertyValue(&find, "%d,%d,%d", &nGx, &tx, &ty) != 3)
+			continue;
+		if (tx < 0 || ty < 0 || tx >= m_ctxGalaxite || ty >= m_ctyGalaxite)
+			continue;
+		m_pbGalaxiteOriginal[ty * m_ctxGalaxite + tx] = (byte)nGx;
+	}
+	return true;
+}
+
+// Galaxite regrowth. Each tile with less Galaxite than it started with grows
+// one size every 60 (Slow) or 30 (Normal) seconds of game time. The map is
+// done in 16 interleaved slices so tiles don't all grow at once. Runs from
+// Simulation::Update, so it follows game time and game speed, and needs
+// nothing saved: the current amounts are in the saved FogMap and the update
+// count is saved.
+
+#define kcRegrowSlices 16
+
+void Level::UpdateGalaxiteRegrowth(long cUpdates)
+{
+	if (m_nGalaxiteRegrowth == knGalaxiteRegrowthOff ||
+			m_pbGalaxiteOriginal == NULL)
+		return;
+
+	long cUpdatesPerGrowth = (m_nGalaxiteRegrowth == knGalaxiteRegrowthSlow ?
+			60000L : 30000L) / kcmsUpdate;
+	long cUpdatesPerSlice = cUpdatesPerGrowth / kcRegrowSlices;
+	if (cUpdatesPerSlice < 1)
+		cUpdatesPerSlice = 1;
+	if ((cUpdates % cUpdatesPerSlice) != 0)
+		return;
+	int nSlice = (int)((cUpdates / cUpdatesPerSlice) % kcRegrowSlices);
+
+	int cTiles = m_ctxGalaxite * m_ctyGalaxite;
+	for (int i = nSlice; i < cTiles; i += kcRegrowSlices) {
+		int nOriginal = m_pbGalaxiteOriginal[i];
+		if (nOriginal == 0)
+			continue;
+		TCoord tx = (TCoord)(i % m_ctxGalaxite);
+		TCoord ty = (TCoord)(i / m_ctxGalaxite);
+
+		// Not under a building (one may have been built on a mined-out tile)
+
+		if (m_ptrmap->IsOccupied(tx, ty, 1, 1, kbfStructure | kbfReserved))
+			continue;
+		m_pfogm->RegrowGalaxite(tx, ty, nOriginal);
+	}
+}
 
 bool Level::LoadLevelVariables(IniReader *pini)
 {

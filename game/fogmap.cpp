@@ -554,6 +554,41 @@ void FogMap::IncGalaxite(TCoord tx, TCoord ty)
 		gpmm->RedrawTile(tx, ty);
 }
 
+// Galaxite regrowth: grow this tile one size toward nOriginal (its amount at
+// the start of the level). Amounts 1-5, 6-10 and 11-15 are three patch looks
+// with five sizes each; a mined-out tile (0) comes back as the smallest size
+// of its original look. Returns true if the tile changed.
+
+bool FogMap::RegrowGalaxite(TCoord tx, TCoord ty, int nOriginal)
+{
+	Assert(tx >= 0 && ty >= 0 && tx < m_ctxMap && ty < m_ctyMap);
+	if (nOriginal <= 0 || nOriginal > 15)
+		return false;
+
+	byte *pb = &m_pbMap[(ty * m_ctxMap) + tx];
+	int nCurrent = (*pb & kbfGalaxiteMask) >> kcGalaxiteShift;
+	if (nCurrent >= nOriginal)
+		return false;
+	int nBase = ((nOriginal - 1) / 5) * 5 + 1;
+	int nNew;
+	if (nCurrent == 0) {
+		nNew = nBase;
+	} else if (nCurrent >= nBase) {
+		nNew = nCurrent + 1;
+	} else {
+		return false;
+	}
+	*pb = (*pb & ~kbfGalaxiteMask) | (byte)(nNew << kcGalaxiteShift);
+
+	// Cause this tile to redraw
+
+	if (gptrcMapOpaque == NULL || !gptrcMapOpaque->PtIn(tx, ty))
+		gpupdSim->InvalidateTile(tx, ty);
+	if (gpmm != NULL)
+		gpmm->RedrawTile(tx, ty);
+	return true;
+}
+
 bool FogMap::DecGalaxite(TCoord tx, TCoord ty)
 {
 	Assert(tx >= 0 && ty >= 0 && tx < m_ctxMap && ty < m_ctyMap);

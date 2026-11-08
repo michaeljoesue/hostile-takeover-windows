@@ -62,6 +62,20 @@ MinerGob::MinerGob() : MobileUnitGob(&gConsts)
 	m_fAttemptingToDeliver = false;
 	m_fKeepMining = false;
 	m_cRetryCountdown = 0;
+	m_fAlertedNoGalaxite = false;
+}
+
+// No Galaxite to be found. Tell the player once (not again on every retry
+// below until this miner has mined again). With Galaxite regrowth on, keep
+// trying every few seconds, since some will grow back.
+
+void MinerGob::OnNoGalaxite()
+{
+	gsim.GetLevel()->GetTriggerMgr()->SetConditionTrue(knMinerCantFindGalaxiteCondition, GetSideMask(GetSide()));
+	if (m_pplr == gpplrLocal && !m_fAlertedNoGalaxite)
+		ShowAlert(kidsMinerNeedsGalaxite);
+	m_fAlertedNoGalaxite = true;
+	m_fKeepMining = gsim.GetLevel()->GetGalaxiteRegrowth() != knGalaxiteRegrowthOff;
 }
 
 // TUNE: how long an idle miner that should be mining waits before trying
@@ -324,10 +338,7 @@ if (!(m_ff & kfGobActive)) {
 				// where we are is in the way of any other Miners trying
 				// to use the same Processor!)
 
-				gsim.GetLevel()->GetTriggerMgr()->SetConditionTrue(knMinerCantFindGalaxiteCondition, GetSideMask(GetSide()));
-				if (m_pplr == gpplrLocal)
-					ShowAlert(kidsMinerNeedsGalaxite);
-				m_fKeepMining = false;
+				OnNoGalaxite();
 				SetState(kstGuard);
 			}
 		}
@@ -681,10 +692,7 @@ if (!(m_ff & kfGobActive)) {
 						// we've come to finding any
 
 						if (m_tptGalaxite.tx == kwxInvalid){
-							gsim.GetLevel()->GetTriggerMgr()->SetConditionTrue(knMinerCantFindGalaxiteCondition, GetSideMask(GetSide()));
-							if (m_pplr == gpplrLocal)
-								ShowAlert(kidsMinerNeedsGalaxite);
-							m_fKeepMining = false;
+							OnNoGalaxite();
 							SetState(kstGuard);
 						} else {
 							SendDeliverCommand(m_gidFavoriteProcessor);
@@ -886,6 +894,7 @@ if (!(m_ff & kfGobActive)) {
 						m_cDelay = kcMinerSuckDelay;
 						m_unvl.MinSkip(m_cDelay);
 						pfogm->DecGalaxite(m_tptGalaxite.tx, m_tptGalaxite.ty);
+						m_fAlertedNoGalaxite = false;
 						m_nGalaxiteAmount += 10;
 						MarkRedraw();
 					}
