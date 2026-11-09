@@ -826,6 +826,42 @@ void UnitGob::RememberEnemyNearby(Gid gidEnemy)
     // list, the issue being we don't want that bit set most of the time.
 }
 
+// Like FindEnemyNearby, but only enemies that can fight back: units and
+// defensive structures (towers), not buildings without weapons. Used by
+// the attack-move and guard orders, so units on them don't stop to shoot
+// walls, reactors, etc. on the way (they can be attacked with a normal
+// order).
+
+UnitGob *UnitGob::FindThreatNearby(TCoord tcRange)
+{
+	if (m_ff & kfGobNoEnemiesNearby)
+		return NULL;
+
+	TCoord txThis = TcFromWc(m_wx);
+	TCoord tyThis = TcFromWc(m_wy);
+	Side sideThis = GetSide();
+	TCoord tcClosest = tcRange;
+	UnitGob *puntEnemyClosest = NULL;
+
+	for (int n = 0; n < ARRAYSIZE(m_agidEnemyNearby); n++) {
+		Gid gidEnemyNearby = m_agidEnemyNearby[n];
+		if (gidEnemyNearby == kgidNull)
+			continue;
+		UnitGob *puntEnemyNearby = (UnitGob *)ggobm.GetGob(gidEnemyNearby);
+		if (puntEnemyNearby == NULL || puntEnemyNearby->GetSide() == sideThis)
+			continue;
+		if ((puntEnemyNearby->GetFlags() & kfGobStructure) &&
+				!(((UnitMask)1 << puntEnemyNearby->GetUnitType()) & kumTowers))
+			continue;
+		TCoord tc = CalcRange(txThis, tyThis, puntEnemyNearby);
+		if (tc <= tcClosest) {
+			tcClosest = tc;
+			puntEnemyClosest = puntEnemyNearby;
+		}
+	}
+	return puntEnemyClosest;
+}
+
 UnitGob *UnitGob::FindEnemyNearby(TCoord tcRange)
 {
 	if (m_ff & kfGobNoEnemiesNearby)

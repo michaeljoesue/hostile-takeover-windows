@@ -32,8 +32,8 @@ along with it.
 | Right click on an enemy | Attack it with the selected units |
 | Right click on your own unit or building | Open its menu (the phone version's "tap and hold"; holding the left button for half a second also works) |
 | Ctrl + right click on anything | Force attack: the selected units attack it, even your own units and buildings |
-| Ctrl + Alt + right click on the ground | Attack-move (Red Alert style): move there, fighting any enemies met on the way, then carry on |
-| Ctrl + Alt + right click on your own or an allied unit or building | Guard / protect it (Red Alert style): the selected units stay near it, follow it when it moves and fight enemies that come near it |
+| Ctrl + Alt + right click on the ground | Attack-move (Red Alert style): move there, fighting enemy units and defence towers met on the way (not buildings without weapons), then carry on |
+| Ctrl + Alt + right click on your own or an allied unit or building | Guard / protect it (Red Alert style): the selected units stay near it, follow it when it moves and fight enemy units and towers that come near it |
 | Right click in a build menu | Cancel one queued unit (on the unit's icon or the Order button); never queues a new one |
 | Right click or Escape while placing a building | Cancel placing it (same as its X button) |
 | Arrow keys | Scroll the map (smoothly, while held) |

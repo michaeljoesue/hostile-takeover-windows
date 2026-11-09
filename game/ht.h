@@ -5818,8 +5818,8 @@ public:
 	void SetForceTargetNone() {
 		m_gidForceTarget = kgidNull;
 	}
-	UnitGob *FindEnemyNear(TCoord tcRange) {	// for guard orders
-		return FindEnemyNearby(tcRange);
+	UnitGob *FindThreatNear(TCoord tcRange) {	// for guard orders
+		return FindThreatNearby(tcRange);
 	}
 
 	fix GetHealth() {
@@ -5852,6 +5852,7 @@ protected:
 	void RememberEnemyNearby(Gid gidEnemy) secUnitGob;
 	TCoord CalcRange(TCoord tx, TCoord ty, Gob *pgob) secUnitGob;
 	virtual UnitGob *FindEnemyNearby(TCoord tc) secUnitGob;
+	UnitGob *FindThreatNearby(TCoord tc) secUnitGob;
 	void NotifyEnemyNearby() secUnitGob;
 
 	union {

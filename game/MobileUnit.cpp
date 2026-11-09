@@ -741,9 +741,9 @@ bool MobileUnitGob::GuardUnitUpdate()
 	// already shooting)
 
 	if (!(m_wfMunt & kfMuntFiring)) {
-		UnitGob *puntEnemy = FindEnemyNearby(ktcVicinity);
+		UnitGob *puntEnemy = FindThreatNearby(ktcVicinity);
 		if (puntEnemy == NULL && fGuardedActive)
-			puntEnemy = puntGuarded->FindEnemyNear(ktcVicinity);
+			puntEnemy = puntGuarded->FindThreatNear(ktcVicinity);
 		if (puntEnemy != NULL && !IsTooFarFromGuardedUnit(puntEnemy)) {
 			puntEnemy->GetAttackPoint(&m_wptTarget);
 			m_gidTarget = puntEnemy->GetId();
@@ -1096,9 +1096,15 @@ lbHitNoDamage:
 
 				// (Human units only do on an attack-move or guard order.)
 
-				if ((m_wfMunt & kfMuntAttackEnemiesWhenMoving) ||
-						m_mua == kmuaAttackMove || m_mua == kmuaGuardUnit) {
-					UnitGob *puntTarget = FindEnemyNearby(m_pmuntc->tcFiringRange);
+				// (Attack-move and guard orders ignore buildings without
+				// weapons; see FindThreatNearby.)
+
+				UnitGob *puntTarget = NULL;
+				if (m_wfMunt & kfMuntAttackEnemiesWhenMoving)
+					puntTarget = FindEnemyNearby(m_pmuntc->tcFiringRange);
+				else if (m_mua == kmuaAttackMove || m_mua == kmuaGuardUnit)
+					puntTarget = FindThreatNearby(m_pmuntc->tcFiringRange);
+				{
 					if (puntTarget != NULL) {
 						m_gidTarget = puntTarget->GetId();
 						puntTarget->GetAttackPoint(&m_wptTarget);

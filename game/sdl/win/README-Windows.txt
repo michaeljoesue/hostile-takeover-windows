@@ -35,10 +35,13 @@ CONTROLS
                         if it's your own unit or building
   Ctrl + Alt + right click on the ground
                         Attack-move (Red Alert style): move there,
-                        fighting enemies met on the way, then carry on
+                        fighting enemy units and defence towers met on
+                        the way (buildings without weapons are ignored),
+                        then carry on
   Ctrl + Alt + right click on your own / an allied unit or building
                         Guard (protect) it: the selected units stay near
-                        it, follow it and fight enemies that come near it.
+                        it, follow it and fight enemy units and towers
+                        that come near it.
                         Any normal order ends attack-move / guard.
   Right click in a build menu
                         Cancel one queued unit (click the unit's icon

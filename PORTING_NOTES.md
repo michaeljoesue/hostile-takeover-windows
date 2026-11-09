@@ -1469,7 +1469,12 @@ Ctrl+Alt+right click (`kfEvtAlt` from `sdl/host.cpp`, handled first in
   existing action logic applies: in `kstMove` it attacks enemies in firing
   range (human units otherwise never do while moving), and after each fight
   `ContinueActionPendingFireComplete` re-sends the order and the move
-  resumes. Arriving (or getting stuck) ends it.
+  resumes. Arriving (or getting stuck) ends it. Attack-move and guard
+  look for targets with `UnitGob::FindThreatNearby`: like
+  `FindEnemyNearby` but skipping structures other than towers, so units
+  don't stop to shoot walls, reactors, etc. on the way (tested: of an enemy
+  Reactor and a Machine Gun Tower beside the route, only the tower was
+  engaged). AI units keep using `FindEnemyNearby`.
 - On an own / allied unit or structure: **guard**. Each selected mobile unit
   gets `kmidGuardUnitCommand` (new) with `MoveCommand.gidTarget` = the
   guarded gob -> `kmuaGuardUnit`, state `kstGuard`.
