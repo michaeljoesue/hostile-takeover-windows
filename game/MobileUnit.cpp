@@ -497,12 +497,6 @@ void MobileUnitGob::SetTarget(Gid gid, WCoord wx, WCoord wy, WCoord wxCenter, WC
 
 	m_gidForceTarget = (gfForceAttackCommand && gid != m_gid) ? gid : kgidNull;
 
-	// A new order from the player also ends an attack-move or guard order
-	// (otherwise the unit would go back to it after its next fight)
-
-	if (IsHumanOrGodControlled())
-		ClearAction();
-
 	if (gid == kgidNull) {
 		// Send formed command. Attack-move (Ctrl+Alt+right click) is an
 		// action: after each fight on the way the unit resumes the move.

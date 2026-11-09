@@ -1008,8 +1008,15 @@ MobileUnitGob *SimUIForm::SetSelectionTargets(Gid gid, WCoord wxTarget, WCoord w
  					wyDst = 0;
  				if (wyDst >= cwyMap)
  					wyDst = cwyMap - 1;
-				if (gfGodMode)
-					pmunt->ClearAction();
+				// A new order from the player ends an attack-move or guard
+				// order (otherwise the unit would go back to it after its next
+				// fight). Done here, not in SetTarget: units are also sent
+				// through SetTarget to step aside for others passing by
+				// (MobileUnitGob::AcceptMoveAsideRequest), and that mustn't end a guard
+				// order; a guard would stop protecting e.g. a miner the first
+				// time the miner squeezed past it.
+
+				pmunt->ClearAction();
 
 				// Need to clean up the targets.
 				// 1. Targets can be either in open terrain or on the unit being targetted,

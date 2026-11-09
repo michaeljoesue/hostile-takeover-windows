@@ -1486,9 +1486,13 @@ Ctrl+Alt+right click (`kfEvtAlt` from `sdl/host.cpp`, handled first in
   enemies near them) and follow it again when it comes out.
 - On an enemy: normal attack.
 
-Any normal order clears the action (`SetTarget` calls `ClearAction()` for
-human units), so the unit doesn't go back to an old attack-move / guard
-after its next fight. `m_mua` and `m_msgAction` are already saved, so both
+Any normal order from the player clears the action (`ClearAction()` in
+`SimUIForm::SetSelectionTargets`), so the unit doesn't go back to an old
+attack-move / guard after its next fight. This must not be done in
+`MobileUnitGob::SetTarget`: idle units are also sent through it to step
+aside for a unit squeezing past (`AcceptMoveAsideRequest`), so guards lost
+their order the first time e.g. the miner they protected pushed past
+them. After stepping aside they now return to the guarded unit. `m_mua` and `m_msgAction` are already saved, so both
 orders survive save / load.
 
 Tested in C5 under Wine: attack-moving 9 MGVs across the map, each stopped
