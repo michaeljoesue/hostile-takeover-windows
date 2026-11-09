@@ -628,6 +628,10 @@ ShellForm::ShellForm()
 	m_fCached = false;
 	m_fAnimate = true;
 	m_fTimerEnabled = false;
+	m_cctlToZip = 0;
+	m_tLast = 0;
+	m_msZipStart = -1;
+	m_msShow = 0;
 }
 
 ShellForm::~ShellForm()
@@ -701,8 +705,15 @@ bool ShellForm::Init(FormMgr *pfrmm, IniReader *pini, word idf)
 	return true;
 }
 
-#define kctRate 2
+#define kctRate 1
 #define kcFcZip 18
+
+// The controls zip in over this long, whatever the screen size. (They used
+// to move a fixed distance per timer tick, so on today's wide windows the
+// zip took about a second, and any hitch in the timer made it jerk.)
+
+#define kmsZip 320
+
 bool ShellForm::DoModal(int *pnResult, bool fAnimate, bool fShowSound)
 {
 	m_fAnimate = fAnimate;
@@ -731,11 +742,14 @@ bool ShellForm::DoModal(int *pnResult, bool fAnimate, bool fShowSound)
 
 		// Odd index controls fly in from the left, even from the right
 
+		int xSrc;
 		if (i & 1) {
-			pctl->SetPosition(rcCtl.left - siz.cx - (i * PcFromFc(kcFcZip)), rcCtl.top);
+			xSrc = rcCtl.left - siz.cx - (i * PcFromFc(kcFcZip));
 		} else {
-			pctl->SetPosition(rcCtl.left + siz.cx + (i * PcFromFc(kcFcZip)), rcCtl.top);
+			xSrc = rcCtl.left + siz.cx + (i * PcFromFc(kcFcZip));
 		}
+		m_axSrc[i] = xSrc & ~1;
+		pctl->SetPosition(m_axSrc[i], rcCtl.top);
 	}
 
 	// Now that the controls are positioned right make the form visible
@@ -751,6 +765,8 @@ bool ShellForm::DoModal(int *pnResult, bool fAnimate, bool fShowSound)
 	m_fTimerEnabled = true;
 	m_fCached = false;
 	m_tLast = 0;
+	m_msZipStart = -1;
+	m_msShow = HostGetMillisecondCount();
 
 	// Some controls might be added on the fly after ShellForm::Init. Since we 
 	// won't have their destination stashed away we'll just ignore them.
@@ -763,18 +779,28 @@ bool ShellForm::DoModal(int *pnResult, bool fAnimate, bool fShowSound)
 void ShellForm::OnTimer(long tCurrent)
 {
 	Assert(m_fAnimate);
-
-	int ct = (int)(tCurrent - m_tLast);
 	m_tLast = tCurrent;
 
-	// Waiting until all the pieces have been cached before doing absolute
-	// timing. This gives smoother movement.
+	// Wait until the form has been painted once (its bitmaps are loaded and
+	// cached) before starting the clock, so the zip doesn't start with a
+	// jump. (But not for long: never leave the controls off screen.)
 
-	int pcMove = PcFromFc(kcFcZip);
-	if (m_fCached)
-		pcMove = ((ct + kctRate / 2) / kctRate) * PcFromFc(kcFcZip);
+	long msNow = HostGetMillisecondCount();
+	if (!m_fCached && msNow - m_msShow < 200)
+		return;
+	if (m_msZipStart == -1)
+		m_msZipStart = msNow;
 
-	bool fZipping = false;
+	// Where along the zip are we? Eased out: fast at first, slowing down as
+	// the controls arrive
+
+	long msElapsed = msNow - m_msZipStart;
+	if (msElapsed < 0)
+		msElapsed = 0;
+	bool fDone = msElapsed >= kmsZip;
+	int nProgress = fDone ? 1024 : (int)(msElapsed * 1024 / kmsZip);
+	int nRemaining = 1024 - nProgress;
+	int nEased = 1024 - (nRemaining * nRemaining) / 1024;
 
 	for (int i = 0; i < m_cctlToZip; i++) {
 		Control *pctl = m_apctl[i];
@@ -783,23 +809,16 @@ void ShellForm::OnTimer(long tCurrent)
 		pctl->GetRect(&rcCtl);
 
 		int xDst = m_axDst[i];
-		if (rcCtl.left == xDst)
-			continue;
-
-		fZipping = true;
-
-		int x;
-		if (xDst > rcCtl.left)
-			x = _min(rcCtl.left + pcMove, xDst);
-		else
-			x = _max(rcCtl.left - pcMove, xDst);
-
-		pctl->SetPosition(x & ~1, rcCtl.top);
+		int x = fDone ? xDst :
+				m_axSrc[i] + (int)((long)(xDst - m_axSrc[i]) * nEased / 1024);
+		x &= ~1;
+		if (x != rcCtl.left)
+			pctl->SetPosition(x, rcCtl.top);
 	}
 
 	gevm.SetRedrawFlags(kfRedrawDirty | kfRedrawBeforeTimer);
 
-	if (!fZipping) {
+	if (fDone) {
 		gtimm.RemoveTimer(this);
 		m_fTimerEnabled = false;
 		if (m_wf & kfFrmShowSound)

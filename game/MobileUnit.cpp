@@ -933,7 +933,11 @@ lbHitNoDamage:
 					Gob *pgobAssailant = ggobm.GetGob(pmsg->Hit.gidAssailant);
 					if (m_mua == kmuaGuardUnit && pgobAssailant != NULL &&
 							IsTooFarFromGuardedUnit(pgobAssailant)) {
-					} else if ((m_pplr->GetFlags() & kfPlrComputer) || (m_st == kstGuard)) {
+					} else if ((m_pplr->GetFlags() & kfPlrComputer) || (m_st == kstGuard) ||
+							m_mua == kmuaAttackMove) {
+
+						// (Attack-moving units fight back too, e.g. against a
+						// tower or artillery that outranges them.)
 
 						// Fight back!
 	

@@ -834,29 +834,63 @@ void UnitGob::RememberEnemyNearby(Gid gidEnemy)
 
 UnitGob *UnitGob::FindThreatNearby(TCoord tcRange)
 {
-	if (m_ff & kfGobNoEnemiesNearby)
-		return NULL;
-
 	TCoord txThis = TcFromWc(m_wx);
 	TCoord tyThis = TcFromWc(m_wy);
 	Side sideThis = GetSide();
 	TCoord tcClosest = tcRange;
 	UnitGob *puntEnemyClosest = NULL;
 
-	for (int n = 0; n < ARRAYSIZE(m_agidEnemyNearby); n++) {
-		Gid gidEnemyNearby = m_agidEnemyNearby[n];
-		if (gidEnemyNearby == kgidNull)
-			continue;
-		UnitGob *puntEnemyNearby = (UnitGob *)ggobm.GetGob(gidEnemyNearby);
-		if (puntEnemyNearby == NULL || puntEnemyNearby->GetSide() == sideThis)
-			continue;
-		if ((puntEnemyNearby->GetFlags() & kfGobStructure) &&
-				!(((UnitMask)1 << puntEnemyNearby->GetUnitType()) & kumTowers))
-			continue;
-		TCoord tc = CalcRange(txThis, tyThis, puntEnemyNearby);
-		if (tc <= tcClosest) {
-			tcClosest = tc;
-			puntEnemyClosest = puntEnemyNearby;
+	// Enemy units: from the nearby-enemies list
+
+	if (!(m_ff & kfGobNoEnemiesNearby)) {
+		for (int n = 0; n < ARRAYSIZE(m_agidEnemyNearby); n++) {
+			Gid gidEnemyNearby = m_agidEnemyNearby[n];
+			if (gidEnemyNearby == kgidNull)
+				continue;
+			UnitGob *puntEnemyNearby = (UnitGob *)ggobm.GetGob(gidEnemyNearby);
+			if (puntEnemyNearby == NULL || puntEnemyNearby->GetSide() == sideThis)
+				continue;
+			if ((puntEnemyNearby->GetFlags() & kfGobStructure) &&
+					!(((UnitMask)1 << puntEnemyNearby->GetUnitType()) & kumTowers))
+				continue;
+			TCoord tc = CalcRange(txThis, tyThis, puntEnemyNearby);
+			if (tc <= tcClosest) {
+				tcClosest = tc;
+				puntEnemyClosest = puntEnemyNearby;
+			}
+		}
+	}
+
+	// Enemy towers: mobile units are never told about structures (see
+	// NotifyEnemyNearby), so look for them on the map around this unit
+
+	TCoord ctx, cty;
+	ggobm.GetMapSize(&ctx, &cty);
+	int txLeft = _max(txThis - tcRange - 1, 0);
+	int txRight = _min(txThis + tcRange + 2, (int)ctx);
+	int tyTop = _max(tyThis - tcRange - 1, 0);
+	int tyBottom = _min(tyThis + tcRange + 2, (int)cty);
+	for (int ty = tyTop; ty < tyBottom; ty++) {
+		for (int tx = txLeft; tx < txRight; tx++) {
+			for (Gid gid = ggobm.GetFirstGid(tx, ty); gid != kgidNull;
+					gid = ggobm.GetNextGid(gid)) {
+				Gob *pgob = ggobm.GetGob(gid);
+				if (pgob == NULL)
+					continue;
+				if ((pgob->GetFlags() & (kfGobStructure | kfGobActive)) !=
+						(kfGobStructure | kfGobActive))
+					continue;
+				UnitGob *punt = (UnitGob *)pgob;
+				if (!(((UnitMask)1 << punt->GetUnitType()) & kumTowers))
+					continue;
+				if (IsAlly(punt->GetSide()))
+					continue;
+				TCoord tc = CalcRange(txThis, tyThis, punt);
+				if (tc <= tcClosest) {
+					tcClosest = tc;
+					puntEnemyClosest = punt;
+				}
+			}
 		}
 	}
 	return puntEnemyClosest;

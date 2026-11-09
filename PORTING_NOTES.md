@@ -1628,6 +1628,40 @@ landing on the right buttons. 1024x768 was still used after the game was
 killed and restarted. Switching to Best fit in the middle of mission M1
 resumed the mission with the same unit selected.
 
+## 60. Fixes: attack-move and towers, Andy / Fox in the editor, menu animation
+
+- **Attack-move went past enemy towers.** `FindThreatNearby` (section 56)
+  looks through the unit's list of nearby enemies, but
+  `UnitGob::NotifyEnemyNearby` deliberately never puts structures in a
+  mobile unit's list, so towers were never found. `FindThreatNearby` now
+  also looks at the tiles within range for enemy Machine Gun / Rocket
+  Towers (`kumTowers`). The list itself is unchanged, so idle units and the
+  computer behave as before. Attack-moving units also return fire now
+  (the `kmidHit` handler only let computer units and units standing on
+  guard do so), so a tower or artillery that outranges them doesn't get
+  free shots. Tested: four Liberators attack-moved past an enemy Machine
+  Gun Tower and a Power Generator; they destroyed the tower and carried on,
+  leaving the generator alone.
+- **Andy and Fox looked old in the editor.** The editor draws units from
+  its own images (`m/GobImages/*.png`, embedded in m.dll) and recolours
+  their blues per side. Andy.png and Fox.png were the old 10x20 pictures
+  without the blues. They're now the new idle frame (`andy_idle_0_0`,
+  `foxunit_idle_0_0`) cropped, with a transparent background, so they show
+  the new art in each side's colours like the other infantry.
+- **Menu animation stuttered, sometimes seemed stuck.** Two causes:
+  - `TimerMgr::ScanDispatch` returned the time until the next timer the
+    wrong way around (`tCurrent - trigger`). While a timer was pending the
+    event loop didn't wait at all (spinning the CPU), and when a timer was
+    already late it slept that much longer, so timer-driven animation
+    jerked. It now returns `trigger - tCurrent`.
+  - `ShellForm` moved its controls a fixed distance per 20 ms tick. That
+    was tuned for 480-pixel phone screens; on a 1280-pixel window the
+    zip-in took about a second, and any hitch showed. The controls now
+    move by time: 320 ms with ease-out, whatever the window size, from the
+    first paint (or at most 200 ms after the form is shown, so they can't
+    stay off screen). Recorded at 30 fps under Wine, the Options form now
+    zips in over about 11 frames.
+
 ## File map
 
 | File | Purpose |
