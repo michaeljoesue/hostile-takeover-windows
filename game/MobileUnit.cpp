@@ -729,9 +729,11 @@ const long kcupdGuardUnitCheck = 6;		// about every half second
 
 bool MobileUnitGob::GuardUnitUpdate()
 {
-	Gob *pgobGuarded = ggobm.GetGob(m_msgAction.MoveCommand.gidTarget);
+	// (Look up inactive gobs too: a GalaxMiner is hidden / inactive while
+	// it's inside a Processor unloading, and must not be forgotten then.)
+
+	Gob *pgobGuarded = ggobm.GetGob(m_msgAction.MoveCommand.gidTarget, false);
 	if (pgobGuarded == NULL || !(pgobGuarded->GetFlags() & kfGobUnit) ||
-			!(pgobGuarded->GetFlags() & kfGobActive) ||
 			!IsAlly(pgobGuarded->GetSide())) {
 		// Gone (destroyed, taken over): just guard here from now on
 
@@ -739,13 +741,14 @@ bool MobileUnitGob::GuardUnitUpdate()
 		return false;
 	}
 	UnitGob *puntGuarded = (UnitGob *)pgobGuarded;
+	bool fGuardedActive = (pgobGuarded->GetFlags() & kfGobActive) != 0;
 
 	// An enemy near this unit or the guarded one: go fight it (unless
 	// already shooting)
 
 	if (!(m_wfMunt & kfMuntFiring)) {
 		UnitGob *puntEnemy = FindEnemyNearby(ktcVicinity);
-		if (puntEnemy == NULL)
+		if (puntEnemy == NULL && fGuardedActive)
 			puntEnemy = puntGuarded->FindEnemyNear(ktcVicinity);
 		if (puntEnemy != NULL && !IsTooFarFromGuardedUnit(puntEnemy)) {
 			puntEnemy->GetAttackPoint(&m_wptTarget);
@@ -758,6 +761,12 @@ bool MobileUnitGob::GuardUnitUpdate()
 			return true;
 		}
 	}
+
+	// Guarded unit inside something (a miner in a Processor): wait here
+	// until it comes back out
+
+	if (!fGuardedActive)
+		return false;
 
 	// Too far from the guarded unit / structure: go to it
 
@@ -790,7 +799,7 @@ bool MobileUnitGob::GuardUnitUpdate()
 
 bool MobileUnitGob::IsTooFarFromGuardedUnit(Gob *pgobTarget)
 {
-	Gob *pgobGuarded = ggobm.GetGob(m_msgAction.MoveCommand.gidTarget);
+	Gob *pgobGuarded = ggobm.GetGob(m_msgAction.MoveCommand.gidTarget, false);
 	if (pgobGuarded == NULL)
 		return false;
 	WPoint wpt;

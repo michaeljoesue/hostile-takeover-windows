@@ -1479,6 +1479,11 @@ Ctrl+Alt+right click (`kfEvtAlt` from `sdl/host.cpp`, handled first in
   (`IsTooFarFromGuardedUnit`: enemy more than 7 tiles from the guarded
   unit) stops chasing, attacking and returning fire far away, so guards
   aren't pulled off. Guarded unit gone / no longer friendly: plain guard.
+  The guarded unit is looked up with `GetGob(gid, false)`: a GalaxMiner
+  unloading inside a Processor is hidden (`kfGobActive` cleared), and the
+  default active-only lookup made guards drop the order every time their
+  miner went in. While it's hidden they wait where they are (still fighting
+  enemies near them) and follow it again when it comes out.
 - On an enemy: normal attack.
 
 Any normal order clears the action (`SetTarget` calls `ClearAction()` for
