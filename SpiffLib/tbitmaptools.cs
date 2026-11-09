@@ -11,6 +11,14 @@ using System.Drawing.Drawing2D;
 
 namespace SpiffLib {
 	class TBitmapTools {
+		// Compare colors by RGB only. Color's == also compares alpha and how
+		// the Color was made, so on Mono a pixel read with GetPixel never
+		// equalled the special (transparent / shadow / side) colors when
+		// scaling: transparent areas turned into solid color.
+		static bool SameRgb(Color a, Color b) {
+			return (a.ToArgb() & 0xffffff) == (b.ToArgb() & 0xffffff);
+		}
+
 		public static Bitmap ScaleBitmap(Bitmap bm, double nScale, Palette palFixed) {
 			Color[] aclrSpecial = new Color[] {
 				// side colors
@@ -43,7 +51,7 @@ namespace SpiffLib {
 					if (palFixed != null) {
 						bool fSpecial = false;
 						foreach (Color clrSpecial in aclrSpecial) {
-							if (clrSample == clrSpecial) {
+							if (SameRgb(clrSample, clrSpecial)) {
 								fSpecial = true;
 								break;
 							}
@@ -82,7 +90,7 @@ namespace SpiffLib {
 
 					Color clr = bm.GetPixel(x, y);
 					for (int iclr = 0; iclr < aclrSpecial.Length; iclr++) {
-						if (clr == aclrSpecial[iclr]) {
+						if (SameRgb(clr, aclrSpecial[iclr])) {
 							anAreaColorSpecial[iclr] += nAreaPixel;
 							nAreaSpecial += nAreaPixel;
 							if (iclr <= iclrSideLast)
@@ -122,7 +130,7 @@ namespace SpiffLib {
 						bool fSideColor = false;
 						Color clr = bm.GetPixel(x, y);
 						for (int iclr = 0; iclr < aclrSpecial.Length; iclr++) {
-							if (clr == aclrSpecial[iclr]) {
+							if (SameRgb(clr, aclrSpecial[iclr])) {
 								if (iclr <= iclrSideLast)
 									fSideColor = true;
 								break;
@@ -179,7 +187,7 @@ namespace SpiffLib {
 					bool fSpecial = false;
 					Color clr = bm.GetPixel(x, y);
 					for (int iclr = 0; iclr < aclrSpecial.Length; iclr++) {
-						if (clr == aclrSpecial[iclr]) {
+						if (SameRgb(clr, aclrSpecial[iclr])) {
 							fSpecial = true;
 							break;
 						}

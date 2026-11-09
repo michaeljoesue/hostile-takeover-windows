@@ -1491,6 +1491,31 @@ to fight the enemies on its way (`move-engage`), resumed and arrived; units
 guarding a structure and an infantry unit followed it, fought nearby
 enemies and returned to it.
 
+## 57. Team colours on Andy and Fox
+
+Units show their side through five special "side colour" shades in their
+art (0,116,232 ... 0,32,64) that the game swaps for the owner's ramp. A
+normal infantryman's uniform is ~38% side colour; Andy's art had ~12%, all
+the darkest shades (gun tip, knees), and Fox was drawn with Andy's art, so
+neither showed its side.
+
+- Art: `tools/hero_side_colors.py` repainted Andy's light grey armour in
+  side shades (helmet, cyan visor, gun unchanged) and made Fox's own copy,
+  `data/art824/foxunit.amx` + `foxunit/`, with an amber visor.
+- Data: both crunched with acrunch (`-scale 1.3333333333333 -noscaleicon`,
+  as the data makefile does) and merged into `game/htdata832.pdb`
+  (`andy.anir/.tbm` replaced, `foxunit.anir/.tbm` added; the pack's
+  directory must stay sorted, the game binary-searches it). Missions and
+  saves are unaffected.
+- Code: `FoxGob::InitClass` swaps in `foxunit.anir` (falls back to Andy's
+  art if the data lacks it). GobTemplates still says `andy.anir` for Fox.
+- Tool fix (`SpiffLib/tbitmaptools.cs`): when scaling art, special colours
+  were compared with `Color ==`, which on Mono never matched pixels read
+  with `GetPixel`, so transparent areas came out as solid boxes and frames
+  weren't shrink-wrapped. Compares RGB now. With that and the shipped fixed
+  palette (first 131 entries of `desert.palbin`), re-crunching the original
+  Andy art gives the shipped `andy.tbm` but for ~130 side-shade bytes.
+
 ## File map
 
 | File | Purpose |

@@ -202,7 +202,20 @@ bool FoxGob::InitClass(IniReader *pini)
 	gmuntcFox.sfxcMove = ksfxcMale03Move;
 	gmuntcFox.sfxcAttack = ksfxcMale03Attack;
 
-	return MobileUnitGob::InitClass(&gmuntcFox, pini);
+	if (!MobileUnitGob::InitClass(&gmuntcFox, pini))
+		return false;
+
+	// Fox's own art: Andy's, with his armour in the side's colour like
+	// Andy's and an amber visor, so he can be told apart from Andy. (The
+	// template still names andy.anir, which is the fallback if the data
+	// has no foxunit.anir.)
+
+	AnimationData *panidFox = LoadAnimationData("foxunit.anir");
+	if (panidFox != NULL) {
+		delete gmuntcFox.panid;
+		gmuntcFox.panid = panidFox;
+	}
+	return true;
 }
 
 void FoxGob::ExitClass()
