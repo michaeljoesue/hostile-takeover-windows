@@ -107,6 +107,14 @@ unit panel to place its units, set it up under **Settings → Side 5
 and buildings lift the fog of war for you, as yours do (the original game
 only counted your own).
 
+**New unit group actions.** Computer unit groups can now **Protect Group**
+(stay with a unit of another group, follow it and fight enemies near it,
+then protect the group's next unit when it dies), **Protect In Area** (the
+same for the nearest own or allied unit or building of the chosen types in
+an area, e.g. a base building) and **Attack In Area** (attack the chosen
+types and sides inside an area until none are left). A time of 0 seconds
+means no limit. Levels that use them need this version of the game.
+
 You can also drag a `.ld` level file onto `M.exe` to open it. Levels you only
 try out with Play Level in Game don't appear in the Add-On list; only
 installed packs do.

@@ -80,6 +80,18 @@ namespace m
 			case 6: // knGuardVicinityUnitGroupAction
 				cab = new GuardVicinityUnitGroupAction();
 				break;
+
+			case 7: // knProtectGroupUnitGroupAction
+				cab = new ProtectGroupUnitGroupAction();
+				break;
+
+			case 8: // knProtectAreaUnitGroupAction
+				cab = new ProtectAreaUnitGroupAction();
+				break;
+
+			case 9: // knAttackAreaUnitGroupAction
+				cab = new AttackAreaUnitGroupAction();
+				break;
 			}
 			if (cab != null) {
 				cab.FromSaveString(strValue);
@@ -1339,6 +1351,55 @@ namespace m
 		}
 		public AttackUnitGroupAction() {
 			m_acat = new CaType[] { new CaTypeUnitTypes(), new CaTypeSide(), new CaTypeNumber() };
+		}
+	}
+
+	[Serializable]
+	[DisplayName("Attack In Area")]
+	[Description("Attack the nearest unit or building of the specified type(s) and side(s) that is " +
+			"inside the specified area. The entire group attacks it together; when it is destroyed " +
+			"the group attacks the next nearest one in the area. The action is complete when " +
+			"nothing matching is left in the area or the interval elapses (0 seconds = no time limit).")]
+	public class AttackAreaUnitGroupAction : CaBase {
+		override public string GetString() {
+			return "Attack nearest $1 owned by $2 in area '$3' for $4 seconds";
+		}
+		public AttackAreaUnitGroupAction() {
+			m_acat = new CaType[] { new CaTypeUnitTypes(), new CaTypeSide(), new CaTypeArea(), new CaTypeNumber() };
+		}
+	}
+
+	[Serializable]
+	[DisplayName("Protect Group")]
+	[Description("The group protects a unit of another unit group: it stays close, follows it " +
+			"and fights enemy units and towers near it. When that unit is destroyed the group " +
+			"protects the other group's next unit. If the other group hasn't been created yet the " +
+			"group waits for it. The action is complete when every unit of the other group is gone " +
+			"or the interval elapses (0 seconds = no time limit). The other group must belong to the " +
+			"same side or an ally.")]
+	public class ProtectGroupUnitGroupAction : CaBase {
+		override public string GetString() {
+			return "Protect group '$1' for $2 seconds";
+		}
+		public ProtectGroupUnitGroupAction() {
+			m_acat = new CaType[] { new CaTypeUnitGroup(), new CaTypeNumber() };
+		}
+	}
+
+	[Serializable]
+	[DisplayName("Protect In Area")]
+	[Description("The group protects the nearest unit or building of the specified type(s) and " +
+			"side(s) that is inside the specified area: it stays close, follows it if it moves " +
+			"(even out of the area) and fights enemy units and towers near it. When it is destroyed " +
+			"the group protects the next nearest one in the area. Only your own side's and allies' " +
+			"units and buildings can be protected. The action is complete when nothing matching is " +
+			"left in the area or the interval elapses (0 seconds = no time limit).")]
+	public class ProtectAreaUnitGroupAction : CaBase {
+		override public string GetString() {
+			return "Protect nearest $1 owned by $2 in area '$3' for $4 seconds";
+		}
+		public ProtectAreaUnitGroupAction() {
+			m_acat = new CaType[] { new CaTypeUnitTypes(), new CaTypeSide(), new CaTypeArea(), new CaTypeNumber() };
 		}
 	}
 

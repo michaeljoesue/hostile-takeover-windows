@@ -796,6 +796,9 @@
 #define knGuardUnitGroupAction 4
 #define knMineUnitGroupAction 5
 #define knGuardVicinityUnitGroupAction 6
+#define knProtectGroupUnitGroupAction 7
+#define knProtectAreaUnitGroupAction 8
+#define knAttackAreaUnitGroupAction 9
 
 // UnitActions
 

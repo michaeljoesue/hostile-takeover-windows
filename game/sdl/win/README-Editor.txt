@@ -112,6 +112,18 @@ GETTING STARTED
    updated, and copies of an area get their own name. The built-in
    missions are the best
    examples.
+
+   New unit group actions in this version (seconds = 0 means no limit):
+   - Protect Group: the group stays with a unit of another unit group,
+     follows it and fights enemy units and towers near it. When that unit
+     is destroyed it protects the other group's next unit. It ends when the
+     other group is gone or the time is up.
+   - Protect In Area: the same, for the nearest of your side's or an
+     ally's units or buildings of the chosen types inside an area (useful
+     for guarding a base building). Then the next one in the area.
+   - Attack In Area: attacks the nearest unit or building of the chosen
+     types and sides inside an area, then the next, until none are left or
+     the time is up, then the group goes on to its next action.
 4. Press F5 to play it.
 
 A guide to mission authoring written by the original developers:

@@ -4401,6 +4401,11 @@ public:
 	void ActivateRandomUnitGroup() secUnitGroup;
 	bool CreateAtLevelLoadGroups() secUnitGroup;
 	UnitGroup *GetUnitGroup(Gid gid) secUnitGroup;
+	UnitGroup *GetUnitGroupByIndex(int iug) {
+		if (iug < 0 || iug >= m_cug)
+			return NULL;
+		return &m_aug[iug];
+	}
 
 private:
 	int m_cug;
@@ -4534,6 +4539,78 @@ private:
 
 	bool m_fWaiting;
 	long m_tStart;
+};
+
+// Protect (guard) a unit of another UnitGroup: the members follow it and
+// fight enemies near it. When it dies they protect the group's next unit.
+
+class ProtectGroupUnitGroupAction : public UnitGroupAction
+{
+public:
+	virtual bool LoadState(Stream *pstm) secAction;
+	virtual bool SaveState(Stream *pstm) secAction;
+	virtual bool Init(char *psz) secAction;
+	virtual void Reset() secAction;
+	virtual bool Perform(UnitGroup *pug) secAction;
+
+private:
+	// These are initialized from the loaded level
+
+	int m_iugTarget;
+	dword m_ctWait;		// 0 = no time limit
+
+	// These are persisted in the save game
+
+	bool m_fWaiting;
+	long m_tStart;
+	Gid m_gidTarget;
+};
+
+// Protect (guard) the nearest unit / structure of the given types and sides
+// that is inside an area. When it's destroyed the next one in the area is
+// protected.
+
+class ProtectAreaUnitGroupAction : public UnitGroupAction
+{
+public:
+	virtual bool LoadState(Stream *pstm) secAction;
+	virtual bool SaveState(Stream *pstm) secAction;
+	virtual bool Init(char *psz) secAction;
+	virtual void Reset() secAction;
+	virtual bool Perform(UnitGroup *pug) secAction;
+
+private:
+	UnitMask m_um;
+	word m_wfCaSideMask;
+	int m_nArea;
+	dword m_ctWait;		// 0 = no time limit
+
+	bool m_fWaiting;
+	long m_tStart;
+	Gid m_gidTarget;
+};
+
+// Attack the nearest unit / structure of the given types and sides that is
+// inside an area, then the next, until none are left or the time is up.
+
+class AttackAreaUnitGroupAction : public UnitGroupAction
+{
+public:
+	virtual bool LoadState(Stream *pstm) secAction;
+	virtual bool SaveState(Stream *pstm) secAction;
+	virtual bool Init(char *psz) secAction;
+	virtual void Reset() secAction;
+	virtual bool Perform(UnitGroup *pug) secAction;
+
+private:
+	UnitMask m_um;
+	word m_wfCaSideMask;
+	int m_nArea;
+	dword m_ctWait;		// 0 = no time limit
+
+	bool m_fWaiting;
+	long m_tStart;
+	Gid m_gidTarget;
 };
 
 // BuildMgr
@@ -6056,6 +6133,17 @@ public:
 
 	void ClearAction() {
 		m_mua = kmuaNone;
+	}
+
+	// The unit / structure this unit is guarding (protecting), or kgidNull
+
+	Gid GetGuardedGid() {
+		if ((m_wfMunt & kfMuntCommandPending) && m_muaPending == kmuaGuardUnit &&
+				m_msgPending.mid == kmidGuardUnitCommand)
+			return m_msgPending.MoveCommand.gidTarget;
+		if (m_mua == kmuaGuardUnit)
+			return m_msgAction.MoveCommand.gidTarget;
+		return kgidNull;
 	}
 
 	bool IsHumanOrGodControlled() {

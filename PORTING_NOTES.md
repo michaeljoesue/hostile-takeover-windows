@@ -1530,6 +1530,54 @@ neither showed its side.
   palette (first 131 entries of `desert.palbin`), re-crunching the original
   Andy art gives the shipped `andy.tbm` but for ~130 side-shade bytes.
 
+## 58. Unit group actions: Protect Group, Protect In Area, Attack In Area
+
+Three new unit group actions let a computer group use the guard order from
+section 56 and attack inside an area (`game/UnitGroupMgr.cpp`, `game/ht.h`,
+editor classes in `m/CaBase.cs`). They're appended to the action numbers in
+`game/res.h` and `m/EmbeddedResources/res.h` (`knProtectGroupUnitGroupAction`
+7, `knProtectAreaUnitGroupAction` 8, `knAttackAreaUnitGroupAction` 9), so
+levels made before still load unchanged. For each, a time of 0 seconds means
+no time limit.
+
+- **Protect Group** <group> for <n> seconds: every member is sent
+  `kmidGuardUnitCommand` with the first living unit of the other group
+  (inactive miners inside a Processor count). When it dies the next unit
+  is protected. If the other group hasn't been created yet, or is still
+  being built, the group waits. The action is done when the time is up or
+  that group was created and none of its units are left.
+- **Protect In Area** <types> <sides> <area> for <n> seconds: protects the
+  nearest unit or structure of those types and sides whose center is in the
+  area (own side or allies only; never one of the group's own members). Once
+  picked it is followed even out of the area. When it's destroyed the next
+  nearest one in the area is picked. Done when the time is up or none are
+  left.
+- **Attack In Area** <types> <sides> <area> for <n> seconds: like the
+  original Attack action (`kmidAttackAction` to every member, the nearest
+  target to the group's center), but only targets inside the area. Done when
+  the time is up or nothing matching is left in the area, so the group goes
+  on to its next action.
+
+The protect actions resend the guard order only to members not already
+guarding the target (`MobileUnitGob::GetGuardedGid`, which also looks at a
+pended command). When the time runs out, members still protecting are
+sent `kmidGuardAction` (stay and guard where they are). State (running,
+start time, target gid) is saved with the game.
+
+`UnitGroup::LoadAction` used to `Assert` on an unknown action number and
+then use an uninitialized pointer. It now skips the action, so a level from
+a newer editor doesn't crash this build.
+
+Tested in a test level under Wine: an escort group followed a looping
+convoy, fought player units at its waypoint, switched to the convoy's second
+tank when the first was destroyed and finished when both were gone. A group
+protecting the nearest of two side-2 reactors stayed with it, ended on its
+60 s limit (and in a second run, when attackers had destroyed both
+reactors). Attack In Area destroyed the two player reactors in the area,
+left a Warehouse in the same area alone (wrong type), then moved on to its
+next action. Saving and loading in the middle of a protect action
+continued it with the same target.
+
 ## File map
 
 | File | Purpose |

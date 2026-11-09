@@ -750,9 +750,23 @@ bool UnitGroup::LoadAction(IniReader *pini, FindProp *pfind)
 		pactn = new MineUnitGroupAction();
 		break;
 
-	default:
-		Assert(false);
+	case knProtectGroupUnitGroupAction:
+		pactn = new ProtectGroupUnitGroupAction();
 		break;
+
+	case knProtectAreaUnitGroupAction:
+		pactn = new ProtectAreaUnitGroupAction();
+		break;
+
+	case knAttackAreaUnitGroupAction:
+		pactn = new AttackAreaUnitGroupAction();
+		break;
+
+	default:
+		// An action this build doesn't know (from a newer editor): skip it
+		// instead of crashing
+
+		return true;
 	}
 
 	// Init it, error if that failed
@@ -1439,6 +1453,422 @@ bool GuardVicinityUnitGroupAction::Perform(UnitGroup *pug)
 
 	// Keep 'waiting' (until all group members are dead or the Guard time runs out).
 
+	return false;
+}
+
+
+//
+// Helpers for the Protect / Attack In Area actions
+//
+
+// Center of the group's living members. False if none are alive.
+
+static bool CalcGroupCenter(UnitGroup *pug, TPoint *ptpt)
+{
+	int tx = 0, ty = 0, c = 0;
+	UnitListEntry *pule = pug->GetUnitList();
+	for (int iule = 0; iule < pug->GetUnitCount(); iule++, pule++) {
+		Gob *pgob = ggobm.GetGob(pule->gid);
+		if (pgob == NULL)
+			continue;
+		TPoint tpt;
+		pgob->GetTilePosition(&tpt);
+		tx += tpt.tx;
+		ty += tpt.ty;
+		c++;
+	}
+	if (c == 0)
+		return false;
+	ptpt->tx = tx / c;
+	ptpt->ty = ty / c;
+	return true;
+}
+
+static bool IsGroupMember(UnitGroup *pug, Gid gid)
+{
+	UnitListEntry *pule = pug->GetUnitList();
+	for (int iule = 0; iule < pug->GetUnitCount(); iule++, pule++) {
+		if (pule->gid == gid)
+			return true;
+	}
+	return false;
+}
+
+// Is the target one the group's owner can protect (its own side or an ally)?
+
+static bool IsProtectable(UnitGroup *pug, Gob *pgob)
+{
+	if (pgob == NULL || !(pgob->GetFlags() & kfGobUnit))
+		return false;
+	Player *pplr = pug->GetOwner();
+	Side side = pgob->GetSide();
+	return side == pplr->GetSide() || (pplr->GetAllies() & GetSideMask(side)) != 0;
+}
+
+// The nearest active unit / structure of the given types and sides whose
+// center is inside the area, not counting the group's own members.
+
+static Gid FindNearestInArea(UnitGroup *pug, UnitMask um, SideMask sidm, int nArea,
+		bool fProtectable)
+{
+	TPoint tptCenter;
+	if (!CalcGroupCenter(pug, &tptCenter))
+		return kgidNull;
+	TRect trcArea;
+	ggobm.GetAreaRect(nArea, &trcArea, pug->GetOwner()->GetSide());
+
+	Gid gidNearest = kgidNull;
+	long nDistNearest = 0x7fffffff;
+	for (Gob *pgob = ggobm.GetFirstGob(); pgob != NULL; pgob = ggobm.GetNextGob(pgob)) {
+		if ((pgob->GetFlags() & (kfGobUnit | kfGobActive)) != (kfGobUnit | kfGobActive))
+			continue;
+		UnitGob *punt = (UnitGob *)pgob;
+		if (!(punt->GetConsts()->um & um))
+			continue;
+		if (!(GetSideMask(punt->GetSide()) & sidm))
+			continue;
+		if (fProtectable && !IsProtectable(pug, punt))
+			continue;
+		WPoint wptCenter;
+		punt->GetCenter(&wptCenter);
+		if (!trcArea.PtIn(TcFromWc(wptCenter.wx), TcFromWc(wptCenter.wy)))
+			continue;
+		if (IsGroupMember(pug, punt->GetId()))
+			continue;
+
+		TPoint tpt;
+		punt->GetTilePosition(&tpt);
+		long dtx = tpt.tx - tptCenter.tx;
+		long dty = tpt.ty - tptCenter.ty;
+		long nDist = dtx * dtx + dty * dty;
+		if (nDist < nDistNearest) {
+			nDistNearest = nDist;
+			gidNearest = punt->GetId();
+		}
+	}
+	return gidNearest;
+}
+
+// Order every living member not already protecting the target to protect it
+// (the same order as the player's Ctrl+Alt+right click on a friendly unit)
+
+static void ProtectTarget(UnitGroup *pug, Gid gidTarget)
+{
+	UnitGob *puntTarget = (UnitGob *)ggobm.GetGob(gidTarget, false);
+	if (puntTarget == NULL)
+		return;
+
+	UnitListEntry *pule = pug->GetUnitList();
+	for (int iule = 0; iule < pug->GetUnitCount(); iule++, pule++) {
+		MobileUnitGob *pmunt = (MobileUnitGob *)ggobm.GetGob(pule->gid);
+		if (pmunt == NULL || pmunt->GetId() == gidTarget)
+			continue;
+		if (!(pmunt->GetFlags() & kfGobMobileUnit))
+			continue;
+		if (pmunt->GetGuardedGid() == gidTarget)
+			continue;
+
+		Message msgT;
+		memset(&msgT, 0, sizeof(msgT));
+		msgT.mid = kmidGuardUnitCommand;
+		msgT.smidSender = ksmidNull;
+		msgT.smidReceiver = pmunt->GetId();
+		puntTarget->GetAttackPoint(&msgT.MoveCommand.wptTarget);
+		msgT.MoveCommand.gidTarget = gidTarget;
+		puntTarget->GetCenter(&msgT.MoveCommand.wptTargetCenter);
+		msgT.MoveCommand.tcTargetRadius = 0;
+		msgT.MoveCommand.wcMoveDistPerUpdate =
+				((MobileUnitConsts *)pmunt->GetConsts())->GetMoveDistPerUpdate();
+		gsmm.SendMsg(&msgT);
+	}
+}
+
+// Time's up: members still protecting the target go back to guarding where
+// they stand
+
+static void StopProtecting(UnitGroup *pug, Gid gidTarget)
+{
+	if (gidTarget == kgidNull)
+		return;
+	UnitListEntry *pule = pug->GetUnitList();
+	for (int iule = 0; iule < pug->GetUnitCount(); iule++, pule++) {
+		MobileUnitGob *pmunt = (MobileUnitGob *)ggobm.GetGob(pule->gid);
+		if (pmunt == NULL || !(pmunt->GetFlags() & kfGobMobileUnit))
+			continue;
+		if (pmunt->GetGuardedGid() != gidTarget)
+			continue;
+		Message msgT;
+		memset(&msgT, 0, sizeof(msgT));
+		msgT.mid = kmidGuardAction;
+		msgT.smidSender = ksmidNull;
+		msgT.smidReceiver = pmunt->GetId();
+		gsmm.SendMsg(&msgT);
+	}
+}
+
+static bool ParseSeconds(char **ppsz, dword *pctWait)
+{
+	int cSecs;
+	if (!ParseNumber(ppsz, &cSecs))
+		return false;
+	*pctWait = cSecs > 0 ? (dword)cSecs * 100 : 0;
+	return true;
+}
+
+#define knVerProtectUnitGroupActionState 1
+
+static bool LoadProtectState(Stream *pstm, bool *pfWaiting, long *ptStart, Gid *pgid)
+{
+	byte nVer = pstm->ReadByte();
+	if (nVer != knVerProtectUnitGroupActionState)
+		return false;
+	*pfWaiting = pstm->ReadByte() != 0;
+	*ptStart = pstm->ReadDword();
+	*pgid = pstm->ReadWord();
+	return pstm->IsSuccess();
+}
+
+static bool SaveProtectState(Stream *pstm, bool fWaiting, long tStart, Gid gid)
+{
+	pstm->WriteByte(knVerProtectUnitGroupActionState);
+	pstm->WriteByte(fWaiting);
+	pstm->WriteDword((dword)tStart);
+	pstm->WriteWord(gid);
+	return pstm->IsSuccess();
+}
+
+// UnitGroup Protect Group <UnitGroup> for <seconds> action:
+// Every member protects (guards) the first living unit of the other group,
+// then the next one when it dies. The action is complete when the time is up
+// (0 = no limit) or every unit of the other group is gone.
+
+bool ProtectGroupUnitGroupAction::LoadState(Stream *pstm)
+{
+	return LoadProtectState(pstm, &m_fWaiting, &m_tStart, &m_gidTarget);
+}
+
+bool ProtectGroupUnitGroupAction::SaveState(Stream *pstm)
+{
+	return SaveProtectState(pstm, m_fWaiting, m_tStart, m_gidTarget);
+}
+
+bool ProtectGroupUnitGroupAction::Init(char *psz)
+{
+	Reset();
+	if (!ParseNumber(&psz, &m_iugTarget))
+		return false;
+	return ParseSeconds(&psz, &m_ctWait);
+}
+
+void ProtectGroupUnitGroupAction::Reset()
+{
+	m_fWaiting = false;
+	m_gidTarget = kgidNull;
+}
+
+bool ProtectGroupUnitGroupAction::Perform(UnitGroup *pug)
+{
+	long t = gsim.GetTickCount();
+	if (!m_fWaiting) {
+		m_fWaiting = true;
+		m_tStart = t;
+		m_gidTarget = kgidNull;
+	} else if (m_ctWait != 0 && t - m_tStart >= (long)m_ctWait) {
+		StopProtecting(pug, m_gidTarget);
+		Reset();
+		return true;
+	}
+
+	UnitGroup *pugTarget = gsim.GetLevel()->GetUnitGroupMgr()->GetUnitGroupByIndex(m_iugTarget);
+	if (pugTarget == NULL || pugTarget == pug) {
+		Reset();
+		return true;
+	}
+
+	// Still protecting a living unit of that group?
+
+	Gob *pgobTarget = ggobm.GetGob(m_gidTarget, false);
+	if (pgobTarget == NULL || !IsProtectable(pug, pgobTarget) ||
+			!IsGroupMember(pugTarget, m_gidTarget)) {
+
+		// No: protect its first living unit. (Miners inside a Processor
+		// are inactive but still count.)
+
+		m_gidTarget = kgidNull;
+		UnitListEntry *pule = pugTarget->GetUnitList();
+		for (int iule = 0; iule < pugTarget->GetUnitCount(); iule++, pule++) {
+			if (pule->gid == kgidNull)
+				continue;
+			if (IsProtectable(pug, ggobm.GetGob(pule->gid, false))) {
+				m_gidTarget = pule->gid;
+				break;
+			}
+		}
+
+		if (m_gidTarget == kgidNull) {
+			// None: the other group hasn't been created yet or is still
+			// being built (keep waiting), or it's all gone (done)
+
+			word wf = pugTarget->GetFlags();
+			if ((wf & kfUgActivatedBefore) && !(wf & kfUgNeedsUnit)) {
+				Reset();
+				return true;
+			}
+			return false;
+		}
+	}
+
+	ProtectTarget(pug, m_gidTarget);
+	return false;
+}
+
+// UnitGroup Protect In Area <UnitMask> <sides> <Area> for <seconds> action:
+// Every member protects the nearest friendly unit / structure of those types
+// inside the area, then the next one when it's destroyed. Complete when the
+// time is up (0 = no limit) or nothing to protect is left in the area.
+
+bool ProtectAreaUnitGroupAction::LoadState(Stream *pstm)
+{
+	return LoadProtectState(pstm, &m_fWaiting, &m_tStart, &m_gidTarget);
+}
+
+bool ProtectAreaUnitGroupAction::SaveState(Stream *pstm)
+{
+	return SaveProtectState(pstm, m_fWaiting, m_tStart, m_gidTarget);
+}
+
+bool ProtectAreaUnitGroupAction::Init(char *psz)
+{
+	Reset();
+	if (!ParseUnitMask(&psz, &m_um))
+		return false;
+	int nCaSideMask;
+	if (!ParseNumber(&psz, &nCaSideMask))
+		return false;
+	m_wfCaSideMask = nCaSideMask;
+	if (!ParseArea(&psz, &m_nArea))
+		return false;
+	return ParseSeconds(&psz, &m_ctWait);
+}
+
+void ProtectAreaUnitGroupAction::Reset()
+{
+	m_fWaiting = false;
+	m_gidTarget = kgidNull;
+}
+
+bool ProtectAreaUnitGroupAction::Perform(UnitGroup *pug)
+{
+	long t = gsim.GetTickCount();
+	if (!m_fWaiting) {
+		m_fWaiting = true;
+		m_tStart = t;
+		m_gidTarget = kgidNull;
+	} else if (m_ctWait != 0 && t - m_tStart >= (long)m_ctWait) {
+		StopProtecting(pug, m_gidTarget);
+		Reset();
+		return true;
+	}
+
+	// Once picked, the target is protected even if it leaves the area
+
+	if (!IsProtectable(pug, ggobm.GetGob(m_gidTarget, false))) {
+		SideMask sidm = GetSideMaskFromCaSideMask(pug->GetOwner()->GetSide(), m_wfCaSideMask);
+		m_gidTarget = FindNearestInArea(pug, m_um, sidm, m_nArea, true);
+		if (m_gidTarget == kgidNull) {
+			Reset();
+			return true;
+		}
+	}
+
+	ProtectTarget(pug, m_gidTarget);
+	return false;
+}
+
+// UnitGroup Attack In Area <UnitMask> <sides> <Area> for <seconds> action:
+// Every member attacks the nearest unit / structure of those types and sides
+// inside the area; when it's destroyed the next nearest one. Complete when
+// the time is up (0 = no limit) or nothing of those types is left in the area.
+
+bool AttackAreaUnitGroupAction::LoadState(Stream *pstm)
+{
+	return LoadProtectState(pstm, &m_fWaiting, &m_tStart, &m_gidTarget);
+}
+
+bool AttackAreaUnitGroupAction::SaveState(Stream *pstm)
+{
+	return SaveProtectState(pstm, m_fWaiting, m_tStart, m_gidTarget);
+}
+
+bool AttackAreaUnitGroupAction::Init(char *psz)
+{
+	Reset();
+	if (!ParseUnitMask(&psz, &m_um))
+		return false;
+	int nCaSideMask;
+	if (!ParseNumber(&psz, &nCaSideMask))
+		return false;
+	m_wfCaSideMask = nCaSideMask;
+	if (!ParseArea(&psz, &m_nArea))
+		return false;
+	return ParseSeconds(&psz, &m_ctWait);
+}
+
+void AttackAreaUnitGroupAction::Reset()
+{
+	m_fWaiting = false;
+	m_gidTarget = kgidNull;
+}
+
+bool AttackAreaUnitGroupAction::Perform(UnitGroup *pug)
+{
+	long t = gsim.GetTickCount();
+	if (!m_fWaiting) {
+		m_fWaiting = true;
+		m_tStart = t;
+		m_gidTarget = kgidNull;
+	} else if (m_ctWait != 0 && t - m_tStart >= (long)m_ctWait) {
+		Reset();
+		return true;
+	}
+
+	SideMask sidmTarget = GetSideMaskFromCaSideMask(pug->GetOwner()->GetSide(), m_wfCaSideMask);
+
+	// Current target still alive and on a side we're attacking? Keep at it
+	// (even if it has left the area)
+
+	UnitGob *puntTarget = (UnitGob *)ggobm.GetGob(m_gidTarget);
+	if (puntTarget != NULL && (GetSideMask(puntTarget->GetSide()) & sidmTarget)) {
+		return false;
+	}
+
+	m_gidTarget = FindNearestInArea(pug, m_um, sidmTarget, m_nArea, false);
+	if (m_gidTarget == kgidNull) {
+		Reset();
+		return true;
+	}
+	puntTarget = (UnitGob *)ggobm.GetGob(m_gidTarget);
+
+	// Have everyone attack it
+
+	Message msgT;
+	memset(&msgT, 0, sizeof(msgT));
+	msgT.smidSender = ksmidNull;
+	puntTarget->GetAttackPoint(&msgT.AttackCommand.wptTarget);
+	msgT.AttackCommand.gidTarget = m_gidTarget;
+	msgT.AttackCommand.wptTargetCenter = msgT.AttackCommand.wptTarget;
+	msgT.AttackCommand.tcTargetRadius = 0;
+	msgT.AttackCommand.wcMoveDistPerUpdate = 0;
+
+	UnitListEntry *pule = pug->GetUnitList();
+	for (int iule = 0; iule < pug->GetUnitCount(); iule++, pule++) {
+		MobileUnitGob *pmunt = (MobileUnitGob *)ggobm.GetGob(pule->gid);
+		if (pmunt == NULL || !(pmunt->GetFlags() & kfGobMobileUnit))
+			continue;
+		msgT.mid = kmidAttackAction;
+		msgT.smidReceiver = pmunt->GetId();
+		gsmm.SendMsg(&msgT);
+	}
 	return false;
 }
 
