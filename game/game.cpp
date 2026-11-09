@@ -407,6 +407,12 @@ bool Game::Init(int imm)
 
 	m_wf |= kfGameInitDone;
 
+	// A display mode was just chosen (Options > Display): remember it now,
+	// not only when the game exits normally
+
+	if (imm != -1)
+		SavePreferences();
+
 	return true;
 }
 
@@ -912,6 +918,12 @@ int Game::FindBestModeMatch(int nSizeDataAbove)
 	// Now find best match if we don't already have a match
 
 	static byte s_abfMatchOrder[] = {
+		// Native modes first (on Windows the best fit for the screen; the
+		// fixed sizes offered in Options > Display aren't native)
+		kfMatchNative | kfMatchWidthBounded | kfMatchExactDepth,
+		kfMatchNative | kfMatchWidthBounded,
+		kfMatchNative | kfMatchExactDepth,
+		kfMatchNative,
 		kfMatchWidthBounded | kfMatchExactDepth, // width bounded exact depth
 		kfMatchWidthBounded, // width bounded closest depth
 		kfMatchExactDepth, // closest width exact depth

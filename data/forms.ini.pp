@@ -78,6 +78,7 @@
 	CHECKBOX=kidcEasy (11 108 67 0) "Easy" kifntShadow
 	CHECKBOX=kidcNormal (11 118 67 0) "Normal" kifntShadow
 	CHECKBOX=kidcHard (11 128 67 0) "Hard" kifntShadow
+	BUTTON=kidcInGameDisplay (95 112 52 12) "DISPLAY" kifntButton
 	BUTTON=kidcOk (13 140 40 12) "OK" kifntButton
 	BUTTON=kidcCancel (60 140 40 12) "CANCEL" kifntButton
 	BUTTON=kidcDefault (107 140 40 12) "DEFAULT" kifntButton
@@ -111,7 +112,7 @@
 [kidfDisplayOptions]
 	FORM=(0 0 160 160) kidcCancel center
 	LABEL=0 (38 6 83 0) "DISPLAY OPTIONS" kifntTitle center
-	LIST=kidcModesList (7 21 146 60) kifntShadow
+	LIST=kidcModesList (7 21 146 112) kifntShadow
 	BUTTON=kidcOk (13 140 40 12) "OK" kifntButton
 	BUTTON=kidcCancel (60 140 40 12) "CANCEL" kifntButton
 	BUTTON=kidcDefault (107 140 40 12) "DEFAULT" kifntButton

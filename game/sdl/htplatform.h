@@ -123,6 +123,9 @@ public:
             bool *pfMiddle);
 
 private:
+#if defined(_WIN32)
+    bool ApplyGameMode(int imode);
+#endif
     int m_imode;
     ModeInfo m_amodeInfo[kcmodesMax];
     int m_cmodes;

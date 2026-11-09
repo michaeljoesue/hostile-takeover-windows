@@ -431,6 +431,7 @@
 #define kidcInGameVolume 1206
 #define kidcInGameVolumeLabel 1207
 #define kidcInGameVolumeString 1208
+#define kidcInGameDisplay 1209
 
 // SoundOptions constants
 

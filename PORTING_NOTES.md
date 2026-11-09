@@ -1578,6 +1578,47 @@ left a Warehouse in the same area alone (wrong type), then moved on to its
 next action. Saving and loading in the middle of a protect action
 continued it with the same target.
 
+## 59. Choosing the display resolution (Options > Display)
+
+Section 52 picks one window size for the monitor. That stays the default
+("Best fit"), and Options now has a DISPLAY button with a list of other
+resolutions. It reuses the engine's original display-mode machinery (made
+for Palm / Pocket PC devices with several screen modes):
+
+- `win/hosthelpers.cpp` `CalcGameModes` builds the list once: the best fit
+  first, then each common resolution from 640x480 to 3840x2160 that fits
+  in the work area at 1x, each at the largest whole-number scale that fits
+  and centered (`HostGetGameModes`, `HostSetGameMode`, new in
+  `sdl/hosthelpers.h`).
+- `Display::Init` (Windows) turns that list into the display's modes (only
+  the best fit is `fNative`). `Display::SetMode` now calls `ApplyGameMode`,
+  which resizes and moves the window and reallocates the texture and pixel
+  buffers when the size or scale changes.
+- `Game::FindBestModeMatch` tries native modes first, so the best fit is
+  the "best" mode (it used to prefer the widest).
+- The old `DisplayOptionsForm` (list of modes) is opened from a new DISPLAY
+  button in `[kidfInGameOptions]` (`kidcInGameDisplay`, res.h; hidden on
+  other platforms or with only one mode). Its list was made taller, and on
+  Windows its entries read e.g. "800x600 (window 1600x1200)".
+- Choosing a mode calls the existing `Game::RequestModeChange`: the game
+  stops, saves a game in progress (`SaveReinitializeGame`), runs
+  `Game::Exit` / `Game::Init` with the new mode and resumes the saved game.
+  The Options form then closes with OK so its other changes are kept.
+- The mode is remembered in the preferences file's existing `cx/cyModeLast`
+  fields. `Game::Init` now saves preferences right after a requested mode
+  change (they used to be saved only on a normal exit). When the best fit
+  differs from the one saved (`cx/cyModeBest`, e.g. another monitor), the
+  game uses the new best fit.
+- The forms.ini record in `game/htdata832.pdb` was rebuilt as in section 44.
+
+Tested under Wine on 1280x900 and 2560x1440 virtual screens: the lists
+showed the expected sizes (on 2560x1440, 640x480 to 1152x648 at 2x, the
+larger ones at 1x). Switching to 800x600 gave an 800x600 window (1600x1200
+at 2x on the big screen) centered on the screen, with mouse clicks still
+landing on the right buttons. 1024x768 was still used after the game was
+killed and restarted. Switching to Best fit in the middle of mission M1
+resumed the mission with the same unit selected.
+
 ## File map
 
 | File | Purpose |
