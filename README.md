@@ -46,13 +46,22 @@ along with it.
 These are modern-RTS style controls. The in-game tutorial was written for
 phones, so when it says "tap on grass to move", right click instead.
 
-The game runs in a window of fixed size picked for your monitor: it fills the
-screen above the taskbar, and every game pixel is drawn as an exact square
-block of screen pixels, so the picture is sharp (no blurry stretching). On a
-1920×1080 screen the game is about 952×496 shown at 2×; 2560×1440 → about
-1272×676 at 2×; 3840×2160 → about 952×516 at 4×; 1366×768 → about 1350×690 at
-1×. The window can't be resized or made fullscreen, and there's no setting to
-change it.
+By default the game runs in a window of fixed size picked for your monitor
+("Best fit"): it fills the screen above the taskbar, and every game pixel is
+drawn as an exact square block of screen pixels, so the picture is sharp (no
+blurry stretching). On a 1920×1080 screen the game is about 952×496 shown at
+2×; 2560×1440 → about 1272×676 at 2×; 3840×2160 → about 952×516 at 4×;
+1366×768 → about 1350×690 at 1×.
+
+To pick another resolution, open **Options → Display** (from the main menu,
+or Menu → Options during a game). The list has Best fit and the usual
+resolutions (640×480, 800×600, 1024×768, 1280×720, 1920×1080…) that fit on
+your screen. Each is shown sharp at the largest whole-number scale that fits,
+e.g. 800×600 in a 1600×1200 window on a 2560×1440 screen. A higher resolution
+shows more of the map with smaller graphics. The change happens right away
+(a game in progress carries on where it was) and is remembered. If you move
+to a different monitor, the game goes back to Best fit. The window can't be
+resized by dragging or made fullscreen.
 
 Sound is in stereo: battles to the left of the screen come from the left
 speaker, and fighting off screen is quieter the farther away it is. Options (main menu,

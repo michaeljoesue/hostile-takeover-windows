@@ -65,13 +65,21 @@ Each factory / barracks can queue up to 99 units of any mix of types
 The in-game tutorial was written for phones: when it says "tap on grass
 to move", right click instead.
 
-The game runs in a window of fixed size picked for your monitor: it fills
-the screen above the taskbar, and each game pixel is an exact square block
-of screen pixels, so the picture is sharp (no blurry stretching):
+By default ("Best fit") the game runs in a window of fixed size picked
+for your monitor: it fills the screen above the taskbar, and each game
+pixel is an exact square block of screen pixels, so the picture is sharp
+(no blurry stretching):
   1920x1080 -> about 952x496 shown at 2x   2560x1440 -> about 1272x676 at 2x
   3840x2160 -> about 952x516 at 4x         1366x768  -> about 1350x690 at 1x
-The window can't be resized or made fullscreen; there is no setting to
-change it.
+To choose another resolution open Options > Display (main menu, or Menu >
+Options in a game). It lists Best fit and the usual resolutions (640x480,
+800x600, 1024x768, 1280x720, 1920x1080...) that fit on your screen, each
+shown sharp at the largest whole-number scale that fits (for example
+800x600 in a 1600x1200 window on a 2560x1440 screen). Higher resolutions
+show more of the map with smaller graphics. The change happens at once (a
+game in progress carries on) and is remembered; on a different monitor
+the game goes back to Best fit. The window can't be resized by dragging or
+made fullscreen.
 
 Your allies' units and buildings lift the fog of war for you too, so you
 can see your allies' bases and armies.

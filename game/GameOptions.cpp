@@ -1,4 +1,7 @@
 #include "ht.h"
+#if defined(SDL) && defined(_WIN32)
+#include "game/sdl/hosthelpers.h"
+#endif
 
 namespace wi {
 
@@ -320,6 +323,18 @@ bool InGameOptionsForm::Init(FormMgr *pfrmm, IniReader *pini, word idf)
     GetControlPtr(kidcLassoSelection)->Show(false);
 #endif
 
+	// Display size choice (Windows), when there's more than one
+
+	Control *pctlDisplay = GetControlPtr(kidcInGameDisplay);
+	if (pctlDisplay != NULL) {
+#if defined(SDL) && defined(_WIN32)
+		if (ggame.GetModeMatchCount() <= 1)
+			pctlDisplay->Show(false);
+#else
+		pctlDisplay->Show(false);
+#endif
+	}
+
 	// Volume (0..255 in the sound manager, shown as 0..100%). Without a sound
 	// device there's nothing to adjust.
 
@@ -489,6 +504,24 @@ void InGameOptionsForm::OnControlSelected(word idc)
 			ggame.SavePreferences();
 		}
 		EndForm(idc);
+		break;
+
+	case kidcInGameDisplay:
+		{
+			ShellForm *pfrm = (ShellForm *)gpmfrmm->LoadForm(gpiniForms,
+					kidfDisplayOptions, new DisplayOptionsForm());
+			if (pfrm != NULL) {
+				pfrm->DoModal();
+				delete pfrm;
+			}
+
+			// A new display size restarts the game's display (a game in
+			// progress is saved and picked up again): keep the other
+			// choices made here and close
+
+			if (gevm.IsAppStopping())
+				OnControlSelected(kidcOk);
+		}
 		break;
 
 	case kidcCancel:
@@ -785,7 +818,25 @@ bool DisplayOptionsForm::Init(FormMgr *pfrmm, IniReader *pini, word idf)
 		if (mode.nDegreeOrientation != 0)
 			sprintf(szOrientation, ", %d deg", mode.nDegreeOrientation);
 		char szT[64];
-#ifdef DEV_BUILD
+#if defined(SDL) && defined(_WIN32)
+		// Windows: one entry per display size, e.g. "1280x720 (window 2560x1440)"
+		GameMode agm[kcGameModesMax];
+		int cgm = HostGetGameModes(agm, kcGameModesMax);
+		if (mm.imode < cgm) {
+			GameMode *pgm = &agm[mm.imode];
+			if (pgm->fAuto) {
+				sprintf(szT, "Best fit: %dx%d", mode.cx, mode.cy);
+			} else {
+				sprintf(szT, "%dx%d", mode.cx, mode.cy);
+			}
+			if (pgm->nScale > 1) {
+				sprintf(&szT[strlen(szT)], " (window %dx%d)",
+						mode.cx * pgm->nScale, mode.cy * pgm->nScale);
+			}
+		} else {
+			sprintf(szT, "%dx%d", mode.cx, mode.cy);
+		}
+#elif defined(DEV_BUILD)
 		sprintf(szT, "%dx%dx%d, %s%s", mode.cx, mode.cy, mode.nDepth, szArt, szOrientation);
 #else
 		sprintf(szT, "%dx%d, %s%s", mode.cx, mode.cy, szArt, szOrientation);

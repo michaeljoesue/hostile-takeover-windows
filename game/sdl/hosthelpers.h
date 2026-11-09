@@ -12,6 +12,18 @@ int HostGetGameScale();
 // Where to put the game window's client area (Windows)
 void HostGetGameWindowPos(int *px, int *py);
 
+// Display sizes to choose from (Windows). The first is the automatic best
+// fit; the others are fixed game resolutions that fit on the screen.
+struct GameMode {
+    int cx, cy;             // game resolution
+    int nScale;             // shown at this whole-number scale
+    int xWindow, yWindow;   // window client area position
+    bool fAuto;
+};
+#define kcGameModesMax 16
+int HostGetGameModes(GameMode *agm, int cgmMax);
+void HostSetGameMode(const GameMode *pgm);
+
 struct SurfaceProperties {
     int cxWidth;
     int cyHeight;

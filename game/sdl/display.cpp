@@ -83,11 +83,12 @@ bool Display::Init()
 	// screen mode! (ssh from another machine and kill the Xcode process)
     videoflags = SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_SHOWN;
 
-    // Desktop Windows: a fixed-size window (not resizable, no fullscreen)
-    // that fills the work area. The game picture size is picked from the
-    // monitor so it's a whole number of times smaller than the window (see
-    // CalcGameSize in win/hosthelpers.cpp), and it's scaled up with sharp,
-    // square pixels.
+    // Desktop Windows: a fixed-size window (not resizable, no fullscreen).
+    // By default it fills the work area and the game picture size is picked
+    // from the monitor so it's a whole number of times smaller than the
+    // window (see CalcGameModes in win/hosthelpers.cpp); Options > Display
+    // can pick a fixed resolution instead (SetMode). It's scaled up with
+    // sharp, square pixels.
     #if defined(_WIN32)
     videoflags = SDL_WINDOW_SHOWN;
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
@@ -155,7 +156,24 @@ bool Display::Init()
     s_siz.cy = m_cy;
 
     ModeInfo *pmode = m_amodeInfo;
-    
+
+#if defined(_WIN32)
+    // One mode per display size (Options > Display): the automatic best fit
+    // first (marked native, so it's what the game picks as "best"), then
+    // fixed resolutions that fit on the screen
+
+    GameMode agm[kcGameModesMax];
+    int cgm = HostGetGameModes(agm, kcGameModesMax);
+    for (int igm = 0; igm < cgm && igm < kcmodesMax; igm++) {
+        pmode->nDepth = 8;
+        pmode->cx = agm[igm].cx;
+        pmode->cy = agm[igm].cy;
+        pmode->cyGraffiti = 0;
+        pmode->fNative = agm[igm].fAuto;
+        pmode->nDegreeOrientation = 0;
+        pmode++;
+    }
+#else
 #if 1
     pmode->nDepth = 8;
     pmode->cx = props.cxWidth;
@@ -195,6 +213,7 @@ bool Display::Init()
     pmode->nDegreeOrientation = 270; // rightie controls
     pmode++;
 #endif
+#endif // !_WIN32
 
     m_cmodes = pmode - m_amodeInfo;
 
@@ -248,8 +267,61 @@ int Display::GetMode(ModeInfo *pmode)
 	return m_imode;
 }
 
+#if defined(_WIN32)
+// Switch the window, renderer and buffers to another display size
+// (Options > Display picks a mode; the game then restarts its display)
+
+bool Display::ApplyGameMode(int imode)
+{
+    GameMode agm[kcGameModesMax];
+    int cgm = HostGetGameModes(agm, kcGameModesMax);
+    if (imode < 0 || imode >= cgm)
+        return false;
+    GameMode *pgm = &agm[imode];
+    if (pgm->cx == m_cx && pgm->cy == m_cy && pgm->nScale == HostGetGameScale())
+        return true;
+
+    byte *pbPixels = (byte *)malloc(pgm->cx * pgm->cy);
+    dword *pdwPixels32 = (dword *)malloc(pgm->cx * pgm->cy * 4);
+    SDL_Texture *ptex = SDL_CreateTexture(m_renderer, SDL_PIXELFORMAT_RGB888,
+            SDL_TEXTUREACCESS_TARGET, pgm->cx, pgm->cy);
+    if (pbPixels == NULL || pdwPixels32 == NULL || ptex == NULL) {
+        free(pbPixels);
+        free(pdwPixels32);
+        if (ptex != NULL)
+            SDL_DestroyTexture(ptex);
+        return false;
+    }
+
+    HostSetGameMode(pgm);
+    SDL_SetWindowSize(m_window, pgm->cx * pgm->nScale, pgm->cy * pgm->nScale);
+    SDL_SetWindowPosition(m_window, pgm->xWindow, pgm->yWindow);
+    SDL_RenderSetLogicalSize(m_renderer, pgm->cx, pgm->cy);
+
+    SDL_DestroyTexture(m_texture);
+    m_texture = ptex;
+    free(m_gamePixels);
+    m_gamePixels = pbPixels;
+    free(m_gamePixels32);
+    m_gamePixels32 = pdwPixels32;
+    m_cx = pgm->cx;
+    m_cy = pgm->cy;
+    m_pixelCount = m_cx * m_cy;
+    m_pitch32 = m_cx * sizeof(dword);
+    s_siz.cx = m_cx;
+    s_siz.cy = m_cy;
+    memset(m_gamePixels, 0, m_pixelCount);
+    return true;
+}
+#endif
+
 bool Display::SetMode(int imode)
 {
+#if defined(_WIN32)
+    if (!ApplyGameMode(imode))
+        return false;
+#endif
+
     // Allocate dib
 
 	ModeInfo *pmode = &m_amodeInfo[imode];

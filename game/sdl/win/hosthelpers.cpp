@@ -182,7 +182,8 @@ void HostHelpers::Break()
 }
 
 // The game runs in a fixed-size window (it can't be resized or maximized,
-// and there's no fullscreen) whose size is picked once for the monitor so
+// and there's no fullscreen). By default ("Best fit" in Options > Display)
+// its size is picked for the monitor so
 // the picture is as large and as sharp as possible: the window fills the
 // screen's work area (the desktop minus the taskbar and the window's own
 // title bar and borders), and each game pixel is drawn as an exact n x n
@@ -202,13 +203,36 @@ void HostHelpers::Break()
 static int s_cxGame, s_cyGame, s_nGameScale;
 static int s_xWindow = SDL_WINDOWPOS_CENTERED, s_yWindow = SDL_WINDOWPOS_CENTERED;
 
-static void CalcGameSize()
+// The display sizes offered in Options > Display (besides the automatic best
+// fit). Each is shown at the largest whole-number scale that fits the screen.
+
+static const struct { int cx, cy; } s_asizCandidates[] = {
+    { 640, 480 }, { 800, 600 }, { 1024, 576 }, { 1024, 768 },
+    { 1152, 648 }, { 1280, 720 }, { 1280, 800 }, { 1280, 960 },
+    { 1280, 1024 }, { 1366, 768 }, { 1440, 900 }, { 1600, 900 },
+    { 1600, 1200 }, { 1680, 1050 }, { 1920, 1080 }, { 1920, 1200 },
+    { 2560, 1080 }, { 2560, 1440 }, { 2560, 1600 }, { 3440, 1440 },
+    { 3840, 2160 },
+};
+
+static GameMode s_agm[kcGameModesMax];
+static int s_cgm;
+static bool s_fModesInit;
+
+static void CalcGameModes()
 {
-    if (s_cxGame != 0)
+    if (s_fModesInit)
         return;
-    s_cxGame = 800;
-    s_cyGame = 600;
-    s_nGameScale = 1;
+    s_fModesInit = true;
+
+    GameMode *pgm = &s_agm[0];
+    pgm->cx = 800;
+    pgm->cy = 600;
+    pgm->nScale = 1;
+    pgm->xWindow = SDL_WINDOWPOS_CENTERED;
+    pgm->yWindow = SDL_WINDOWPOS_CENTERED;
+    pgm->fAuto = true;
+    s_cgm = 1;
 
     SDL_SetHint(SDL_HINT_WINDOWS_DPI_AWARENESS, "permonitorv2");
     if (!SDL_WasInit(SDL_INIT_VIDEO) && SDL_InitSubSystem(SDL_INIT_VIDEO) < 0)
@@ -222,6 +246,8 @@ static void CalcGameSize()
         SDL_DisplayMode mode;
         if (SDL_GetDesktopDisplayMode(0, &mode) != 0)
             return;
+        rcUsable.x = 0;
+        rcUsable.y = 0;
         rcUsable.w = mode.w;
         rcUsable.h = mode.h - 48;
     }
@@ -249,24 +275,73 @@ static void CalcGameSize()
     }
     int cxRoom = rcUsable.w - cxLeft - cxRight;
     int cyRoom = rcUsable.h - cyTop - cyBottom;
+    int xRoom = rcUsable.x + cxLeft;
+    int yRoom = rcUsable.y + cyTop;
+
+    // The automatic best fit
+
     if (cxRoom < kcxGameMin || cyRoom < kcyGameMin) {
         // Tiny screen: just use what there is
-        s_cxGame = (cxRoom > 320 ? cxRoom : 320) & ~1;
-        s_cyGame = (cyRoom > 240 ? cyRoom : 240) & ~1;
+        pgm->cx = (cxRoom > 320 ? cxRoom : 320) & ~1;
+        pgm->cy = (cyRoom > 240 ? cyRoom : 240) & ~1;
         return;
     }
-
     int n = 1;
     while (cxRoom / (n + 1) >= kcxGameMin && cyRoom / (n + 1) >= kcyGameMin)
         n++;
     // Game sizes are kept even (some blits work in pairs of pixels)
-    s_cxGame = (cxRoom / n) & ~1;
-    s_cyGame = (cyRoom / n) & ~1;
-    s_nGameScale = n;
+    pgm->cx = (cxRoom / n) & ~1;
+    pgm->cy = (cyRoom / n) & ~1;
+    pgm->nScale = n;
 
     // Window client area centered in the room left for it
-    s_xWindow = rcUsable.x + cxLeft + (cxRoom - s_cxGame * n) / 2;
-    s_yWindow = rcUsable.y + cyTop + (cyRoom - s_cyGame * n) / 2;
+    pgm->xWindow = xRoom + (cxRoom - pgm->cx * n) / 2;
+    pgm->yWindow = yRoom + (cyRoom - pgm->cy * n) / 2;
+
+    // Fixed sizes that fit
+
+    for (int i = 0; i < ARRAYSIZE(s_asizCandidates) && s_cgm < kcGameModesMax; i++) {
+        int cx = s_asizCandidates[i].cx;
+        int cy = s_asizCandidates[i].cy;
+        if (cx > cxRoom || cy > cyRoom)
+            continue;
+        if (cx == s_agm[0].cx && cy == s_agm[0].cy)
+            continue;
+        pgm = &s_agm[s_cgm++];
+        pgm->cx = cx;
+        pgm->cy = cy;
+        pgm->nScale = 1;
+        while (cx * (pgm->nScale + 1) <= cxRoom && cy * (pgm->nScale + 1) <= cyRoom)
+            pgm->nScale++;
+        pgm->xWindow = xRoom + (cxRoom - cx * pgm->nScale) / 2;
+        pgm->yWindow = yRoom + (cyRoom - cy * pgm->nScale) / 2;
+        pgm->fAuto = false;
+    }
+}
+
+static void CalcGameSize()
+{
+    if (s_cxGame != 0)
+        return;
+    CalcGameModes();
+    HostSetGameMode(&s_agm[0]);
+}
+
+int HostGetGameModes(GameMode *agm, int cgmMax)
+{
+    CalcGameModes();
+    int cgm = s_cgm < cgmMax ? s_cgm : cgmMax;
+    memcpy(agm, s_agm, cgm * sizeof(GameMode));
+    return cgm;
+}
+
+void HostSetGameMode(const GameMode *pgm)
+{
+    s_cxGame = pgm->cx;
+    s_cyGame = pgm->cy;
+    s_nGameScale = pgm->nScale;
+    s_xWindow = pgm->xWindow;
+    s_yWindow = pgm->yWindow;
 }
 
 void HostGetGameWindowPos(int *px, int *py)
