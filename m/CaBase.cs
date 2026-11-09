@@ -1344,7 +1344,7 @@ namespace m
 	[DisplayName("Attack")]
 	[Description("Attack the nearest enemy unit matching the specified side(s) and type(s) for the specified interval. " +
 			"The entire group will attack the unit together. If the unit is destroyed before the interval " +
-			"elapses the next nearest matching enemy will be targeted by the group.")]
+			"elapses the next nearest matching enemy will be targeted by the group. 0 seconds = no time limit.")]
 	public class AttackUnitGroupAction : CaBase {
 		override public string GetString() {
 			return "Attack nearest $1 owned by $2 for $3 seconds";
@@ -1418,7 +1418,7 @@ namespace m
 	[Serializable]
 	[DisplayName("Guard")]
 	[Description("All members of the group are directed guard the area within " +
-		 "their sight range for the specified interval.")]
+		 "their sight range for the specified interval (0 seconds = no time limit).")]
 	public class GuardUnitGroupAction : CaBase {
 		override public string GetString() {
 			return "Guard for $1 seconds";
@@ -1431,7 +1431,7 @@ namespace m
 	[Serializable]
 	[DisplayName("GuardVicinity")]
 	[Description("All members of the group are directed guard the area within " +
-		 "an expanded sight range for the specified interval.")]
+		 "an expanded sight range for the specified interval (0 seconds = no time limit).")]
 	public class GuardVicinityUnitGroupAction : CaBase {
 		override public string GetString() {
 			return "Guard vicinity for $1 seconds";

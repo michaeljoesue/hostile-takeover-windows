@@ -1578,6 +1578,15 @@ left a Warehouse in the same area alone (wrong type), then moved on to its
 next action. Saving and loading in the middle of a protect action
 continued it with the same target.
 
+Later, 0 seconds was made to mean "no time limit" in the original timed
+actions too: Attack, Guard and Guard Vicinity (`m_ctWait != 0 &&` in their
+`Perform`). Before, 0 seconds ended them on the next update. None of the
+built-in missions uses 0 for these (checked with the editor's code over
+all 47 levels: the shortest is 30 seconds), so they play the same. Wait
+keeps 0 = no wait, since waiting forever would just freeze the group.
+Tested: groups with Guard 0, Guard Vicinity 0 and Attack 0 never went on to
+their next action, while a Guard 5 group did after 5 seconds.
+
 ## File map
 
 | File | Purpose |

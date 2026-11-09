@@ -1084,9 +1084,9 @@ bool AttackUnitGroupAction::Perform(UnitGroup *pug)
 
 	long t = gsim.GetTickCount();
 	if (m_fWaiting) {
-		// Wait over? If so, return true
+		// Time up? If so, return true (0 seconds = no time limit)
 
-		if (t - m_tStart >= m_ctWait) {
+		if (m_ctWait != 0 && t - m_tStart >= m_ctWait) {
 			m_fWaiting = false;
 			return true;
 		}
@@ -1276,9 +1276,9 @@ bool GuardUnitGroupAction::Perform(UnitGroup *pug)
 
 	long t = gsim.GetTickCount();
 	if (m_fWaiting) {
-		// Wait over? If so, return true
+		// Time up? If so, return true (0 seconds = no time limit)
 
-		if (t - m_tStart >= m_ctWait) {
+		if (m_ctWait != 0 && t - m_tStart >= m_ctWait) {
 			m_fWaiting = false;
 			return true;
 		}
@@ -1411,9 +1411,9 @@ bool GuardVicinityUnitGroupAction::Perform(UnitGroup *pug)
 
 	long t = gsim.GetTickCount();
 	if (m_fWaiting) {
-		// Wait over? If so, return true
+		// Time up? If so, return true (0 seconds = no time limit)
 
-		if (t - m_tStart >= m_ctWait) {
+		if (m_ctWait != 0 && t - m_tStart >= m_ctWait) {
 			m_fWaiting = false;
 			return true;
 		}

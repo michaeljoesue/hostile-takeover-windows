@@ -112,8 +112,13 @@ only counted your own).
 then protect the group's next unit when it dies), **Protect In Area** (the
 same for the nearest own or allied unit or building of the chosen types in
 an area, e.g. a base building) and **Attack In Area** (attack the chosen
-types and sides inside an area until none are left). A time of 0 seconds
-means no limit. Levels that use them need this version of the game.
+types and sides inside an area until none are left). Levels that use them
+need this version of the game.
+
+In every unit group action with a time (Attack, Guard, Guard Vicinity and the
+three above), **0 seconds means no time limit**: the group keeps doing it
+and never moves on to its next action (before, 0 ended Attack and Guard at
+once). Wait is the exception: Wait 0 seconds still means don't wait.
 
 You can also drag a `.ld` level file onto `M.exe` to open it. Levels you only
 try out with Play Level in Game don't appear in the Add-On list; only

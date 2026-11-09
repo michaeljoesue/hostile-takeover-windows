@@ -124,6 +124,9 @@ GETTING STARTED
    - Attack In Area: attacks the nearest unit or building of the chosen
      types and sides inside an area, then the next, until none are left or
      the time is up, then the group goes on to its next action.
+   In Attack, Guard and Guard Vicinity too, 0 seconds now means no time
+   limit (the group keeps at it and doesn't go on to its next action).
+   Wait 0 seconds still means don't wait.
 4. Press F5 to play it.
 
 A guide to mission authoring written by the original developers:
