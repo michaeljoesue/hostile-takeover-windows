@@ -497,11 +497,18 @@ void MobileUnitGob::SetTarget(Gid gid, WCoord wx, WCoord wy, WCoord wxCenter, WC
 
 	m_gidForceTarget = (gfForceAttackCommand && gid != m_gid) ? gid : kgidNull;
 
+	// A new order from the player also ends an attack-move or guard order
+	// (otherwise the unit would go back to it after its next fight)
+
+	if (IsHumanOrGodControlled())
+		ClearAction();
+
 	if (gid == kgidNull) {
-		// Send formed command
+		// Send formed command. Attack-move (Ctrl+Alt+right click) is an
+		// action: after each fight on the way the unit resumes the move.
 
 		Message msgT;
-		msgT.mid = kmidMoveCommand;
+		msgT.mid = gfAttackMoveCommand ? kmidAttackMoveCommand : kmidMoveCommand;
 		msgT.smidSender = kgidNull;
 		msgT.smidReceiver = m_gid;
 		msgT.MoveCommand.wptTarget.wx = wx;
@@ -713,6 +720,84 @@ bool MobileUnitGob::IsAttackPointWithinFiringRangeOfTarget(UnitGob *puntTarget)
 
 const TCoord ktcVicinity = 5;
 const long kcupdAggressivenessBoost = 63; // 5 seconds
+const TCoord ktcGuardUnitFollow = 2;	// guards stay this close to a guarded unit
+const long kcupdGuardUnitCheck = 6;		// about every half second
+
+// Guard order (Ctrl+Alt+right click on a friendly unit or structure, like
+// Red Alert): stay near it and fight enemies that come near it. Called from
+// the guard state; returns true if it changed state.
+
+bool MobileUnitGob::GuardUnitUpdate()
+{
+	Gob *pgobGuarded = ggobm.GetGob(m_msgAction.MoveCommand.gidTarget);
+	if (pgobGuarded == NULL || !(pgobGuarded->GetFlags() & kfGobUnit) ||
+			!(pgobGuarded->GetFlags() & kfGobActive) ||
+			!IsAlly(pgobGuarded->GetSide())) {
+		// Gone (destroyed, taken over): just guard here from now on
+
+		m_mua = kmuaNone;
+		return false;
+	}
+	UnitGob *puntGuarded = (UnitGob *)pgobGuarded;
+
+	// An enemy near this unit or the guarded one: go fight it (unless
+	// already shooting)
+
+	if (!(m_wfMunt & kfMuntFiring)) {
+		UnitGob *puntEnemy = FindEnemyNearby(ktcVicinity);
+		if (puntEnemy == NULL)
+			puntEnemy = puntGuarded->FindEnemyNear(ktcVicinity);
+		if (puntEnemy != NULL && !IsTooFarFromGuardedUnit(puntEnemy)) {
+			puntEnemy->GetAttackPoint(&m_wptTarget);
+			m_gidTarget = puntEnemy->GetId();
+			m_wptTargetCenter = m_wptTarget;
+			m_tcTargetRadius = 0;
+			m_wcMoveDistPerUpdate = m_pmuntc->GetMoveDistPerUpdate();
+			SetStatePendingFireComplete(kstAttack);
+			NotifyNearbyAlliesOfHit(m_gidTarget);
+			return true;
+		}
+	}
+
+	// Too far from the guarded unit / structure: go to it
+
+	TCoord tcFollow = ktcGuardUnitFollow;
+	if (pgobGuarded->GetFlags() & kfGobStructure) {
+		TRect trc;
+		pgobGuarded->GetTileRect(&trc);
+		tcFollow += _max(trc.right - trc.left, trc.bottom - trc.top) / 2;
+	}
+	if (CalcRange(TcFromWc(m_wx), TcFromWc(m_wy), pgobGuarded) > ktcGuardUnitFollow + 1 &&
+			!(m_wfMunt & kfMuntFiring)) {
+		WPoint wptCenter;
+		pgobGuarded->GetCenter(&wptCenter);
+		m_wptTargetCenter.wx = WcTrunc(wptCenter.wx) + kwcTileHalf;
+		m_wptTargetCenter.wy = WcTrunc(wptCenter.wy) + kwcTileHalf;
+		WPoint wptAttack;
+		puntGuarded->GetAttackPoint(&wptAttack);
+		m_wptTarget.wx = WcTrunc(wptAttack.wx) + kwcTileHalf;
+		m_wptTarget.wy = WcTrunc(wptAttack.wy) + kwcTileHalf;
+		m_tcTargetRadius = tcFollow;
+		m_wcMoveDistPerUpdate = m_pmuntc->GetMoveDistPerUpdate();
+		m_gidTarget = kgidNull;
+		SetState(kstMove);
+		return true;
+	}
+	return false;
+}
+
+// For guard orders: is this enemy too far from the guarded unit to chase?
+
+bool MobileUnitGob::IsTooFarFromGuardedUnit(Gob *pgobTarget)
+{
+	Gob *pgobGuarded = ggobm.GetGob(m_msgAction.MoveCommand.gidTarget);
+	if (pgobGuarded == NULL)
+		return false;
+	WPoint wpt;
+	pgobTarget->GetCenter(&wpt);
+	return CalcRange(TcFromWc(wpt.wx), TcFromWc(wpt.wy), pgobGuarded) >
+			ktcVicinity + ktcGuardUnitFollow;
+}
 
 int MobileUnitGob::ProcessStateMachineMessage(State st, Message *pmsg)
 {
@@ -742,6 +827,17 @@ BeginStateMachine
 
 	OnMsg(kmidHuntEnemiesAction)
 		PendOrProcessAction(pmsg, kstHuntEnemies, kmuaHuntEnemies);
+
+	// Desktop orders (Red Alert style), given by the player but carried out
+	// like actions so the unit returns to them after each fight
+
+	OnMsg(kmidAttackMoveCommand)
+		if (PendOrProcessAction(pmsg, kstMove, kmuaAttackMove))
+			goto lbMoveCommand;
+
+	OnMsg(kmidGuardUnitCommand)
+		if (PendOrProcessAction(pmsg, kstGuard, kmuaGuardUnit))
+			m_unvl.MinSkip();
 
 	// Commands are the result of player interactions with the SimUI
 
@@ -828,7 +924,13 @@ lbHitNoDamage:
 
 					// and we're not on a human directed mission...
 
-					if ((m_pplr->GetFlags() & kfPlrComputer) || (m_st == kstGuard)) {
+					// (Guarding a unit: not if the attacker is far from it,
+					// or the guard would be pulled away)
+
+					Gob *pgobAssailant = ggobm.GetGob(pmsg->Hit.gidAssailant);
+					if (m_mua == kmuaGuardUnit && pgobAssailant != NULL &&
+							IsTooFarFromGuardedUnit(pgobAssailant)) {
+					} else if ((m_pplr->GetFlags() & kfPlrComputer) || (m_st == kstGuard)) {
 
 						// Fight back!
 	
@@ -893,6 +995,12 @@ lbHitNoDamage:
 				gsmm.SendMsg(&m_msgPending);
 				return knHandled;
 			}
+
+			// Guarding (protecting) a unit or structure: fight enemies near
+			// it, follow it when it moves away
+
+			if (m_mua == kmuaGuardUnit && GuardUnitUpdate())
+				return knHandled;
 
 			// if enemy in range and we're not already firing at something
 
@@ -959,6 +1067,11 @@ lbHitNoDamage:
 			}
 			m_unvl.MinSkip(m_cCountdown);
 
+			// Guarding a unit: check on it often so we keep up with it
+
+			if (m_mua == kmuaGuardUnit)
+				m_unvl.MinSkip(kcupdGuardUnitCheck);
+
 			// Handle flashing
 
 			DefUpdate();
@@ -978,7 +1091,10 @@ lbHitNoDamage:
 				// If the Unit is sufficiently aggressive and sees an enemy 
 				// unit it should attack it.
 
-				if (m_wfMunt & kfMuntAttackEnemiesWhenMoving) {
+				// (Human units only do on an attack-move or guard order.)
+
+				if ((m_wfMunt & kfMuntAttackEnemiesWhenMoving) ||
+						m_mua == kmuaAttackMove || m_mua == kmuaGuardUnit) {
 					UnitGob *puntTarget = FindEnemyNearby(m_pmuntc->tcFiringRange);
 					if (puntTarget != NULL) {
 						m_gidTarget = puntTarget->GetId();
@@ -994,7 +1110,7 @@ lbHitNoDamage:
 
 			switch (MoveUpdate()) {
 			case knMoveTargetReached:
-				if (m_mua == kmuaMove)
+				if (m_mua == kmuaMove || m_mua == kmuaAttackMove)
 					m_mua = kmuaNone;	// Move action complete
 
 				SetState(kstGuard);
@@ -1006,7 +1122,7 @@ lbHitNoDamage:
 
 				// For now, give up and return to Guard state
 
-				if (m_mua == kmuaMove)
+				if (m_mua == kmuaMove || m_mua == kmuaAttackMove)
 					m_mua = kmuaNone;	// Move action complete
 
 				SetState(kstGuard);
@@ -1062,7 +1178,13 @@ lbHitNoDamage:
 
 				if (!IsGobWithinRange(puntTarget, m_pmuntc->tcFiringRange)) {
 					// Test actions and situations under which it is a good idea to chase
+					// (guarding a unit: not after an enemy far from it)
 
+					if (m_mua == kmuaGuardUnit && IsTooFarFromGuardedUnit(puntTarget)) {
+						m_gidTarget = kgidNull;
+						ContinueActionPendingFireComplete();
+						return knHandled;
+					}
 					if (!(m_wfMunt & kfMuntStayPut) && (m_mua != kmuaNone || !IsStandingOnActivator()) && 
 							(m_wfMunt & kfMuntChaseEnemies ||
 							(gsim.GetUpdateCount() - m_cupdLastHitOrNearbyAllyHit <= kcupdAggressivenessBoost) ||
@@ -1151,10 +1273,12 @@ lbHitNoDamage:
 					}
 				}
 
-				// Verify the target still exists
+				// Verify the target still exists. Guarding a unit: don't chase
+				// an enemy far from it, go back to guarding instead.
 
 				Gob *pgobTarget = ggobm.GetGob(m_gidTarget);
-				if (pgobTarget == NULL || !IsValidTarget(pgobTarget)) {
+				if (pgobTarget == NULL || !IsValidTarget(pgobTarget) ||
+						(m_mua == kmuaGuardUnit && IsTooFarFromGuardedUnit(pgobTarget))) {
 					
 					// If some other action was interrupted to attack/chase, return to it
 

@@ -1577,7 +1577,9 @@ struct Event { // evt
 #define kfEvtCoalesce 0x00000002
 #define kfEvtRightButton 0x00000004 // desktop: pen event came from the right mouse button
 #define kfEvtForceAttack 0x00000008 // desktop: Ctrl was held (force attack)
+#define kfEvtAlt 0x00000010 // desktop: Alt was held (Ctrl+Alt: attack-move / guard)
 extern bool gfForceAttackCommand;
+extern bool gfAttackMoveCommand; // set by SimUIForm::AttackMoveOrGuard while it gives orders
 extern long gmsLastSimUpdate;
 extern bool gfSmoothRender; // set by SimUIForm::ForceAttack while it gives orders
 extern dword gffPenEventCurrent; // flags (kfEvt*) of the pen event forms are processing now
@@ -3395,6 +3397,7 @@ public:
     bool HasSelectedUnits();
     bool HasSelectedMobileUnits();
     bool ForceAttack(int x, int y) secSimUIForm;
+    bool AttackMoveOrGuard(int x, int y) secSimUIForm;
     void ShowUnitMenu(Gob *pgob);
     void SelectSameUnitTypes(Gob *pgob, bool fSfx);
     bool IsSelectionCommand(Gob *pgobHit);
@@ -5812,6 +5815,12 @@ public:
 	Gid GetForceTarget() {
 		return m_gidForceTarget;
 	}
+	void SetForceTargetNone() {
+		m_gidForceTarget = kgidNull;
+	}
+	UnitGob *FindEnemyNear(TCoord tcRange) {	// for guard orders
+		return FindEnemyNearby(tcRange);
+	}
 
 	fix GetHealth() {
 		return m_fxHealth;
@@ -5980,6 +5989,8 @@ enum MobileUnitAction // mua
 	kmuaMove,
 	kmuaAttack,
 	kmuaHuntEnemies,
+	kmuaAttackMove,		// player's attack-move (Ctrl+Alt+right click on the ground)
+	kmuaGuardUnit,		// player's guard order (Ctrl+Alt+right click on a friendly unit/structure)
 };
 
 struct MoveDirections // movd
@@ -6097,6 +6108,8 @@ private:
 	bool IsTargetInRange() secUnitGob;
 	void SetStatePendingFireComplete(State st) secUnitGob;
 	void ContinueActionPendingFireComplete() secUnitGob;
+	bool GuardUnitUpdate() secUnitGob;
+	bool IsTooFarFromGuardedUnit(Gob *pgobTarget) secUnitGob;
 	void ReserveTile(TCoord tx, TCoord ty, bool fReserve) secUnitGob;
 	bool IsTileReserved(TCoord tx, TCoord ty) secUnitGob;
 	byte GetTileFlags(TCoord tx, TCoord ty) secUnitGob;

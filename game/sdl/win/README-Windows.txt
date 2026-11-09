@@ -33,6 +33,13 @@ CONTROLS
   Ctrl + right click on anything
                         Force attack: the selected units attack it even
                         if it's your own unit or building
+  Ctrl + Alt + right click on the ground
+                        Attack-move (Red Alert style): move there,
+                        fighting enemies met on the way, then carry on
+  Ctrl + Alt + right click on your own / an allied unit or building
+                        Guard (protect) it: the selected units stay near
+                        it, follow it and fight enemies that come near it.
+                        Any normal order ends attack-move / guard.
   Right click in a build menu
                         Cancel one queued unit (click the unit's icon
                         or the Order button). It never orders a new one.

@@ -277,6 +277,8 @@ enum MessageId { // mid
 	kmidHeal,
 	kmidPlaySfx,
     kmidPlayerDisconnect,
+	kmidAttackMoveCommand,	// desktop: move, fighting enemies met on the way (MoveCommand)
+	kmidGuardUnitCommand,	// desktop: stay with and protect a unit/structure (MoveCommand.gidTarget)
 };
 
 STARTLABEL(MessageNames)

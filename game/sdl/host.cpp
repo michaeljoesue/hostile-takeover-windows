@@ -213,6 +213,9 @@ bool ProcessSdlEvent(base::Message *pmsg, Event *pevt)
         if (SDL_GetModState() & KMOD_CTRL) {
             pevt->ff |= kfEvtForceAttack;
         }
+        if (SDL_GetModState() & KMOD_ALT) {
+            pevt->ff |= kfEvtAlt;
+        }
 #endif
 		break;
 		
@@ -229,6 +232,9 @@ bool ProcessSdlEvent(base::Message *pmsg, Event *pevt)
         }
         if (SDL_GetModState() & KMOD_CTRL) {
             pevt->ff |= kfEvtForceAttack;
+        }
+        if (SDL_GetModState() & KMOD_ALT) {
+            pevt->ff |= kfEvtAlt;
         }
 #endif
 		break;

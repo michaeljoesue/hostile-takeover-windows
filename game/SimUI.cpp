@@ -1359,6 +1359,7 @@ bool SimUIForm::IsSelectionCommand(Gob *pgobHit)
 }
 
 bool gfForceAttackCommand = false;
+bool gfAttackMoveCommand = false;
 
 bool SimUIForm::HasSelectedMobileUnits()
 {
@@ -1403,6 +1404,91 @@ bool SimUIForm::ForceAttack(int x, int y)
 		gsndm.PlaySfx(SfxFromCategory(((MobileUnitConsts *)
 				gapuntc[pmunt->GetUnitType()])->sfxcAttack));
 	}
+	return true;
+}
+
+// Desktop Red Alert style orders, Ctrl+Alt+right click:
+// - on your own or an allied unit / structure: the selected units guard
+//   (protect) it: they stay near it, follow it, and fight enemies near it
+// - on an enemy: a normal attack
+// - on the ground: attack-move there: move, fighting enemies met on the way,
+//   then carry on to the destination
+
+bool SimUIForm::AttackMoveOrGuard(int x, int y)
+{
+	WCoord wxTarget, wyTarget;
+	bool fHitSurrounding;
+	Gob *pgobHit = HitTestGob(x, y, false, &wxTarget, &wyTarget,
+			&fHitSurrounding);
+
+	if (pgobHit != NULL && (pgobHit->GetFlags() & kfGobUnit) &&
+			pgobHit->GetType() != kgtReplicator) {
+		UnitGob *puntHit = (UnitGob *)pgobHit;
+		bool fFriendly = puntHit->GetSide() == gpplrLocal->GetSide() ||
+				(gpplrLocal->GetAllies() & GetSideMask(puntHit->GetSide())) != 0;
+		if (!fFriendly) {
+			MoveOrAttackOrSelect(pgobHit, wxTarget, wyTarget, kfMasAttack);
+			return true;
+		}
+
+		// Guard it
+
+		MobileUnitGob *pmuntSound = NULL;
+		for (Gob *pgobT = ggobm.GetFirstGob(); pgobT != NULL;
+				pgobT = ggobm.GetNextGob(pgobT)) {
+			if ((pgobT->GetFlags() & (kfGobSelected | kfGobMobileUnit)) !=
+					(kfGobSelected | kfGobMobileUnit))
+				continue;
+			if (pgobT == pgobHit)
+				continue;
+			if (!gfGodMode && pgobT->GetSide() != gpplrLocal->GetSide())
+				continue;
+			MobileUnitGob *pmunt = (MobileUnitGob *)pgobT;
+
+			// Like any new order this ends a force attack / earlier order
+
+			pmunt->SetForceTargetNone();
+			pmunt->ClearAction();
+
+			Message msgT;
+			memset(&msgT, 0, sizeof(msgT));
+			msgT.mid = kmidGuardUnitCommand;
+			msgT.smidSender = kgidNull;
+			msgT.smidReceiver = pmunt->GetId();
+			WPoint wpt;
+			puntHit->GetAttackPoint(&wpt);
+			msgT.MoveCommand.wptTarget = wpt;
+			msgT.MoveCommand.gidTarget = pgobHit->GetId();
+			pgobHit->GetCenter(&msgT.MoveCommand.wptTargetCenter);
+			msgT.MoveCommand.tcTargetRadius = 0;
+			msgT.MoveCommand.wcMoveDistPerUpdate =
+					((MobileUnitConsts *)pmunt->GetConsts())->GetMoveDistPerUpdate();
+			gcmdq.Enqueue(&msgT);
+			pmuntSound = pmunt;
+		}
+		if (pmuntSound == NULL)
+			return false;
+		puntHit->Flash();
+		gsndm.PlaySfx(SfxFromCategory(((MobileUnitConsts *)
+				gapuntc[pmuntSound->GetUnitType()])->sfxcMove));
+		return true;
+	}
+
+	// Attack-move to the ground
+
+	gfAttackMoveCommand = true;
+	MobileUnitGob *pmunt = SetSelectionTargets(kgidNull, wxTarget, wyTarget);
+	gfAttackMoveCommand = false;
+	if (pmunt == NULL)
+		return false;
+	if (m_nStateMoveTarget != 0)
+		m_pfrmm->GetUpdateMap()->InvalidateTile(TcFromWc(m_wxMoveTarget), TcFromWc(m_wyMoveTarget));
+	m_aniMoveTarget.Start(0, 0, 0);
+	m_wxMoveTarget = WcTrunc(wxTarget) + kwcTileHalf;
+	m_wyMoveTarget = WcTrunc(wyTarget) + kwcTileHalf;
+	m_nStateMoveTarget = 1;
+	gsndm.PlaySfx(SfxFromCategory(((MobileUnitConsts *)
+			gapuntc[pmunt->GetUnitType()])->sfxcAttack));
 	return true;
 }
 

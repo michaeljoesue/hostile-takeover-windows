@@ -1456,6 +1456,41 @@ binary-serialized). `TriggerManager` no longer adds a null when importing
 an ini line for a hidden/unknown type. Game side, `Trigger::LoadAction`
 ignores an unknown action instead of crashing.
 
+## 56. Red Alert style attack-move and guard (protect) orders
+
+Ctrl+Alt+right click (`kfEvtAlt` from `sdl/host.cpp`, handled first in
+`StylusHandler::OnPenUp`, then `SimUIForm::AttackMoveOrGuard`):
+
+- On the ground: **attack-move**. `SetSelectionTargets` runs with
+  `gfAttackMoveCommand` set, so `MobileUnitGob::SetTarget` queues
+  `kmidAttackMoveCommand` (new, appended to `MessageId` in
+  `mpshared/mpht.h`) instead of `kmidMoveCommand`. The unit handles it as
+  an *action* (`PendOrProcessAction`, new `kmuaAttackMove`), so the engine's
+  existing action logic applies: in `kstMove` it attacks enemies in firing
+  range (human units otherwise never do while moving), and after each fight
+  `ContinueActionPendingFireComplete` re-sends the order and the move
+  resumes. Arriving (or getting stuck) ends it.
+- On an own / allied unit or structure: **guard**. Each selected mobile unit
+  gets `kmidGuardUnitCommand` (new) with `MoveCommand.gidTarget` = the
+  guarded gob -> `kmuaGuardUnit`, state `kstGuard`.
+  `MobileUnitGob::GuardUnitUpdate` (called from `kstGuard` every ~6
+  updates): attack an enemy within 5 tiles of the guard or of the guarded
+  unit; otherwise if more than 3 tiles from it, move next to it. A leash
+  (`IsTooFarFromGuardedUnit`: enemy more than 7 tiles from the guarded
+  unit) stops chasing, attacking and returning fire far away, so guards
+  aren't pulled off. Guarded unit gone / no longer friendly: plain guard.
+- On an enemy: normal attack.
+
+Any normal order clears the action (`SetTarget` calls `ClearAction()` for
+human units), so the unit doesn't go back to an old attack-move / guard
+after its next fight. `m_mua` and `m_msgAction` are already saved, so both
+orders survive save / load.
+
+Tested in C5 under Wine: attack-moving 9 MGVs across the map, each stopped
+to fight the enemies on its way (`move-engage`), resumed and arrived; units
+guarding a structure and an infantry unit followed it, fought nearby
+enemies and returned to it.
+
 ## File map
 
 | File | Purpose |

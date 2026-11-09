@@ -104,6 +104,16 @@ void SimUIForm::StylusHandler::OnPenUp(Event *pevt)
     CancelModes();
 
 #ifdef _WIN32
+    // Ctrl + Alt + right click (Red Alert style): on a friendly unit or
+    // structure, guard (protect) it; on the ground, attack-move there
+
+    if ((pevt->ff & kfEvtRightButton) && (pevt->ff & kfEvtForceAttack) &&
+            (pevt->ff & kfEvtAlt) && pevt->dw != 1 &&
+            m_psui->HasSelectedMobileUnits()) {
+        m_psui->AttackMoveOrGuard(pevt->x, pevt->y);
+        return;
+    }
+
     // Ctrl + right click: force attack whatever is under the cursor, even
     // your own units and buildings. On empty ground it does nothing.
 
