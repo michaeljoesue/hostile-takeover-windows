@@ -389,6 +389,9 @@ namespace m
 			// 
 			this.menuItemCounters.Index = 3;
 			this.menuItemCounters.Text = "&Counters...";
+			// Counters can't be used: the game has no Counter condition or
+			// Modify Counter action (both hidden), so hide their editor too
+			this.menuItemCounters.Visible = false;
 			this.menuItemCounters.Click += new System.EventHandler(this.menuItemCounters_Click);
 			// 
 			// menuItemText

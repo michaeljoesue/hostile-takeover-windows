@@ -71,6 +71,11 @@ namespace m
 			foreach (Type type in atype) {
 				string strName = type.ToString();
 				if (strName.EndsWith(strEndsWith)) {
+					// Skip conditions / actions that do nothing in the game
+					// (but keep the one being modified, if it's one of them)
+					if (Attribute.GetCustomAttribute(type, typeof(HiddenCaAttribute)) != null &&
+							(cab == null || cab.GetType() != type))
+						continue;
 					alsType.Add(type);
 					string strDisplayName = Helper.GetDisplayName(type);
 					if (strDisplayName == null) {

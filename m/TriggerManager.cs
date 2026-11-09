@@ -287,11 +287,15 @@ namespace m
 					continue;
 				}
 				if (prop.Name == "C") {
-					tgrCurrent.Conditions.Add(TriggerConditionLoader.LoadIni(prop.Value));
+					CaBase cabCondition = TriggerConditionLoader.LoadIni(prop.Value);
+					if (cabCondition != null)
+						tgrCurrent.Conditions.Add(cabCondition);
 					continue;
 				}
 				if (prop.Name == "A") {
-					tgrCurrent.Actions.Add(TriggerActionLoader.LoadIni(prop.Value));
+					CaBase cabAction = TriggerActionLoader.LoadIni(prop.Value);
+					if (cabAction != null)
+						tgrCurrent.Actions.Add(cabAction);
 					continue;
 				}
 			}

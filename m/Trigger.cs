@@ -100,7 +100,9 @@ namespace m {
 			}
 
 			foreach (CaBase cab in m_alsActions) {
-				if (!(cab is CommentTriggerAction))
+				// Modify Counter isn't in the game: leave it out (the game
+				// would fail to load the mission)
+				if (!(cab is CommentTriggerAction) && !(cab is ModifyCounterTriggerAction))
 					sec.Add(new Ini.Property("A", cab.ToSaveString()));
 			}
 		}

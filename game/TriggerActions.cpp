@@ -157,13 +157,16 @@ bool Trigger::LoadAction(IniReader *pini, FindProp *pfind)
 #endif
 
 	default:
-		Assert(false);
-		break;
+		// An action this game doesn't have (e.g. Modify Counter from an old
+		// editor): ignore it instead of crashing on a NULL action
+		return true;
 	}
 
 	// Init it, error if that failed
 
 	Assert(pactn != NULL, "out of memory!");
+	if (pactn == NULL)
+		return false;
 	if (!pactn->Init(sz)) {
 		delete pactn;
 		return false;

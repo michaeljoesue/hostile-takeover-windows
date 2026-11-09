@@ -1426,6 +1426,36 @@ length, clears the rest and gives loaded queues (other than the HQ's
 
 `BuilderGob`'s size changed: clean rebuild (`rm -rf release`).
 
+## 55. Editor: hide trigger actions that do nothing
+
+Audit of every trigger condition, trigger action, unit group action and
+unit action the editor offers against what the game implements
+(`game/TriggerConditions.cpp`, `game/TriggerActions.cpp`,
+`game/UnitGroupMgr.cpp`, `MobileUnitGob::PerformAction`) and against the
+47 levels in `data/`:
+
+- Already hidden by Spiffcode (`#if false` in `m/CaBase.cs`): conditions
+  Deaths, Mobile HQ deployable / deployed, Unit Sees Unit, Unit Destroyed,
+  Counter; actions Set Resources, Set Player Controls, Pan View, Move Unit,
+  Target Unit. The game doesn't implement any of them.
+- **Hunt Units** (action 16): shown, but `HuntAction::Perform` is an empty
+  `UNDONE` stub; no mission uses it. Now hidden.
+- **Modify Counter** (action 24): shown, but the game has no such action
+  (nor the Counter condition), so a mission using it crashed on load
+  (`Trigger::LoadAction` called `Init` on a NULL action). No mission uses
+  it. Now hidden, left out when exporting, and the **Counters...** menu item
+  (nothing can use counters) is hidden too.
+- Everything else, including all 7 unit group actions and all 6 unit
+  actions, is implemented and does something; most are used by the
+  original missions.
+
+How (`m/CaBase.cs`, `m/CaNew.cs`): a `[HiddenCa]` attribute; the New /
+Modify dialog skips such classes, except the one being modified. The
+classes stay so older `.ld` files containing them still open (they're
+binary-serialized). `TriggerManager` no longer adds a null when importing
+an ini line for a hidden/unknown type. Game side, `Trigger::LoadAction`
+ignores an unknown action instead of crashing.
+
 ## File map
 
 | File | Purpose |

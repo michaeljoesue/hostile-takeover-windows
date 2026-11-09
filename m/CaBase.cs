@@ -5,6 +5,12 @@ using System.Text.RegularExpressions;
 
 namespace m
 {
+	// Marks a condition / action class that isn't offered in the editor's
+	// New / Modify lists (it does nothing or can't be played by the game)
+	[AttributeUsage(AttributeTargets.Class)]
+	public class HiddenCaAttribute : Attribute {
+	}
+
 	public class UnitActionLoader {
 		public static CaBase LoadIni(string strValue) {
 			CaBase cab = null;
@@ -262,7 +268,7 @@ namespace m
 				}
 				break;
 
-			case 16: // knHuntTriggerAction
+			case 16: // knHuntTriggerAction (does nothing in the game)
 				cab = new HuntTriggerAction();
 				break;
 
@@ -990,7 +996,11 @@ namespace m
 		}
 	}
 
+	// Hidden from the editor's list of actions (HiddenCa): the game never
+	// implemented it (HuntAction::Perform does nothing) and no mission uses
+	// it. The class stays so older .ld files that contain it still open.
 	[Serializable]
+	[HiddenCa]
 	[DisplayName("Hunt Units")]
 	[Description("Each unit of the first specified side and type will seek " + 
 			"out a unit of the second side and type and attack it and continue " +
@@ -1055,7 +1065,12 @@ namespace m
 		}
 	}
 	
+	// Hidden from the editor's list of actions (HiddenCa): the game has no
+	// Modify Counter action (nor the Counter condition, already hidden), so a
+	// mission using it couldn't load. The class stays so older .ld files
+	// that contain it still open; exporting skips it.
 	[Serializable]
+	[HiddenCa]
 	[DisplayName("Modify Counter")]
 	[Description("Use this to modify the value of a Counter.")]
 	public class ModifyCounterTriggerAction : CaBase {
