@@ -91,3 +91,14 @@ vacuum.anir	a 7	0	miner/mining_7_0	-128	-128
 vacuum.anir	a 7	1	miner/mining_7_1	-128	-128
 vacuum.anir	a 7	2	miner/mining_7_2	-128	-128
 vacuum.anir	a 7	3	miner/mining_7_3	-128	-128
+warehouse.anir	a 0	0	warehouse/warehouse_a_0_0	-76	-48
+warehouse.anir	a 0	1	warehouse/warehouse_a_0_1	-76	-48
+warehouse.anir	a 0	2	warehouse/warehouse_a_0_2	-76	-48
+warehouse.anir	a 0	3	warehouse/warehouse_a_0_3	-76	-48
+warehouse.anir	a 1	0	warehouse/warehouse_a_1_0	-76	-48
+warehouse.anir	a 1	1	warehouse/warehouse_a_1_1	-76	-48
+warehouse.anir	a 1	2	warehouse/warehouse_a_1_2	-76	-48
+warehouse.anir	a 1	3	warehouse/warehouse_a_1_3	-76	-48
+warehouse.anir	a 2	0	warehouse/warehouse_a_2_0	-76	-48
+warehouse.anir	a 2	1	warehouse/warehouse_a_2_1	-76	-48
+warehouse.anir	a 2	2	warehouse/warehouse_a_2_2	-76	-48
