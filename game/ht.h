@@ -1458,8 +1458,18 @@ private:
 	TBitmap *m_ptbm;
 	FileMap m_fmap;
 	AnimationFileHeader *m_panih;
+	int m_ihdAnir;		// HD sprite set for this animation (-1 = none)
+	int m_nHdState;		// HD: state of the base strip drawn last (e.g. Processor door)
 };
 AnimationData *LoadAnimationData(const char *pszAniName) secAnimation;
+
+// HD sprites (32-bit RGBA pictures drawn over the 8-bit game image, see
+// game/sdl/hdsprites.cpp). Platforms without them use the stubs in Animation.cpp.
+
+int HdFindAnir(const char *pszAniName);
+bool HdDrawFrame(int ihdAnir, const char *pszStrip, int nFrame, DibBitmap *pbm, int x, int y, Side side, int *pnState);
+void HdBeginSimFrame();
+bool HdIsActive();
 
 const word kfAniLoop = 0x0001;
 const word kfAniDone = 0x0002;

@@ -393,6 +393,12 @@ void AddPointToLassoSelection(WPoint wpt)
 
 void SimUIForm::OnUpdateMapInvalidate(UpdateMap *pupd, Rect *prcOpaque)
 {
+	// HD sprites are drawn over the whole finished frame, so every visible
+	// gob has to draw (and be recorded) every frame
+
+	if (HdIsActive())
+		pupd->InvalidateRect();
+
 #ifdef DRAW_LINES
 	if (gfDrawLines)
 		pupd->InvalidateRect();

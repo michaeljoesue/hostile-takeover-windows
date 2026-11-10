@@ -21,6 +21,8 @@ AnimationData::AnimationData()
 {
 	m_panih = NULL;
 	m_ptbm = NULL;
+	m_ihdAnir = -1;
+	m_nHdState = 0;
 }
 
 AnimationData::~AnimationData()
@@ -55,6 +57,10 @@ bool AnimationData::Init(const char *pszAniName)
 		Assert("unable to load TBitmap %s", szTbmName);
 		return false;
 	}
+
+	// Is there an HD picture set for this animation?
+
+	m_ihdAnir = HdFindAnir(pszAniName);
 
 	return true;
 }
@@ -150,6 +156,14 @@ void AnimationData::DrawFrame(int nStrip, int nFrame, DibBitmap *pbm, int x, int
 {
 	Assert(nStrip >= 0 && nStrip < GetStripCount());
 	Assert(nFrame >= 0 && nFrame < GetStripDataPtr(nStrip)->GetFrameCount());
+
+	// HD sprites: the picture is recorded and drawn over the finished frame
+	// by the display; nothing is drawn into the 8-bit bitmap
+
+	if (m_ihdAnir >= 0 && prcSrc == NULL) {
+		if (HdDrawFrame(m_ihdAnir, GetStripDataPtr(nStrip)->GetName(), nFrame, pbm, x, y, side, &m_nHdState))
+			return;
+	}
 
 	FrameData *pfrmd = GetFrameDataPtr(nStrip, nFrame);
 	if (pfrmd->ibm2 != 255)
@@ -321,5 +335,14 @@ long Animation::GetRemainingStripTime()
 	return c * kctUpdate;
 }
 
+
+#if !defined(SDL)
+// No HD sprites on this platform
+
+int HdFindAnir(const char *pszAniName) { return -1; }
+bool HdDrawFrame(int ihdAnir, const char *pszStrip, int nFrame, DibBitmap *pbm, int x, int y, Side side, int *pnState) { return false; }
+void HdBeginSimFrame() {}
+bool HdIsActive() { return false; }
+#endif
 
 } // namespace wi

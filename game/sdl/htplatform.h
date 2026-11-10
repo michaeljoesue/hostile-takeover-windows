@@ -140,6 +140,8 @@ private:
     SDL_Renderer *m_renderer;
     int m_nVSync;
     SDL_Texture *m_texture;
+    SDL_Texture *m_textureHd;     // HD sprites: window-sized render target
+    int m_cxHd, m_cyHd;
 
     byte *m_gamePixels;
     Uint32 *m_gamePixels32;

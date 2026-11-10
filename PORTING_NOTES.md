@@ -1628,6 +1628,52 @@ landing on the right buttons. 1024x768 was still used after the game was
 killed and restarted. Switching to Best fit in the middle of mission M1
 resumed the mission with the same unit selected.
 
+## 60. HD sprites (32-bit pictures over the 8-bit game image)
+
+The reworked art (Headquarters, Power Generator, Galaxite Processor with its
+door, smoke and unloading Bullpup, the Bullpup on the map and its mining
+bits) is drawn as 32-bit RGBA pictures at window resolution, while the rest
+of the game stays the classic 8-bit image. F9 switches HD on and off.
+
+Data: `data/hd/` (copied to `hd/` next to the exe by build.sh).
+`manifest.txt` maps an animation frame (anir file, strip name, frame) to one
+or more pictures and their top-left offset from the frame's draw point, in HD
+pixels (4 per pixel of the 24-pixel-tile art; at the game's 32-pixel tiles
+that is 3 HD pixels per game pixel, `96 / gcxTile`). Each picture can have a
+`_shadow.png` (255 = darken the ground 60%) and a `_team.png` (team-colour
+mask). Tokens: `{S}` = state of the base strip the same animation drew last
+(Processor door over the healthy or damaged base), `{T36}` = 36-picture loop
+played in game time (generator fan: 33 ms per picture, smooth between game
+updates, stops when paused).
+
+How it works (`game/sdl/hdsprites.cpp`):
+- `AnimationData::Init` looks the animation up (`HdFindAnir`);
+  `AnimationData::DrawFrame` calls `HdDrawFrame` first. For frames in the
+  manifest, drawn onto the playfield's bitmap (`gpfrmmSim->GetDib()`; menus
+  and forms are left alone) and without a source clip rect, nothing is drawn
+  into the 8-bit bitmap: the pictures are recorded with a snapshot of the
+  8-bit pixels under them.
+- `SimUIForm::OnUpdateMapInvalidate` invalidates the whole playfield every
+  frame while HD is on, so every visible gob draws (and is recorded) every
+  frame. `Simulation::Draw` clears the list first (`HdBeginSimFrame`).
+- `Display::RenderGameSurface` scales the 8-bit image up into a window-sized
+  target texture and calls `HdComposite`: for each recorded entry, in draw
+  order, the game pixels that still equal the snapshot are where nothing was
+  drawn on top since (units in front, selection brackets, health bars,
+  dialogs); the shadow and then the picture are drawn only there, in row
+  runs. An entry that is mostly covered (less than 40% visible) is skipped,
+  which also drops stale entries when a full-screen form is up.
+- Team colours: pictures are painted blue (side 1). Other sides get the hue
+  and saturation of their side's colour where the team mask is set, keeping
+  the painted brightness; a hit flash turns the team areas white.
+  Textures are made per picture and side on first use (PNG via stb_image).
+- Being built / placement ghosts use the same pictures (neutral colour while
+  being built).
+
+Not covered: animations without HD pictures stay classic (all other units
+and buildings, the build-menu icons). Without the hd folder the game runs
+exactly as before.
+
 ## File map
 
 | File | Purpose |
