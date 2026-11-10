@@ -380,7 +380,8 @@ static SDL_Texture *GetTexture(SDL_Renderer *prend, HdPic *ppic, int side, Uint3
                 float h, s, v;
                 RgbToHsv(r, g, b, &h, &s, &v);
                 // keep the painted shading (brightness); hue and saturation of the side
-                float sNew = sT < 0.15f ? sT : sT + (1 - sT) * (s > sT ? (s - sT) * 0.5f : 0);
+                float sNew = sT < 0.15f ? sT : s * sT / 0.85f;     // pale trims stay pale
+                if (sNew > 1) sNew = 1;
                 HsvToRgb(hT, sNew, v * (0.85f + 0.15f * vT), &r2, &g2, &b2);
             }
             pb[i * 4] = (byte)((r + (r2 - r) * m) * 255 + 0.5f);
