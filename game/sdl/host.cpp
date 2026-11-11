@@ -1,5 +1,6 @@
 #include "game/ht.h"
 #include "game/sdl/hosthelpers.h"
+#include "game/sdl/hdsprites.h"
 #include "base/tick.h"
 #include "base/log.h"
 #include "base/thread.h"
@@ -348,6 +349,11 @@ bool ProcessSdlEvent(base::Message *pmsg, Event *pevt)
 			}
 			break;
 #endif
+
+		case SDLK_F9:
+			// Switch between HD and classic sprites
+			HdToggle();
+			break;
 
 		case SDLK_KP_MINUS:	// numpad
 			{
