@@ -1644,16 +1644,19 @@ that is 3 HD pixels per game pixel, `96 / gcxTile`). Each picture can have a
 mask). Tokens: `{S}` = state of the base strip the same animation drew last
 (Processor door over the healthy or damaged base), `{T36}` = 36-picture loop
 played in game time (generator fan: 33 ms per picture, smooth between game
-updates, stops when paused), `{L12}` = 12-picture loop (Surveillance
-Center dish) at a steady 30 ms per picture in game time at the default speed
-(40 ms updates), as in the artist's reference video. `Animation::Draw` passes
-the Animation as a key; each key keeps its own turn and only advances it while
-its classic frame keeps changing, so the dish stops with low power like the
-classic one, and stops when the game is paused. (Following the classic
-frames instead, 3 pictures per classic frame, looked uneven: the game does
-not advance the classic frame at a steady rate.) `{T36}` uses the real update interval (`gtGameSpeed`,
+updates, stops when paused), `{L<n>x<ms>}` = n-picture loop at a
+steady <ms> per picture in game time at the default speed (40 ms updates):
+Surveillance Center dish `{L12x30}` (the artist's reference video), R&D
+Center dish swing `{L52x40}`. `Animation::Draw` passes the Animation as a
+key; each key keeps its own place in the loop and only advances it while the
+game keeps advancing the classic animation (`Animation::GetLastAdvanceMs`,
+set in `Animation::Advance`; needed because the damaged R&D Center has a
+one-frame strip whose frame never changes), so dishes stop with low power
+like the classic ones, and stop when the game is paused. (Following the
+classic frames instead looked uneven: the game does not advance them at a
+steady rate.) `{T36}` uses the real update interval (`gtGameSpeed`,
 `gmsLastSimUpdate`) the same way the moving units do. While any `{T36}` or
-still-turning `{L12}` picture is on screen, `HdWantsRedraw` keeps the
+still-running `{L..}` picture is on screen, `HdWantsRedraw` keeps the
 smooth-render timer asking for paints between game updates.
 
 How it works (`game/sdl/hdsprites.cpp`):

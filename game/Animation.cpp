@@ -297,6 +297,7 @@ bool Animation::Advance(int cAdvance)
 {
 	if (m_wf & kfAniDone)
 		return false;
+	m_msLastAdvance = HostGetMillisecondCount();
 
 	if (m_cCountdown >= cAdvance) {
 		m_cCountdown -= cAdvance;

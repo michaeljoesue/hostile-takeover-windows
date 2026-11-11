@@ -1487,6 +1487,7 @@ public:
 		m_nFrame = 0;
 		m_cDelay = 0;
 		m_wf = kfAniDone;
+		m_msLastAdvance = 0;
 	}
 
 	~Animation() {
@@ -1558,6 +1559,12 @@ public:
 		return m_panid;
 	}
 
+	// HD sprites: when the game last advanced this animation (ms), so a
+	// looping HD picture set knows whether the animation is running
+	long GetLastAdvanceMs() {
+		return m_msLastAdvance;
+	}
+
 	bool Advance(int cAdvance) secAnimation;
 	long GetRemainingStripTime() secAnimation;
 
@@ -1567,6 +1574,7 @@ private:
 	int m_nFrame;
 	word m_wf;
 	byte m_cCountdown;
+	long m_msLastAdvance;
 	byte m_cDelay;
 };
 

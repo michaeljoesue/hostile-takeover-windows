@@ -244,26 +244,28 @@ static long GameMs() {
     return (long)gsim.GetUpdateCount() * 80 + UpdateAlpha256() * 80 / 256;
 }
 
-// {L12}: a 12-picture loop at a steady 30 ms per picture (Surveillance
-// Center dish), in game time at the default game speed (40 ms updates; a
-// slower game speed slows it down like the classic animation). It only runs
-// while the classic animation is actually advancing (each Animation, passed
-// as the key, remembers when its frame last changed), so the dish stops with
-// low power, and it stops when the game is paused.
+// {L<n>x<ms>}: an n-picture loop at a steady <ms> per picture (Surveillance
+// Center dish {L12x30}, R&D Center dish {L52x40}), in game time at the
+// default game speed (40 ms updates; a slower game speed slows it down like
+// the classic animation). It only runs while the game keeps advancing the
+// classic animation (each Animation, passed as the key, says when it was
+// last advanced), so the dish stops with low power, and it stops when the
+// game is paused. Each building keeps its own place in the loop.
 
 struct HdLoopTrack {
     int nFrame;
     long tFrameChanged;     // real ms when the classic frame last changed
     long msGameLast;        // game time at the last draw
-    long msPhase;           // how far this dish has turned, ms
+    long msPhase;           // how far this loop has played, ms
 };
 static std::map<void *, HdLoopTrack> s_mapLoop;
 
-static int LoopPicture12(void *pvKey, int nFrame) {
+static int LoopPicture(void *pvKey, int nFrame, int cPics, int msPic) {
     long t = HostGetMillisecondCount();
     long msGame = (long)gsim.GetUpdateCount() * 40 + UpdateAlpha256() * 40 / 256;
+    long msLoop = (long)cPics * msPic;
     if (pvKey == NULL)
-        return (int)((msGame / 30) % 12);
+        return (int)((msGame % msLoop) / msPic);
     if (s_mapLoop.size() > 4096)
         s_mapLoop.clear();
     std::map<void *, HdLoopTrack>::iterator it = s_mapLoop.find(pvKey);
@@ -277,19 +279,23 @@ static int LoopPicture12(void *pvKey, int nFrame) {
         ptrk->nFrame = nFrame;
         ptrk->tFrameChanged = t;
     }
+    long tRun = ptrk->tFrameChanged;
+    long tAdvance = ((Animation *)pvKey)->GetLastAdvanceMs();
+    if (tAdvance > tRun)
+        tRun = tAdvance;
     long dms = msGame - ptrk->msGameLast;
     ptrk->msGameLast = msGame;
     if (dms < 0 || dms > 200)
         dms = 0;
-    if (t - ptrk->tFrameChanged < 500) {
-        ptrk->msPhase = (ptrk->msPhase + dms) % 360;
+    if (t - tRun < 1500) {
+        ptrk->msPhase = (ptrk->msPhase + dms) % msLoop;
         s_fTimed = true;    // keep drawing between game updates
     }
-    return (int)(ptrk->msPhase / 30);
+    return (int)(ptrk->msPhase / msPic);
 }
 
-// Expand {S} (base state), {T36} (36-frame loop in game time) and {L12}
-// (12-picture loop while the classic animation runs)
+// Expand {S} (base state), {T36} (36-frame loop in game time) and
+// {L<n>x<ms>} (n-picture loop while the classic animation runs)
 
 static std::string ExpandPic(const std::string &str, int nState, int nFrame, void *pvKey) {
     std::string strOut = str;
@@ -308,11 +314,17 @@ static std::string ExpandPic(const std::string &str, int nState, int nFrame, voi
         snprintf(sz, sizeof(sz), "%02d", (int)((msGame / 33) % 36));
         strOut.replace(i, 5, sz);
     }
-    i = strOut.find("{L12}");
+    i = strOut.find("{L");
     if (i != std::string::npos) {
-        char sz[8];
-        snprintf(sz, sizeof(sz), "%02d", LoopPicture12(pvKey, nFrame));
-        strOut.replace(i, 5, sz);
+        size_t j = strOut.find('}', i);
+        int cPics = 0, msPic = 0;
+        if (j != std::string::npos &&
+                sscanf(strOut.c_str() + i, "{L%dx%d}", &cPics, &msPic) == 2 &&
+                cPics > 0 && msPic > 0) {
+            char sz[8];
+            snprintf(sz, sizeof(sz), "%02d", LoopPicture(pvKey, nFrame, cPics, msPic));
+            strOut.replace(i, j - i + 1, sz);
+        }
     }
     return strOut;
 }
