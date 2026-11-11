@@ -1648,7 +1648,7 @@ updates, stops when paused), `{L<n>x<ms>}` = n-picture loop at a
 steady <ms> per picture in game time at the default speed (40 ms updates):
 Surveillance Center dish `{L12x30}` (the artist's reference video), R&D
 Center dish swing `{L52x40}`. `Animation::Draw` passes the Animation as a
-key; each key keeps its own place in the loop and only advances it while the
+key; a loop stops while its owner's power is low (as the classic dishes do); each key keeps its own place in the loop and only advances it while the
 game keeps advancing the classic animation (`Animation::GetLastAdvanceMs`,
 set in `Animation::Advance`; needed because the damaged R&D Center has a
 one-frame strip whose frame never changes), so dishes stop with low power
@@ -1728,3 +1728,13 @@ exactly as before.
 | `game/Player.cpp` (`IsVisionSharedWithLocal`, `RevealSharedVision`) | Allies share vision |
 | `game/packs.h`, `mpshared/packmanager.*` | Local mission packs only (online code removed) |
 | `data/forms.ini.pp`, `data/help.txt` | Main menu without online buttons; help text |
+
+### Structures keep animating after damage and repair
+
+`StructGob::SetHealth` switches between the healthy and damaged idle strips
+passing the animation's current flags on. A one-frame strip (the damaged R&D
+Center) drops the loop bit when started, so after a repair the healthy
+animation never ran again (the classic R&D dish froze too). Switching between
+strips 0 and 1 now always restarts them looping. The damaged R&D Center's HD
+dish runs whenever its owner's power is not low, since the game never needs
+to advance a one-frame strip.

@@ -260,7 +260,7 @@ struct HdLoopTrack {
 };
 static std::map<void *, HdLoopTrack> s_mapLoop;
 
-static int LoopPicture(void *pvKey, int nFrame, int cPics, int msPic) {
+static int LoopPicture(void *pvKey, int nFrame, Side side, int cPics, int msPic) {
     long t = HostGetMillisecondCount();
     long msGame = (long)gsim.GetUpdateCount() * 40 + UpdateAlpha256() * 40 / 256;
     long msLoop = (long)cPics * msPic;
@@ -279,15 +279,30 @@ static int LoopPicture(void *pvKey, int nFrame, int cPics, int msPic) {
         ptrk->nFrame = nFrame;
         ptrk->tFrameChanged = t;
     }
-    long tRun = ptrk->tFrameChanged;
-    long tAdvance = ((Animation *)pvKey)->GetLastAdvanceMs();
-    if (tAdvance > tRun)
-        tRun = tAdvance;
+    // Running: the owner's power is not low (as for the classic dishes), and
+    // the game is advancing the classic animation - or, for a one-frame strip
+    // (damaged R&D Center), which the game never needs to advance, always
+
+    Animation *pani = (Animation *)pvKey;
+    bool fRun;
+    if (pani->GetAnimationData()->GetFrameCount(pani->GetStrip()) <= 1) {
+        fRun = true;
+    } else {
+        long tRun = ptrk->tFrameChanged;
+        if (pani->GetLastAdvanceMs() > tRun)
+            tRun = pani->GetLastAdvanceMs();
+        fRun = t - tRun < 1500;
+    }
+    if (side >= ksideNeutral && side < kcSides) {
+        Player *pplr = gplrm.GetPlayer(side);
+        if (pplr != NULL && pplr->IsPowerLow())
+            fRun = false;
+    }
     long dms = msGame - ptrk->msGameLast;
     ptrk->msGameLast = msGame;
     if (dms < 0 || dms > 200)
         dms = 0;
-    if (t - tRun < 1500) {
+    if (fRun) {
         ptrk->msPhase = (ptrk->msPhase + dms) % msLoop;
         s_fTimed = true;    // keep drawing between game updates
     }
@@ -297,7 +312,7 @@ static int LoopPicture(void *pvKey, int nFrame, int cPics, int msPic) {
 // Expand {S} (base state), {T36} (36-frame loop in game time) and
 // {L<n>x<ms>} (n-picture loop while the classic animation runs)
 
-static std::string ExpandPic(const std::string &str, int nState, int nFrame, void *pvKey) {
+static std::string ExpandPic(const std::string &str, int nState, int nFrame, Side side, void *pvKey) {
     std::string strOut = str;
     size_t i = strOut.find("{S}");
     if (i != std::string::npos) {
@@ -322,7 +337,7 @@ static std::string ExpandPic(const std::string &str, int nState, int nFrame, voi
                 sscanf(strOut.c_str() + i, "{L%dx%d}", &cPics, &msPic) == 2 &&
                 cPics > 0 && msPic > 0) {
             char sz[8];
-            snprintf(sz, sizeof(sz), "%02d", LoopPicture(pvKey, nFrame, cPics, msPic));
+            snprintf(sz, sizeof(sz), "%02d", LoopPicture(pvKey, nFrame, side, cPics, msPic));
             strOut.replace(i, j - i + 1, sz);
         }
     }
@@ -357,7 +372,7 @@ bool HdDrawFrame(int ihdAnir, const char *pszStrip, int nFrame, DibBitmap *pbm,
     bool fFirst = true;
     for (int i = 0; i < (int)it->second.size(); i++) {
         HdEntry *pent = &it->second[i];
-        HdPic *ppic = GetPic(ExpandPic(pent->strPic, *pnState, nFrame, pvKey));
+        HdPic *ppic = GetPic(ExpandPic(pent->strPic, *pnState, nFrame, side, pvKey));
         if (!ppic->fOk)
             return false;   // missing picture: draw the classic sprite
         HdItem itm;
