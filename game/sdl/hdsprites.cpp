@@ -73,8 +73,6 @@ static bool s_fHaveData;
 static std::vector<HdAnir> s_aanir;
 static std::map<std::string, HdPic *> s_mapPics;
 static std::vector<HdCommand> s_acmd;
-static int s_cUpdatesLast = -1;
-static long s_tUpdateLast;
 
 static int HdPixelsPerGamePixel() {
     // HD pictures have 4 pixels per pixel of the 24-pixel-tile art
@@ -218,58 +216,76 @@ static HdPic *GetPic(const std::string &strPic) {
     return ppic;
 }
 
-// Milliseconds of game time: whole game updates (80 ms) plus the real time
-// since the last one (at most 80), so pictures between updates run smoothly
-// and stop when the game is paused
+// How far the game is between its last update and the next one, 0..256.
+// Updates come every gtGameSpeed ticks: 40 ms at the default speed, 80 ms
+// at normal, and so on, so the real interval is used (as for the moving
+// units in Simulation::BeginInterpolatedDraw), not a fixed 80 ms. It stops
+// at 256 while the game is paused or waiting.
 
-static long GameMs(long *pmsSinceUpdate) {
-    int cUpdates = gsim.GetUpdateCount();
-    long t = HostGetMillisecondCount();
-    if (cUpdates != s_cUpdatesLast) {
-        s_cUpdatesLast = cUpdates;
-        s_tUpdateLast = t;
-    }
-    long ms = t - s_tUpdateLast;
-    if (ms > 80)
-        ms = 80;
-    if (pmsSinceUpdate != NULL)
-        *pmsSinceUpdate = ms;
-    return (long)cUpdates * 80 + ms;
+extern long gmsLastSimUpdate;
+extern int gtGameSpeed;
+
+static int UpdateAlpha256() {
+    long msInterval = (long)gtGameSpeed * 10;
+    if (msInterval <= 0)
+        return 0;
+    long msSince = HostGetMillisecondCount() - gmsLastSimUpdate;
+    if (msSince < 0)
+        msSince = 0;
+    if (msSince >= msInterval)
+        return 256;
+    return (int)(msSince * 256 / msInterval);
 }
 
-// {F3}: three HD pictures per classic frame. The in-between pictures are
-// shown only while this animation's classic frame is advancing (the
-// Surveillance Center stops turning when power is low), so each animation
-// remembers its last frame and the game update it changed in
+// Game time in ms: 80 per game update (the art's time base) plus the part
+// of the current update that has passed
+
+static long GameMs() {
+    return (long)gsim.GetUpdateCount() * 80 + UpdateAlpha256() * 80 / 256;
+}
+
+// {F3}: three HD pictures per classic frame (Surveillance Center dish).
+// Each animation (keyed by its Animation) remembers when its classic frame
+// last changed and how long frames have been lasting, measured in real time,
+// so the in-between pictures fill each frame's real duration whatever the
+// game speed or however often the game advances it. The picture only ever
+// moves forward: if the frame stops changing (low power, paused game) the
+// dish stays on the last in-between picture until the frame moves on.
 
 struct HdFrameTrack {
     int nFrame;
-    int cUpdateChanged;
+    long tChanged;      // ms when nFrame started
+    long msFrame;       // average frame duration, 0 = not known yet
 };
 static std::map<void *, HdFrameTrack> s_mapTrack;
 
 static int SubFrame3(void *pvKey, int nFrame) {
     if (pvKey == NULL)
         return 0;
-    long ms;
-    GameMs(&ms);
-    int cUpdates = gsim.GetUpdateCount();
+    long t = HostGetMillisecondCount();
     if (s_mapTrack.size() > 4096)
         s_mapTrack.clear();
     std::map<void *, HdFrameTrack>::iterator it = s_mapTrack.find(pvKey);
     if (it == s_mapTrack.end()) {
-        HdFrameTrack trk = { nFrame, -1000 };
+        HdFrameTrack trk = { nFrame, t, 0 };
         s_mapTrack[pvKey] = trk;
         return 0;
     }
-    if (it->second.nFrame != nFrame) {
-        it->second.nFrame = nFrame;
-        it->second.cUpdateChanged = cUpdates;
+    HdFrameTrack *ptrk = &it->second;
+    if (ptrk->nFrame != nFrame) {
+        long dt = t - ptrk->tChanged;
+        bool fNext = nFrame == ptrk->nFrame + 1 || nFrame == 0;
+        if (fNext && dt > 0 && dt < 400)
+            ptrk->msFrame = ptrk->msFrame == 0 ? dt : (ptrk->msFrame * 3 + dt) / 4;
+        ptrk->nFrame = nFrame;
+        ptrk->tChanged = t;
     }
-    if (it->second.cUpdateChanged != cUpdates)
+    if (ptrk->msFrame <= 0)
         return 0;
-    s_fTimed = true;
-    int n = (int)(ms * 3 / 80);
+    long ms = t - ptrk->tChanged;
+    if (ms < ptrk->msFrame)
+        s_fTimed = true;    // still moving: keep drawing between updates
+    int n = (int)(ms * 3 / ptrk->msFrame);
     return n > 2 ? 2 : n;
 }
 
@@ -288,7 +304,7 @@ static std::string ExpandPic(const std::string &str, int nState, int nFrame, voi
     if (i != std::string::npos) {
         // 33 ms per picture in game time
         s_fTimed = true;
-        long msGame = GameMs(NULL);
+        long msGame = GameMs();
         char sz[8];
         snprintf(sz, sizeof(sz), "%02d", (int)((msGame / 33) % 36));
         strOut.replace(i, 5, sz);
