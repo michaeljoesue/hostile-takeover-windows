@@ -244,53 +244,52 @@ static long GameMs() {
     return (long)gsim.GetUpdateCount() * 80 + UpdateAlpha256() * 80 / 256;
 }
 
-// {F3}: three HD pictures per classic frame (Surveillance Center dish).
-// Each animation (keyed by its Animation) remembers when its classic frame
-// last changed and how long frames have been lasting, measured in real time,
-// so the in-between pictures fill each frame's real duration whatever the
-// game speed or however often the game advances it. The picture only ever
-// moves forward: if the frame stops changing (low power, paused game) the
-// dish stays on the last in-between picture until the frame moves on.
+// {L12}: a 12-picture loop at a steady 30 ms per picture (Surveillance
+// Center dish), in game time at the default game speed (40 ms updates; a
+// slower game speed slows it down like the classic animation). It only runs
+// while the classic animation is actually advancing (each Animation, passed
+// as the key, remembers when its frame last changed), so the dish stops with
+// low power, and it stops when the game is paused.
 
-struct HdFrameTrack {
+struct HdLoopTrack {
     int nFrame;
-    long tChanged;      // ms when nFrame started
-    long msFrame;       // average frame duration, 0 = not known yet
+    long tFrameChanged;     // real ms when the classic frame last changed
+    long msGameLast;        // game time at the last draw
+    long msPhase;           // how far this dish has turned, ms
 };
-static std::map<void *, HdFrameTrack> s_mapTrack;
+static std::map<void *, HdLoopTrack> s_mapLoop;
 
-static int SubFrame3(void *pvKey, int nFrame) {
-    if (pvKey == NULL)
-        return 0;
+static int LoopPicture12(void *pvKey, int nFrame) {
     long t = HostGetMillisecondCount();
-    if (s_mapTrack.size() > 4096)
-        s_mapTrack.clear();
-    std::map<void *, HdFrameTrack>::iterator it = s_mapTrack.find(pvKey);
-    if (it == s_mapTrack.end()) {
-        HdFrameTrack trk = { nFrame, t, 0 };
-        s_mapTrack[pvKey] = trk;
+    long msGame = (long)gsim.GetUpdateCount() * 40 + UpdateAlpha256() * 40 / 256;
+    if (pvKey == NULL)
+        return (int)((msGame / 30) % 12);
+    if (s_mapLoop.size() > 4096)
+        s_mapLoop.clear();
+    std::map<void *, HdLoopTrack>::iterator it = s_mapLoop.find(pvKey);
+    if (it == s_mapLoop.end()) {
+        HdLoopTrack trk = { nFrame, t, msGame, 0 };
+        s_mapLoop[pvKey] = trk;
         return 0;
     }
-    HdFrameTrack *ptrk = &it->second;
+    HdLoopTrack *ptrk = &it->second;
     if (ptrk->nFrame != nFrame) {
-        long dt = t - ptrk->tChanged;
-        bool fNext = nFrame == ptrk->nFrame + 1 || nFrame == 0;
-        if (fNext && dt > 0 && dt < 400)
-            ptrk->msFrame = ptrk->msFrame == 0 ? dt : (ptrk->msFrame * 3 + dt) / 4;
         ptrk->nFrame = nFrame;
-        ptrk->tChanged = t;
+        ptrk->tFrameChanged = t;
     }
-    if (ptrk->msFrame <= 0)
-        return 0;
-    long ms = t - ptrk->tChanged;
-    if (ms < ptrk->msFrame)
-        s_fTimed = true;    // still moving: keep drawing between updates
-    int n = (int)(ms * 3 / ptrk->msFrame);
-    return n > 2 ? 2 : n;
+    long dms = msGame - ptrk->msGameLast;
+    ptrk->msGameLast = msGame;
+    if (dms < 0 || dms > 200)
+        dms = 0;
+    if (t - ptrk->tFrameChanged < 500) {
+        ptrk->msPhase = (ptrk->msPhase + dms) % 360;
+        s_fTimed = true;    // keep drawing between game updates
+    }
+    return (int)(ptrk->msPhase / 30);
 }
 
-// Expand {S} (base state), {T36} (36-frame loop in game time) and {F3}
-// (classic frame x 3 + in-between picture)
+// Expand {S} (base state), {T36} (36-frame loop in game time) and {L12}
+// (12-picture loop while the classic animation runs)
 
 static std::string ExpandPic(const std::string &str, int nState, int nFrame, void *pvKey) {
     std::string strOut = str;
@@ -309,11 +308,11 @@ static std::string ExpandPic(const std::string &str, int nState, int nFrame, voi
         snprintf(sz, sizeof(sz), "%02d", (int)((msGame / 33) % 36));
         strOut.replace(i, 5, sz);
     }
-    i = strOut.find("{F3}");
+    i = strOut.find("{L12}");
     if (i != std::string::npos) {
         char sz[8];
-        snprintf(sz, sizeof(sz), "%02d", nFrame * 3 + SubFrame3(pvKey, nFrame));
-        strOut.replace(i, 4, sz);
+        snprintf(sz, sizeof(sz), "%02d", LoopPicture12(pvKey, nFrame));
+        strOut.replace(i, 5, sz);
     }
     return strOut;
 }

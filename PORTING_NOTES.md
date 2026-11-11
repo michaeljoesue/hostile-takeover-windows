@@ -1644,17 +1644,16 @@ that is 3 HD pixels per game pixel, `96 / gcxTile`). Each picture can have a
 mask). Tokens: `{S}` = state of the base strip the same animation drew last
 (Processor door over the healthy or damaged base), `{T36}` = 36-picture loop
 played in game time (generator fan: 33 ms per picture, smooth between game
-updates, stops when paused), `{F3}` = classic frame x 3 + 0..2 (Surveillance
-Center dish: 12 pictures per turn). For `{F3}`, `Animation::Draw` passes
-the Animation as a key; each key remembers when its classic frame last
-changed and how long frames have been lasting in real time, and the three
-pictures fill that time. The game does not advance the frame on every update
-(and updates are 40 ms at the default speed, not 80), so a fixed "one frame
-per update" timing showed an in-between picture and then jumped back. The
-picture only moves forward: when the frame stops (low power, pause) the dish
-holds still. `{T36}` uses the real update interval (`gtGameSpeed`,
+updates, stops when paused), `{L12}` = 12-picture loop (Surveillance
+Center dish) at a steady 30 ms per picture in game time at the default speed
+(40 ms updates), as in the artist's reference video. `Animation::Draw` passes
+the Animation as a key; each key keeps its own turn and only advances it while
+its classic frame keeps changing, so the dish stops with low power like the
+classic one, and stops when the game is paused. (Following the classic
+frames instead, 3 pictures per classic frame, looked uneven: the game does
+not advance the classic frame at a steady rate.) `{T36}` uses the real update interval (`gtGameSpeed`,
 `gmsLastSimUpdate`) the same way the moving units do. While any `{T36}` or
-still-moving `{F3}` picture is on screen, `HdWantsRedraw` keeps the
+still-turning `{L12}` picture is on screen, `HdWantsRedraw` keeps the
 smooth-render timer asking for paints between game updates.
 
 How it works (`game/sdl/hdsprites.cpp`):
