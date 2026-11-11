@@ -152,7 +152,7 @@ void AnimationData::GetBounds(int nStrip, int nFrame, Rect *prc)
 	}
 }
 
-void AnimationData::DrawFrame(int nStrip, int nFrame, DibBitmap *pbm, int x, int y, Side side, Rect *prcSrc)
+void AnimationData::DrawFrame(int nStrip, int nFrame, DibBitmap *pbm, int x, int y, Side side, Rect *prcSrc, void *pvKey)
 {
 	Assert(nStrip >= 0 && nStrip < GetStripCount());
 	Assert(nFrame >= 0 && nFrame < GetStripDataPtr(nStrip)->GetFrameCount());
@@ -161,7 +161,7 @@ void AnimationData::DrawFrame(int nStrip, int nFrame, DibBitmap *pbm, int x, int
 	// by the display; nothing is drawn into the 8-bit bitmap
 
 	if (m_ihdAnir >= 0 && prcSrc == NULL) {
-		if (HdDrawFrame(m_ihdAnir, GetStripDataPtr(nStrip)->GetName(), nFrame, pbm, x, y, side, &m_nHdState))
+		if (HdDrawFrame(m_ihdAnir, GetStripDataPtr(nStrip)->GetName(), nFrame, pbm, x, y, side, &m_nHdState, pvKey))
 			return;
 	}
 
@@ -340,9 +340,10 @@ long Animation::GetRemainingStripTime()
 // No HD sprites on this platform
 
 int HdFindAnir(const char *pszAniName) { return -1; }
-bool HdDrawFrame(int ihdAnir, const char *pszStrip, int nFrame, DibBitmap *pbm, int x, int y, Side side, int *pnState) { return false; }
+bool HdDrawFrame(int ihdAnir, const char *pszStrip, int nFrame, DibBitmap *pbm, int x, int y, Side side, int *pnState, void *pvKey) { return false; }
 void HdBeginSimFrame() {}
 bool HdIsActive() { return false; }
+bool HdWantsRedraw() { return false; }
 #endif
 
 } // namespace wi

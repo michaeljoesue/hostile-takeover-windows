@@ -1644,7 +1644,13 @@ that is 3 HD pixels per game pixel, `96 / gcxTile`). Each picture can have a
 mask). Tokens: `{S}` = state of the base strip the same animation drew last
 (Processor door over the healthy or damaged base), `{T36}` = 36-picture loop
 played in game time (generator fan: 33 ms per picture, smooth between game
-updates, stops when paused).
+updates, stops when paused), `{F3}` = classic frame x 3 + 0..2 (Surveillance
+Center dish: 12 pictures per turn). For `{F3}`, `Animation::Draw` passes the
+Animation as a key, and each key remembers its last frame and the game update
+it changed in: the in-between pictures show only while that frame is
+advancing, so the dish stops with low power like the classic one. While any
+`{T36}` or advancing `{F3}` picture is on screen, `HdWantsRedraw` keeps the
+smooth-render timer asking for paints between game updates.
 
 How it works (`game/sdl/hdsprites.cpp`):
 - `AnimationData::Init` looks the animation up (`HdFindAnir`);

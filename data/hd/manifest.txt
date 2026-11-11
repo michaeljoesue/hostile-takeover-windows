@@ -3,6 +3,7 @@
 # picture: path under hd/ without .png; also <picture>_shadow.png and <picture>_team.png if present
 #   {S}   = 0/1, the state of the base strip this animation drew last (Processor door)
 #   {T36} = 00..35, played in game time (Power Generator fan)
+#   {F3}  = classic frame x 3 + 0..2 while the frame is advancing (Surveillance Center)
 # dx, dy: picture top-left relative to the frame's draw point, in HD pixels
 hq.anir	a 0	0	hq/hq_a_0_00	-72	-16
 hq.anir	a 0	1	hq/hq_a_0_04	-72	-16
@@ -114,3 +115,12 @@ vts.anir	a 2	0	vts/vts_a_2	-52	-36
 vts.anir	b 0	0	vts/vts_b_0	-52	-36
 vts.anir	b 1	0	vts/vts_b_1	-52	-36
 vts.anir	b 2	0	vts/vts_b_2	-52	-36
+radar.anir	a 0	0	radar/radar_a_0_{F3}	-48	-40
+radar.anir	a 0	1	radar/radar_a_0_{F3}	-48	-40
+radar.anir	a 0	2	radar/radar_a_0_{F3}	-48	-40
+radar.anir	a 0	3	radar/radar_a_0_{F3}	-48	-40
+radar.anir	a 1	0	radar/radar_a_1_{F3}	-48	-40
+radar.anir	a 1	1	radar/radar_a_1_{F3}	-48	-40
+radar.anir	a 1	2	radar/radar_a_1_{F3}	-48	-40
+radar.anir	a 1	3	radar/radar_a_1_{F3}	-48	-40
+radar.anir	a 2	0	radar/radar_a_2_0	-48	-40

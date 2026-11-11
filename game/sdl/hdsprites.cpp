@@ -162,8 +162,18 @@ int HdFindAnir(const char *pszAniName) {
     return -1;
 }
 
+// Set while recording a frame that has pictures changing between game
+// updates (fan, dish), so the map keeps being redrawn in between
+
+static bool s_fTimed;
+
 void HdBeginSimFrame() {
     s_acmd.clear();
+    s_fTimed = false;
+}
+
+bool HdWantsRedraw() {
+    return HdIsActive() && s_fTimed;
 }
 
 static byte *LoadGrey(const char *psz, int cx, int cy) {
@@ -208,9 +218,65 @@ static HdPic *GetPic(const std::string &strPic) {
     return ppic;
 }
 
-// Expand {S} (base state) and {T36} (36-frame loop in game time)
+// Milliseconds of game time: whole game updates (80 ms) plus the real time
+// since the last one (at most 80), so pictures between updates run smoothly
+// and stop when the game is paused
 
-static std::string ExpandPic(const std::string &str, int nState) {
+static long GameMs(long *pmsSinceUpdate) {
+    int cUpdates = gsim.GetUpdateCount();
+    long t = HostGetMillisecondCount();
+    if (cUpdates != s_cUpdatesLast) {
+        s_cUpdatesLast = cUpdates;
+        s_tUpdateLast = t;
+    }
+    long ms = t - s_tUpdateLast;
+    if (ms > 80)
+        ms = 80;
+    if (pmsSinceUpdate != NULL)
+        *pmsSinceUpdate = ms;
+    return (long)cUpdates * 80 + ms;
+}
+
+// {F3}: three HD pictures per classic frame. The in-between pictures are
+// shown only while this animation's classic frame is advancing (the
+// Surveillance Center stops turning when power is low), so each animation
+// remembers its last frame and the game update it changed in
+
+struct HdFrameTrack {
+    int nFrame;
+    int cUpdateChanged;
+};
+static std::map<void *, HdFrameTrack> s_mapTrack;
+
+static int SubFrame3(void *pvKey, int nFrame) {
+    if (pvKey == NULL)
+        return 0;
+    long ms;
+    GameMs(&ms);
+    int cUpdates = gsim.GetUpdateCount();
+    if (s_mapTrack.size() > 4096)
+        s_mapTrack.clear();
+    std::map<void *, HdFrameTrack>::iterator it = s_mapTrack.find(pvKey);
+    if (it == s_mapTrack.end()) {
+        HdFrameTrack trk = { nFrame, -1000 };
+        s_mapTrack[pvKey] = trk;
+        return 0;
+    }
+    if (it->second.nFrame != nFrame) {
+        it->second.nFrame = nFrame;
+        it->second.cUpdateChanged = cUpdates;
+    }
+    if (it->second.cUpdateChanged != cUpdates)
+        return 0;
+    s_fTimed = true;
+    int n = (int)(ms * 3 / 80);
+    return n > 2 ? 2 : n;
+}
+
+// Expand {S} (base state), {T36} (36-frame loop in game time) and {F3}
+// (classic frame x 3 + in-between picture)
+
+static std::string ExpandPic(const std::string &str, int nState, int nFrame, void *pvKey) {
     std::string strOut = str;
     size_t i = strOut.find("{S}");
     if (i != std::string::npos) {
@@ -220,28 +286,24 @@ static std::string ExpandPic(const std::string &str, int nState) {
     }
     i = strOut.find("{T36}");
     if (i != std::string::npos) {
-        // 33 ms per picture in game time: whole game updates (80 ms) plus the
-        // real time since the last one, so it runs smoothly and stops when
-        // the game is paused
-        int cUpdates = gsim.GetUpdateCount();
-        long t = HostGetMillisecondCount();
-        if (cUpdates != s_cUpdatesLast) {
-            s_cUpdatesLast = cUpdates;
-            s_tUpdateLast = t;
-        }
-        long ms = t - s_tUpdateLast;
-        if (ms > 80)
-            ms = 80;
-        long msGame = (long)cUpdates * 80 + ms;
+        // 33 ms per picture in game time
+        s_fTimed = true;
+        long msGame = GameMs(NULL);
         char sz[8];
         snprintf(sz, sizeof(sz), "%02d", (int)((msGame / 33) % 36));
         strOut.replace(i, 5, sz);
+    }
+    i = strOut.find("{F3}");
+    if (i != std::string::npos) {
+        char sz[8];
+        snprintf(sz, sizeof(sz), "%02d", nFrame * 3 + SubFrame3(pvKey, nFrame));
+        strOut.replace(i, 4, sz);
     }
     return strOut;
 }
 
 bool HdDrawFrame(int ihdAnir, const char *pszStrip, int nFrame, DibBitmap *pbm,
-        int x, int y, Side side, int *pnState) {
+        int x, int y, Side side, int *pnState, void *pvKey) {
     if (!HdIsActive() || ihdAnir < 0 || ihdAnir >= (int)s_aanir.size())
         return false;
 
@@ -268,7 +330,7 @@ bool HdDrawFrame(int ihdAnir, const char *pszStrip, int nFrame, DibBitmap *pbm,
     bool fFirst = true;
     for (int i = 0; i < (int)it->second.size(); i++) {
         HdEntry *pent = &it->second[i];
-        HdPic *ppic = GetPic(ExpandPic(pent->strPic, *pnState));
+        HdPic *ppic = GetPic(ExpandPic(pent->strPic, *pnState, nFrame, pvKey));
         if (!ppic->fOk)
             return false;   // missing picture: draw the classic sprite
         HdItem itm;

@@ -1450,7 +1450,7 @@ public:
 	void GetFrameOrigin(int nStrip, int nFrame, Point *pptOrigin) secAnimation;
 	void GetSpecialPoint(int nStrip, int nFrame, Point *pptSpecial) secAnimation;
 	void GetBounds(int nStrip, int nFrame, Rect *prc) secAnimation;
-	void DrawFrame(int nStrip, int nFrame, DibBitmap *pbm, int x, int y, Side side, Rect *prcSrc = NULL) secAnimation;
+	void DrawFrame(int nStrip, int nFrame, DibBitmap *pbm, int x, int y, Side side, Rect *prcSrc = NULL, void *pvKey = NULL) secAnimation;
 	int GetStripDelay(int nStrip) secAnimation;
 	int GetFrameDelay(int nStrip, int nFrame) secAnimation;
 
@@ -1467,9 +1467,10 @@ AnimationData *LoadAnimationData(const char *pszAniName) secAnimation;
 // game/sdl/hdsprites.cpp). Platforms without them use the stubs in Animation.cpp.
 
 int HdFindAnir(const char *pszAniName);
-bool HdDrawFrame(int ihdAnir, const char *pszStrip, int nFrame, DibBitmap *pbm, int x, int y, Side side, int *pnState);
+bool HdDrawFrame(int ihdAnir, const char *pszStrip, int nFrame, DibBitmap *pbm, int x, int y, Side side, int *pnState, void *pvKey);
 void HdBeginSimFrame();
 bool HdIsActive();
+bool HdWantsRedraw();
 
 const word kfAniLoop = 0x0001;
 const word kfAniDone = 0x0002;
@@ -1542,7 +1543,7 @@ public:
 	}
 
 	void Draw(DibBitmap *pbm, int x, int y, Side side = ksideNeutral, Rect *prcSrc = NULL) {
-		m_panid->DrawFrame(m_nStrip, m_nFrame, pbm, x, y, side, prcSrc);
+		m_panid->DrawFrame(m_nStrip, m_nFrame, pbm, x, y, side, prcSrc, this);
 	}
 
 	word GetFlags() {

@@ -178,9 +178,10 @@ void SmoothRenderTimer::OnTimer(long tCurrent)
 		m_nyScrollFrac = 0;
 	}
 
-	// Keep drawing while something is part way between updates
+	// Keep drawing while something is part way between updates (moving
+	// gobs, or HD pictures that change between updates)
 
-	if (gfInterpolatedLastPaint)
+	if (gfInterpolatedLastPaint || HdWantsRedraw())
 		gevm.SetRedrawFlags(kfRedrawDirty);
 }
 
