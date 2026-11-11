@@ -142,7 +142,12 @@ long TimerMgr::ScanDispatch(long tCurrent)
 
 	if (m_ptmrTriggerNext == NULL)
 		return -1;
-	long ct = tCurrent - m_ptmrTriggerNext->m_tTrigger;
+	// (This used to be tCurrent - trigger, the wrong way around: the event
+	// loop then didn't wait at all while a timer was pending, spinning
+	// the CPU, and waited extra when a timer was already late, which made
+	// timer driven animation like the menus' zip-in stutter.)
+
+	long ct = m_ptmrTriggerNext->m_tTrigger - tCurrent;
 	if (ct < 0)
 		return 0;
 	return ct;

@@ -2604,9 +2604,12 @@ protected:
 private:
 	bool m_fCached;
 	int m_axDst[kcControlsMax];
+	int m_axSrc[kcControlsMax];
 	bool m_fTimerEnabled;
 	int m_cctlToZip;
 	long m_tLast;
+	long m_msZipStart;	// -1 until the zip-in starts
+	long m_msShow;
 };
 
 // InGameOptions
