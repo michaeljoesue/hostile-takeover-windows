@@ -1662,6 +1662,73 @@ resumed the mission with the same unit selected.
     stay off screen). Recorded at 30 fps under Wine, the Options form now
     zips in over about 11 frames.
 
+## 61. HD sprites (32-bit pictures over the 8-bit game image)
+
+The reworked art (Headquarters, Power Generator, Galaxite Processor with its
+door, smoke and unloading Bullpup, the Bullpup on the map and its mining
+bits) is drawn as 32-bit RGBA pictures at window resolution, while the rest
+of the game stays the classic 8-bit image. F9 switches HD on and off.
+
+Data: `data/hd/` (copied to `hd/` next to the exe by build.sh).
+`manifest.txt` maps an animation frame (anir file, strip name, frame) to one
+or more pictures and their top-left offset from the frame's draw point, in HD
+pixels (4 per pixel of the 24-pixel-tile art; at the game's 32-pixel tiles
+that is 3 HD pixels per game pixel, `96 / gcxTile`). Each picture can have a
+`_shadow.png` (255 = darken the ground 60%) and a `_team.png` (team-colour
+mask). Tokens: `{S}` = state of the base strip the same animation drew last
+(Processor door over the healthy or damaged base), `{T36}` = 36-picture loop
+played in game time (generator fan: 33 ms per picture, smooth between game
+updates, stops when paused), `{L<n>x<ms>}` = n-picture loop at a
+steady <ms> per picture in game time at the default speed (40 ms updates):
+Surveillance Center dish `{L36x30}` (36 pictures: the dish turns 3 times while the screen lights change; the artist's reference video loops every 36), R&D
+Center dish swing `{L52x40}`. `Animation::Draw` passes the Animation as a
+key; a loop stops while its owner's power is low (as the classic dishes do); each key keeps its own place in the loop and only advances it while the
+game keeps advancing the classic animation (`Animation::GetLastAdvanceMs`,
+set in `Animation::Advance`; needed because the damaged R&D Center has a
+one-frame strip whose frame never changes), so dishes stop with low power
+like the classic ones, and stop when the game is paused. (Following the
+classic frames instead looked uneven: the game does not advance them at a
+steady rate.) `{T36}` uses the real update interval (`gtGameSpeed`,
+`gmsLastSimUpdate`) the same way the moving units do. While any `{T36}` or
+still-running `{L..}` picture is on screen, `HdWantsRedraw` keeps the
+smooth-render timer asking for paints between game updates.
+
+How it works (`game/sdl/hdsprites.cpp`):
+- `AnimationData::Init` looks the animation up (`HdFindAnir`);
+  `AnimationData::DrawFrame` calls `HdDrawFrame` first. For frames in the
+  manifest, drawn onto the playfield's bitmap (`gpfrmmSim->GetDib()`; menus
+  and forms are left alone) and without a source clip rect, nothing is drawn
+  into the 8-bit bitmap: the pictures are recorded with a snapshot of the
+  8-bit pixels under them.
+- `SimUIForm::OnUpdateMapInvalidate` invalidates the whole playfield every
+  frame while HD is on, so every visible gob draws (and is recorded) every
+  frame. `Simulation::Draw` clears the list first (`HdBeginSimFrame`).
+- `Display::RenderGameSurface` scales the 8-bit image up into a window-sized
+  target texture and calls `HdComposite`: for each recorded entry, in draw
+  order, the game pixels that still equal the snapshot are where nothing was
+  drawn on top since (units in front, selection brackets, health bars,
+  dialogs); the shadow and then the picture are drawn only there, in row
+  runs. An entry that is mostly covered (less than 40% visible) is skipped,
+  which also drops stale entries when a full-screen form is up.
+- Team colours: pictures are painted blue (side 1). Other sides get the hue
+  and saturation of their side's colour where the team mask is set, keeping
+  the painted brightness; a hit flash turns the team areas white.
+  Textures are made per picture and side on first use (PNG via stb_image).
+- Being built / placement ghosts use the same pictures (neutral colour while
+  being built).
+
+Not covered: animations without HD pictures stay classic (all other units
+and buildings, the build-menu icons). Without the hd folder the game runs
+exactly as before.
+
+## 62. HD set without the Bullpup
+
+The Bullpup (on the map, mining and unloading at the Processor) uses the
+classic sprites; every other reworked structure and both towers are HD. The
+classic Bullpup still drives in between the HD Processor and its door: the
+game draws it after the base, so the base's HD picture gives way there, and
+the door overlay is drawn over it.
+
 ## File map
 
 | File | Purpose |
@@ -1703,3 +1770,103 @@ resumed the mission with the same unit selected.
 | `game/Player.cpp` (`IsVisionSharedWithLocal`, `RevealSharedVision`) | Allies share vision |
 | `game/packs.h`, `mpshared/packmanager.*` | Local mission packs only (online code removed) |
 | `data/forms.ini.pp`, `data/help.txt` | Main menu without online buttons; help text |
+
+### Structures keep animating after damage and repair
+
+`StructGob::SetHealth` switches between the healthy and damaged idle strips
+passing the animation's current flags on. A one-frame strip (the damaged R&D
+Center) drops the loop bit when started, so after a repair the healthy
+animation never ran again (the classic R&D dish froze too). Switching between
+strips 0 and 1 now always restarts them looping. The damaged R&D Center's HD
+dish runs whenever its owner's power is not low, since the game never needs
+to advance a one-frame strip.
+
+### HD team colours as bright as the classic ones
+
+The HD pictures are painted in a darker blue than the classic team shades
+(median brightness about 100 of 255), and the team colour used to keep that
+brightness, only taking the side's hue: Red and Crimson came out as nearly
+the same dark red. Now every side, blue included, takes its colours from its
+own 5-shade palette ramp like the classic sprites: the painted brightness
+x1.35 (`kHdTeamGain`, after trying 1.7: too bright) picks the shade (blue ramp brightness 232 = the side's
+brightest shade ... 64 = its darkest, interpolated, extrapolated beyond), and
+pale painted highlights keep part of their paleness. `GetTexture` in
+`game/sdl/hdsprites.cpp`.
+
+### Galaxite smoke: all 27 pictures, smooth
+
+The classic smoke strip has 8 frames (one per game update, then a hold), so
+the HD smoke showed only 6 of the 27 painted pictures. The manifest now has
+timed paths (`track` / `trackpt` lines, frame entries `@smokeL` / `@smokeR`):
+each puff plays all 27 pictures over the animation's life (left chimney
+updates 0-14, right chimney 2-14), at real time between updates, its position
+gliding along the classic rise. `HdDrawFrame` times each Animation's strip
+from when it started (`StripTime`), and `AnimGob::GetClippingBounds` keeps a
+puff visible during the classic strip's empty hold frame.
+
+### HQ hatch and Processor door: every painted picture
+
+The HQ was painted with 32 pictures and showed 8 (one per classic frame); the
+Processor door with 12 opening + 10 closing pictures and showed 6, closing
+with the opening pictures backwards. Manifest token `{M rf a b rb c d}`: when
+the game moves the animation onto a classic frame, pictures a..b-1 (came
+forward) or c..d-1 (came back) play during that one update, then rf / rb
+shows (`MovePicture`, per Animation key, real update interval). HQ: frames
+1-3 and 5-7 play 5 pictures each, frames 0 and 4 (held) show 0 and 16. Door:
+opening plays 0-11, closing 11, 12-21, 0.
+
+### Gatling and Rocket Towers: whole-tower HD pictures
+
+The artist painted each tower whole (body + head) for every head direction
+and firing picture. The turret animation (`turret DD` strips, drawn at the
+base's special point 12,5) draws the whole-tower picture; the base strips 0/1
+map to `@none` (an HD entry that draws nothing, so the classic base is not
+drawn either) and strip 2 to the wreck, which shows from the explosion until
+the structure is deleted. Healthy and damaged towers have their own pictures:
+the turret entries use `{S}`, the state of the base strip the tower drew just
+before the turret (the base always draws first). Only the tower body casts a shadow (the
+pixels that are opaque and unchanged in all 16 idle pictures): the head and
+muzzle flashes cast none, so the shadow does not turn with the head.
+
+Shots start at the HD gun's muzzle: manifest `spec` lines give the special
+point of turret picture 1 per direction (measured from the painted flash),
+and `AnimationData::GetSpecialPoint` returns them. They apply whenever the
+HD pictures are installed, shown or not (F9), so the simulation is the same
+either way (multiplayer stays in step).
+
+### Soft HD shadows in the classic direction
+
+Every HD `_shadow.png` is remade from its picture's outline (scratchpad
+`soft/reshadow.py`, run at the end of building data/hd): the outline swept
+2 game pixels down-left (the classic sprites' shadow direction, light from the
+upper right), blurred (sigma 3.2 HD px) at 55% of the 60% maximum, never under
+the object. Towers: only the body (opaque and unchanged in all 16 idle
+pictures) casts.
+Every building was then rebuilt from the artist's sheets without the extra
+shading the packaging used to paint onto the pictures (`self_shadow`, now 0):
+the pictures carry only the artist's own shading.
+
+### HD shadows from the original sprites
+
+Replaces the soft outline shadows above. Each HD `_shadow.png` is the shadow
+of the classic frame it replaces (light blue 156,212,248 pixels, items
+composed as the game draws them), enlarged x4 into the HD picture's place,
+stair-steps smoothed (sigma 1.2 HD px), at the classic darkness (the level
+shadow map: lightness x 0.6, i.e. 40% darker; `_shadow` 255 = 60%, so 170).
+Loops use the classic frame shown at the same moment (Surveillance Center:
+12 pictures per classic turn; R&D dish by the classic holds). Towers use the
+classic base's shadow (body only); the Processor door has none (the base
+has it). Scratchpad `soft/classic_shadow.py`, run at the end of gen_hd.py.
+Gaps: the HD outlines differ from the classic ones, so a copied classic
+shadow could float away from the HD body. The HD body (towers: the body only)
+is swept up to 28 HD px toward the shadow, the shadow swept the same distance
+back toward the body, and only where both meet (the space between them) is
+filled: every shadow starts at the building's edge and keeps the classic size.
+Shadows now follow the HD body: the classic shadow's shape did not match
+the HD outlines (loose blocky lobes, shadows hidden under the body or on the
+wrong side). Each building's classic sprite gives the offset its shadow falls
+at (the sweep of the classic body that best covers the classic shadow,
+healthy state, capped at 4 px; (-2,3) where nothing is measurable); the HD
+body (towers: body only) is swept by that offset x4, softened, at the
+classic 40% darkness. One offset per building, so states and animations
+match; the Bullpup has one per direction.

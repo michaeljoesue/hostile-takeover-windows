@@ -1,0 +1,322 @@
+# HD sprites for Hostile Takeover (32-bit RGBA, 4 pixels per pixel of the 24-pixel-tile art)
+# anir<TAB>strip<TAB>frame<TAB>picture<TAB>dx<TAB>dy
+# picture: path under hd/ without .png; also <picture>_shadow.png and <picture>_team.png if present
+#   {S}   = 0/1, the state of the base strip this animation drew last (Processor door)
+#   {T36} = 00..35, played in game time (Power Generator fan)
+#   {M rf a b rb c d} = in-between pictures a..b-1 (frame came forward) or c..d-1 (came back) during one update, then rf / rb
+# spec<TAB>anir<TAB>strip<TAB>frame<TAB>x<TAB>y = special point (1x pixels) replacing the classic one: where shots start
+#   @none = draw nothing (the picture is drawn by another animation of the same object)
+#   @name = a timed path (track / trackpt lines): Galaxite smoke puffs
+#   {L<n>x<ms>} = n-picture loop, <ms> per picture, while the classic animation runs (dishes)
+# dx, dy: picture top-left relative to the frame's draw point, in HD pixels
+hq.anir	a 0	0	hq/hq_a_0_{M 0 0 0 0 0 0}	-72	-16
+hq.anir	a 0	1	hq/hq_a_0_{M 5 1 6 5 1 6}	-72	-16
+hq.anir	a 0	2	hq/hq_a_0_{M 10 6 11 10 6 11}	-72	-16
+hq.anir	a 0	3	hq/hq_a_0_{M 15 11 16 15 11 16}	-72	-16
+hq.anir	a 0	4	hq/hq_a_0_{M 16 16 16 16 16 16}	-72	-16
+hq.anir	a 0	5	hq/hq_a_0_{M 21 17 22 21 17 22}	-72	-16
+hq.anir	a 0	6	hq/hq_a_0_{M 26 22 27 26 22 27}	-72	-16
+hq.anir	a 0	7	hq/hq_a_0_{M 31 27 32 31 27 32}	-72	-16
+hq.anir	a 1	0	hq/hq_a_1_{M 0 0 0 0 0 0}	-72	-16
+hq.anir	a 1	1	hq/hq_a_1_{M 5 1 6 5 1 6}	-72	-16
+hq.anir	a 1	2	hq/hq_a_1_{M 10 6 11 10 6 11}	-72	-16
+hq.anir	a 1	3	hq/hq_a_1_{M 15 11 16 15 11 16}	-72	-16
+hq.anir	a 1	4	hq/hq_a_1_{M 16 16 16 16 16 16}	-72	-16
+hq.anir	a 1	5	hq/hq_a_1_{M 21 17 22 21 17 22}	-72	-16
+hq.anir	a 1	6	hq/hq_a_1_{M 26 22 27 26 22 27}	-72	-16
+hq.anir	a 1	7	hq/hq_a_1_{M 31 27 32 31 27 32}	-72	-16
+hq.anir	a 2	0	hq/hq_a_2_0	-72	-16
+reactor.anir	spin 0	0	reactor/reactor_spin_0_{T36}	-72	8
+reactor.anir	spin 0	1	reactor/reactor_spin_0_{T36}	-72	8
+reactor.anir	spin 0	2	reactor/reactor_spin_0_{T36}	-72	8
+reactor.anir	spin 1	0	reactor/reactor_spin_1_{T36}	-72	8
+reactor.anir	spin 1	1	reactor/reactor_spin_1_{T36}	-72	8
+reactor.anir	spin 1	2	reactor/reactor_spin_1_{T36}	-72	8
+reactor.anir	spin 2	0	reactor/reactor_spin_2_0	-72	8
+proc.anir	base 0	0	proc/proc_base_0	-32	-20
+proc.anir	base 1	0	proc/proc_base_1	-32	-20
+proc.anir	base 2	0	proc/proc_base_2	-32	-20
+proc.anir	door 0	0	proc/proc_door_{S}_{M 0 0 0 0 21 22}	52	20
+proc.anir	door 0	1	proc/proc_door_{S}_{M 2 1 3 20 19 21}	52	20
+proc.anir	door 0	2	proc/proc_door_{S}_{M 4 3 5 18 16 19}	52	20
+proc.anir	door 0	3	proc/proc_door_{S}_{M 7 5 8 15 14 16}	52	20
+proc.anir	door 0	4	proc/proc_door_{S}_{M 9 8 10 13 12 14}	52	20
+proc.anir	door 0	5	proc/proc_door_{S}_{M 11 10 12 11 11 11}	52	20
+track	smokeL	0	14	smoke/smoke_%02d	27
+trackpt	smokeL	0	-	25	-48
+trackpt	smokeL	1	-	24	-53
+trackpt	smokeL	2	-	24	-58
+trackpt	smokeL	3	-	23	-63
+trackpt	smokeL	4	-	23	-68
+trackpt	smokeL	5	-	22	-72
+trackpt	smokeL	6	-	23	-76
+trackpt	smokeL	7	-	23	-80
+trackpt	smokeL	8	-	24	-84
+trackpt	smokeL	9	-	24	-88
+trackpt	smokeL	10	-	25	-91
+trackpt	smokeL	11	-	25	-95
+trackpt	smokeL	12	-	25	-98
+trackpt	smokeL	13	-	25	-101
+trackpt	smokeL	14	-	25	-105
+trackpt	smokeL	15	-	25	-108
+trackpt	smokeL	16	-	25	-111
+trackpt	smokeL	17	-	25	-114
+trackpt	smokeL	18	-	25	-118
+trackpt	smokeL	19	-	25	-121
+trackpt	smokeL	20	-	24	-124
+trackpt	smokeL	21	-	24	-127
+trackpt	smokeL	22	-	22	-130
+trackpt	smokeL	23	-	21	-134
+trackpt	smokeL	24	-	20	-137
+trackpt	smokeL	25	-	18	-140
+trackpt	smokeL	26	-	17	-144
+track	smokeR	2	14	smoke/smoke_%02d	27
+trackpt	smokeR	0	-	196	-18
+trackpt	smokeR	1	-	196	-23
+trackpt	smokeR	2	-	196	-28
+trackpt	smokeR	3	-	197	-33
+trackpt	smokeR	4	-	197	-38
+trackpt	smokeR	5	-	197	-42
+trackpt	smokeR	6	-	198	-46
+trackpt	smokeR	7	-	198	-49
+trackpt	smokeR	8	-	199	-52
+trackpt	smokeR	9	-	200	-55
+trackpt	smokeR	10	-	200	-58
+trackpt	smokeR	11	-	200	-61
+trackpt	smokeR	12	-	200	-64
+trackpt	smokeR	13	-	200	-67
+trackpt	smokeR	14	-	200	-71
+trackpt	smokeR	15	-	200	-74
+trackpt	smokeR	16	-	201	-77
+trackpt	smokeR	17	-	201	-80
+trackpt	smokeR	18	-	202	-84
+trackpt	smokeR	19	-	202	-87
+trackpt	smokeR	20	-	203	-90
+trackpt	smokeR	21	-	203	-93
+trackpt	smokeR	22	-	202	-96
+trackpt	smokeR	23	-	202	-100
+trackpt	smokeR	24	-	201	-103
+trackpt	smokeR	25	-	200	-106
+trackpt	smokeR	26	-	200	-110
+proc.anir	smoke	0	@smokeL	0	0
+proc.anir	smoke	0	@smokeR	0	0
+proc.anir	smoke	1	@smokeL	0	0
+proc.anir	smoke	1	@smokeR	0	0
+proc.anir	smoke	2	@smokeL	0	0
+proc.anir	smoke	2	@smokeR	0	0
+proc.anir	smoke	3	@smokeL	0	0
+proc.anir	smoke	3	@smokeR	0	0
+proc.anir	smoke	4	@smokeL	0	0
+proc.anir	smoke	4	@smokeR	0	0
+proc.anir	smoke	5	@smokeL	0	0
+proc.anir	smoke	5	@smokeR	0	0
+proc.anir	smoke	6	@smokeL	0	0
+proc.anir	smoke	6	@smokeR	0	0
+proc.anir	smoke	7	@smokeL	0	0
+proc.anir	smoke	7	@smokeR	0	0
+proc.anir	smoke	8	@smokeL	0	0
+proc.anir	smoke	8	@smokeR	0	0
+warehouse.anir	a 0	0	warehouse/warehouse_a_0_0	-76	-48
+warehouse.anir	a 0	1	warehouse/warehouse_a_0_1	-76	-48
+warehouse.anir	a 0	2	warehouse/warehouse_a_0_2	-76	-48
+warehouse.anir	a 0	3	warehouse/warehouse_a_0_3	-76	-48
+warehouse.anir	a 1	0	warehouse/warehouse_a_1_0	-76	-48
+warehouse.anir	a 1	1	warehouse/warehouse_a_1_1	-76	-48
+warehouse.anir	a 1	2	warehouse/warehouse_a_1_2	-76	-48
+warehouse.anir	a 1	3	warehouse/warehouse_a_1_3	-76	-48
+warehouse.anir	a 2	0	warehouse/warehouse_a_2_0	-76	-48
+warehouse.anir	a 2	1	warehouse/warehouse_a_2_1	-76	-48
+warehouse.anir	a 2	2	warehouse/warehouse_a_2_2	-76	-48
+hrc.anir	base 0	0	hrc/hrc_base_0	-52	-40
+hrc.anir	base 1	0	hrc/hrc_base_1	-52	-40
+hrc.anir	base 2	0	hrc/hrc_base_2	-52	-40
+hrc.anir	base2 0	0	hrc/hrc_base2_0	-52	-40
+hrc.anir	base2 1	0	hrc/hrc_base2_1	-52	-40
+hrc.anir	base2 2	0	hrc/hrc_base2_2	-52	-40
+vts.anir	a 0	0	vts/vts_a_0	-52	-36
+vts.anir	a 1	0	vts/vts_a_1	-52	-36
+vts.anir	a 2	0	vts/vts_a_2	-52	-36
+vts.anir	b 0	0	vts/vts_b_0	-52	-36
+vts.anir	b 1	0	vts/vts_b_1	-52	-36
+vts.anir	b 2	0	vts/vts_b_2	-52	-36
+radar.anir	a 0	0	radar/radar_a_0_{L36x30}	-48	-40
+radar.anir	a 0	1	radar/radar_a_0_{L36x30}	-48	-40
+radar.anir	a 0	2	radar/radar_a_0_{L36x30}	-48	-40
+radar.anir	a 0	3	radar/radar_a_0_{L36x30}	-48	-40
+radar.anir	a 1	0	radar/radar_a_1_{L36x30}	-48	-40
+radar.anir	a 1	1	radar/radar_a_1_{L36x30}	-48	-40
+radar.anir	a 1	2	radar/radar_a_1_{L36x30}	-48	-40
+radar.anir	a 1	3	radar/radar_a_1_{L36x30}	-48	-40
+radar.anir	a 2	0	radar/radar_a_2_0	-48	-40
+research.anir	a 0	0	research/research_a_0_{L52x40}	-68	-16
+research.anir	a 0	1	research/research_a_0_{L52x40}	-68	-16
+research.anir	a 0	2	research/research_a_0_{L52x40}	-68	-16
+research.anir	a 0	3	research/research_a_0_{L52x40}	-68	-16
+research.anir	a 1	0	research/research_a_1_{L52x40}	-68	-16
+research.anir	a 2	0	research/research_a_2_0	-68	-16
+mtower.anir	base 0	0	@none	0	0
+mtower.anir	base 1	0	@none	0	0
+mtower.anir	base 2	0	mtower/mtower_wreck	-28	-56
+mtower.anir	turret 00	0	mtower/mtower_{S}_00_0	-76	-76
+mtower.anir	turret 00	1	mtower/mtower_{S}_00_1	-76	-76
+mtower.anir	turret 00	2	mtower/mtower_{S}_00_2	-76	-76
+mtower.anir	turret 00	3	mtower/mtower_{S}_00_1	-76	-76
+mtower.anir	turret 00	4	mtower/mtower_{S}_00_2	-76	-76
+spec	mtower.anir	turret 00	1	0	-12
+mtower.anir	turret 01	0	mtower/mtower_{S}_01_0	-76	-76
+mtower.anir	turret 01	1	mtower/mtower_{S}_01_1	-76	-76
+mtower.anir	turret 01	2	mtower/mtower_{S}_01_2	-76	-76
+mtower.anir	turret 01	3	mtower/mtower_{S}_01_1	-76	-76
+mtower.anir	turret 01	4	mtower/mtower_{S}_01_2	-76	-76
+spec	mtower.anir	turret 01	1	6	-10
+mtower.anir	turret 02	0	mtower/mtower_{S}_02_0	-76	-76
+mtower.anir	turret 02	1	mtower/mtower_{S}_02_1	-76	-76
+mtower.anir	turret 02	2	mtower/mtower_{S}_02_2	-76	-76
+mtower.anir	turret 02	3	mtower/mtower_{S}_02_1	-76	-76
+mtower.anir	turret 02	4	mtower/mtower_{S}_02_2	-76	-76
+spec	mtower.anir	turret 02	1	8	-8
+mtower.anir	turret 03	0	mtower/mtower_{S}_03_0	-76	-76
+mtower.anir	turret 03	1	mtower/mtower_{S}_03_1	-76	-76
+mtower.anir	turret 03	2	mtower/mtower_{S}_03_2	-76	-76
+mtower.anir	turret 03	3	mtower/mtower_{S}_03_1	-76	-76
+mtower.anir	turret 03	4	mtower/mtower_{S}_03_2	-76	-76
+spec	mtower.anir	turret 03	1	11	-4
+mtower.anir	turret 04	0	mtower/mtower_{S}_04_0	-76	-76
+mtower.anir	turret 04	1	mtower/mtower_{S}_04_1	-76	-76
+mtower.anir	turret 04	2	mtower/mtower_{S}_04_2	-76	-76
+mtower.anir	turret 04	3	mtower/mtower_{S}_04_1	-76	-76
+mtower.anir	turret 04	4	mtower/mtower_{S}_04_2	-76	-76
+spec	mtower.anir	turret 04	1	12	0
+mtower.anir	turret 05	0	mtower/mtower_{S}_05_0	-76	-76
+mtower.anir	turret 05	1	mtower/mtower_{S}_05_1	-76	-76
+mtower.anir	turret 05	2	mtower/mtower_{S}_05_2	-76	-76
+mtower.anir	turret 05	3	mtower/mtower_{S}_05_1	-76	-76
+mtower.anir	turret 05	4	mtower/mtower_{S}_05_2	-76	-76
+spec	mtower.anir	turret 05	1	11	4
+mtower.anir	turret 06	0	mtower/mtower_{S}_06_0	-76	-76
+mtower.anir	turret 06	1	mtower/mtower_{S}_06_1	-76	-76
+mtower.anir	turret 06	2	mtower/mtower_{S}_06_2	-76	-76
+mtower.anir	turret 06	3	mtower/mtower_{S}_06_1	-76	-76
+mtower.anir	turret 06	4	mtower/mtower_{S}_06_2	-76	-76
+spec	mtower.anir	turret 06	1	10	7
+mtower.anir	turret 07	0	mtower/mtower_{S}_07_0	-76	-76
+mtower.anir	turret 07	1	mtower/mtower_{S}_07_1	-76	-76
+mtower.anir	turret 07	2	mtower/mtower_{S}_07_2	-76	-76
+mtower.anir	turret 07	3	mtower/mtower_{S}_07_1	-76	-76
+mtower.anir	turret 07	4	mtower/mtower_{S}_07_2	-76	-76
+spec	mtower.anir	turret 07	1	8	9
+mtower.anir	turret 08	0	mtower/mtower_{S}_08_0	-76	-76
+mtower.anir	turret 08	1	mtower/mtower_{S}_08_1	-76	-76
+mtower.anir	turret 08	2	mtower/mtower_{S}_08_2	-76	-76
+mtower.anir	turret 08	3	mtower/mtower_{S}_08_1	-76	-76
+mtower.anir	turret 08	4	mtower/mtower_{S}_08_2	-76	-76
+spec	mtower.anir	turret 08	1	2	10
+mtower.anir	turret 09	0	mtower/mtower_{S}_09_0	-76	-76
+mtower.anir	turret 09	1	mtower/mtower_{S}_09_1	-76	-76
+mtower.anir	turret 09	2	mtower/mtower_{S}_09_2	-76	-76
+mtower.anir	turret 09	3	mtower/mtower_{S}_09_1	-76	-76
+mtower.anir	turret 09	4	mtower/mtower_{S}_09_2	-76	-76
+spec	mtower.anir	turret 09	1	-5	9
+mtower.anir	turret 10	0	mtower/mtower_{S}_10_0	-76	-76
+mtower.anir	turret 10	1	mtower/mtower_{S}_10_1	-76	-76
+mtower.anir	turret 10	2	mtower/mtower_{S}_10_2	-76	-76
+mtower.anir	turret 10	3	mtower/mtower_{S}_10_1	-76	-76
+mtower.anir	turret 10	4	mtower/mtower_{S}_10_2	-76	-76
+spec	mtower.anir	turret 10	1	-9	6
+mtower.anir	turret 11	0	mtower/mtower_{S}_11_0	-76	-76
+mtower.anir	turret 11	1	mtower/mtower_{S}_11_1	-76	-76
+mtower.anir	turret 11	2	mtower/mtower_{S}_11_2	-76	-76
+mtower.anir	turret 11	3	mtower/mtower_{S}_11_1	-76	-76
+mtower.anir	turret 11	4	mtower/mtower_{S}_11_2	-76	-76
+spec	mtower.anir	turret 11	1	-11	4
+mtower.anir	turret 12	0	mtower/mtower_{S}_12_0	-76	-76
+mtower.anir	turret 12	1	mtower/mtower_{S}_12_1	-76	-76
+mtower.anir	turret 12	2	mtower/mtower_{S}_12_2	-76	-76
+mtower.anir	turret 12	3	mtower/mtower_{S}_12_1	-76	-76
+mtower.anir	turret 12	4	mtower/mtower_{S}_12_2	-76	-76
+spec	mtower.anir	turret 12	1	-12	1
+mtower.anir	turret 13	0	mtower/mtower_{S}_13_0	-76	-76
+mtower.anir	turret 13	1	mtower/mtower_{S}_13_1	-76	-76
+mtower.anir	turret 13	2	mtower/mtower_{S}_13_2	-76	-76
+mtower.anir	turret 13	3	mtower/mtower_{S}_13_1	-76	-76
+mtower.anir	turret 13	4	mtower/mtower_{S}_13_2	-76	-76
+spec	mtower.anir	turret 13	1	-11	-5
+mtower.anir	turret 14	0	mtower/mtower_{S}_14_0	-76	-76
+mtower.anir	turret 14	1	mtower/mtower_{S}_14_1	-76	-76
+mtower.anir	turret 14	2	mtower/mtower_{S}_14_2	-76	-76
+mtower.anir	turret 14	3	mtower/mtower_{S}_14_1	-76	-76
+mtower.anir	turret 14	4	mtower/mtower_{S}_14_2	-76	-76
+spec	mtower.anir	turret 14	1	-9	-8
+mtower.anir	turret 15	0	mtower/mtower_{S}_15_0	-76	-76
+mtower.anir	turret 15	1	mtower/mtower_{S}_15_1	-76	-76
+mtower.anir	turret 15	2	mtower/mtower_{S}_15_2	-76	-76
+mtower.anir	turret 15	3	mtower/mtower_{S}_15_1	-76	-76
+mtower.anir	turret 15	4	mtower/mtower_{S}_15_2	-76	-76
+spec	mtower.anir	turret 15	1	-6	-11
+rtower.anir	base 0	0	@none	0	0
+rtower.anir	base 1	0	@none	0	0
+rtower.anir	base 2	0	rtower/rtower_wreck	-28	-56
+rtower.anir	turret 00	0	rtower/rtower_{S}_00_0	-76	-76
+rtower.anir	turret 00	1	rtower/rtower_{S}_00_1	-76	-76
+rtower.anir	turret 00	2	rtower/rtower_{S}_00_2	-76	-76
+spec	rtower.anir	turret 00	1	-4	-10
+rtower.anir	turret 01	0	rtower/rtower_{S}_01_0	-76	-76
+rtower.anir	turret 01	1	rtower/rtower_{S}_01_1	-76	-76
+rtower.anir	turret 01	2	rtower/rtower_{S}_01_2	-76	-76
+spec	rtower.anir	turret 01	1	6	-8
+rtower.anir	turret 02	0	rtower/rtower_{S}_02_0	-76	-76
+rtower.anir	turret 02	1	rtower/rtower_{S}_02_1	-76	-76
+rtower.anir	turret 02	2	rtower/rtower_{S}_02_2	-76	-76
+spec	rtower.anir	turret 02	1	7	-7
+rtower.anir	turret 03	0	rtower/rtower_{S}_03_0	-76	-76
+rtower.anir	turret 03	1	rtower/rtower_{S}_03_1	-76	-76
+rtower.anir	turret 03	2	rtower/rtower_{S}_03_2	-76	-76
+spec	rtower.anir	turret 03	1	12	-2
+rtower.anir	turret 04	0	rtower/rtower_{S}_04_0	-76	-76
+rtower.anir	turret 04	1	rtower/rtower_{S}_04_1	-76	-76
+rtower.anir	turret 04	2	rtower/rtower_{S}_04_2	-76	-76
+spec	rtower.anir	turret 04	1	10	0
+rtower.anir	turret 05	0	rtower/rtower_{S}_05_0	-76	-76
+rtower.anir	turret 05	1	rtower/rtower_{S}_05_1	-76	-76
+rtower.anir	turret 05	2	rtower/rtower_{S}_05_2	-76	-76
+spec	rtower.anir	turret 05	1	9	1
+rtower.anir	turret 06	0	rtower/rtower_{S}_06_0	-76	-76
+rtower.anir	turret 06	1	rtower/rtower_{S}_06_1	-76	-76
+rtower.anir	turret 06	2	rtower/rtower_{S}_06_2	-76	-76
+spec	rtower.anir	turret 06	1	4	7
+rtower.anir	turret 07	0	rtower/rtower_{S}_07_0	-76	-76
+rtower.anir	turret 07	1	rtower/rtower_{S}_07_1	-76	-76
+rtower.anir	turret 07	2	rtower/rtower_{S}_07_2	-76	-76
+spec	rtower.anir	turret 07	1	2	6
+rtower.anir	turret 08	0	rtower/rtower_{S}_08_0	-76	-76
+rtower.anir	turret 08	1	rtower/rtower_{S}_08_1	-76	-76
+rtower.anir	turret 08	2	rtower/rtower_{S}_08_2	-76	-76
+spec	rtower.anir	turret 08	1	-3	7
+rtower.anir	turret 09	0	rtower/rtower_{S}_09_0	-76	-76
+rtower.anir	turret 09	1	rtower/rtower_{S}_09_1	-76	-76
+rtower.anir	turret 09	2	rtower/rtower_{S}_09_2	-76	-76
+spec	rtower.anir	turret 09	1	-7	5
+rtower.anir	turret 10	0	rtower/rtower_{S}_10_0	-76	-76
+rtower.anir	turret 10	1	rtower/rtower_{S}_10_1	-76	-76
+rtower.anir	turret 10	2	rtower/rtower_{S}_10_2	-76	-76
+spec	rtower.anir	turret 10	1	-10	3
+rtower.anir	turret 11	0	rtower/rtower_{S}_11_0	-76	-76
+rtower.anir	turret 11	1	rtower/rtower_{S}_11_1	-76	-76
+rtower.anir	turret 11	2	rtower/rtower_{S}_11_2	-76	-76
+spec	rtower.anir	turret 11	1	-9	0
+rtower.anir	turret 12	0	rtower/rtower_{S}_12_0	-76	-76
+rtower.anir	turret 12	1	rtower/rtower_{S}_12_1	-76	-76
+rtower.anir	turret 12	2	rtower/rtower_{S}_12_2	-76	-76
+spec	rtower.anir	turret 12	1	-9	1
+rtower.anir	turret 13	0	rtower/rtower_{S}_13_0	-76	-76
+rtower.anir	turret 13	1	rtower/rtower_{S}_13_1	-76	-76
+rtower.anir	turret 13	2	rtower/rtower_{S}_13_2	-76	-76
+spec	rtower.anir	turret 13	1	-8	-8
+rtower.anir	turret 14	0	rtower/rtower_{S}_14_0	-76	-76
+rtower.anir	turret 14	1	rtower/rtower_{S}_14_1	-76	-76
+rtower.anir	turret 14	2	rtower/rtower_{S}_14_2	-76	-76
+spec	rtower.anir	turret 14	1	-7	-6
+rtower.anir	turret 15	0	rtower/rtower_{S}_15_0	-76	-76
+rtower.anir	turret 15	1	rtower/rtower_{S}_15_1	-76	-76
+rtower.anir	turret 15	2	rtower/rtower_{S}_15_2	-76	-76
+spec	rtower.anir	turret 15	1	-4	-9

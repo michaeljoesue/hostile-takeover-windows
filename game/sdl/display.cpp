@@ -1,6 +1,7 @@
 #include "../ht.h"
 #include "game/sdl/sdlspritemgr.h"
 #include "game/sdl/hosthelpers.h"
+#include "game/sdl/hdsprites.h"
 #include "game/sdl/sdlspritemgr.h"
 
 namespace wi {
@@ -35,6 +36,9 @@ Display::Display()
     m_window = NULL;
     m_renderer = NULL;
     m_texture = NULL;
+    m_textureHd = NULL;
+    m_cxHd = 0;
+    m_cyHd = 0;
 
     m_gamePixels = NULL;
     m_gamePixels32 = NULL;
@@ -406,6 +410,35 @@ void Display::RenderGameSurface() {
     SDL_SetRenderTarget(m_renderer, m_texture);
     s_psprm->DrawSprites(m_renderer, s_siz);
     SDL_SetRenderTarget(m_renderer, NULL);
+
+    // HD sprites: scale the 8-bit image up to the window's size and draw
+    // the HD pictures over it at full resolution
+    if (HdHasCommands()) {
+        int cxOut, cyOut;
+        SDL_GetRendererOutputSize(m_renderer, &cxOut, &cyOut);
+        int nScale = cxOut / m_cx;
+        if (cyOut / m_cy < nScale)
+            nScale = cyOut / m_cy;
+        if (nScale < 1)
+            nScale = 1;
+        if (m_textureHd == NULL || m_cxHd != m_cx * nScale || m_cyHd != m_cy * nScale) {
+            if (m_textureHd != NULL)
+                SDL_DestroyTexture(m_textureHd);
+            m_cxHd = m_cx * nScale;
+            m_cyHd = m_cy * nScale;
+            m_textureHd = SDL_CreateTexture(m_renderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_TARGET, m_cxHd, m_cyHd);
+        }
+        if (m_textureHd != NULL) {
+            SDL_SetRenderTarget(m_renderer, m_textureHd);
+            SDL_RenderCopy(m_renderer, m_texture, NULL, NULL);
+            HdComposite(m_renderer, nScale, m_gamePixels, m_cx, m_cy, m_palette);
+            SDL_SetRenderTarget(m_renderer, NULL);
+            SDL_RenderClear(m_renderer);
+            SDL_RenderCopy(m_renderer, m_textureHd, NULL, NULL);
+            SDL_RenderPresent(m_renderer);
+            return;
+        }
+    }
 
     // Present the renderer to the screen
     SDL_RenderClear(m_renderer);

@@ -893,6 +893,15 @@ GobType AnimGob::GetType()
 void AnimGob::GetClippingBounds(Rect *prc)
 {
 	m_ani.GetBounds(prc);
+
+	// HD sprites can keep drawing during an empty classic frame (Galaxite
+	// smoke puffs play out over the whole animation): use the strip's first
+	// frame, enlarged, so the gob is still found as visible
+
+	if (prc->IsEmpty() && HdIsActive() && m_ani.GetAnimationData()->HasHdPictures()) {
+		m_ani.GetAnimationData()->GetBounds(m_ani.GetStrip(), 0, prc);
+		prc->Inflate(48, 48);
+	}
 	prc->Offset(PcFromUwc(m_wx), PcFromUwc(m_wy));
 }
 
