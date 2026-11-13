@@ -104,6 +104,9 @@ bool Simulation::OneTimeInit()
     Status("Init WarehouseGob...");
     fSuccess = fSuccess && WarehouseGob::InitClass(piniGobTemplates);
     Assert(fSuccess);
+    Status("Init WallGob...");
+    fSuccess = fSuccess && WallGob::InitClass(piniGobTemplates);
+    Assert(fSuccess);
     Status("Init GunTowerGob...");
     fSuccess = fSuccess && GunTowerGob::InitClass(piniGobTemplates);
     Assert(fSuccess);
@@ -166,6 +169,7 @@ void Simulation::OneTimeExit()
     BulletGob::ExitClass();
     AndyShotGob::ExitClass();
     WarehouseGob::ExitClass();
+    WallGob::ExitClass();
     GunTowerGob::ExitClass();
     RocketTowerGob::ExitClass();
     MobileHqGob::ExitClass();

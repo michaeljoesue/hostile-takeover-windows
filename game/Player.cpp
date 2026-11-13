@@ -324,11 +324,11 @@ void Player::Init(Pid pid)
 	}
 }
 
-#define knVerPlayerState 11
+#define knVerPlayerState 12	// 12: kutWall (kutMax 23 -> 24)
 bool Player::LoadState(Stream *pstm)
 {
 	byte nVer = pstm->ReadByte();
-	if (nVer != knVerPlayerState)
+	if (nVer != knVerPlayerState && nVer != 11)
 		return false;
 	m_wfUpgrades = pstm->ReadWord();
 	m_side = pstm->ReadWord();
@@ -345,7 +345,11 @@ bool Player::LoadState(Stream *pstm)
 	m_nCreditsConsumed = 0;
 	m_nPowerSupply = (short)pstm->ReadWord();
 	m_nPowerDemand = (short)pstm->ReadWord();
-	pstm->Read(m_acut, sizeof(m_acut));
+	memset(m_acut, 0, sizeof(m_acut));
+	if (nVer == 11)
+		pstm->Read(m_acut, sizeof(m_acut[0]) * kutWall);	// saved before walls were units
+	else
+		pstm->Read(m_acut, sizeof(m_acut));
 	m_umAllowed = pstm->ReadDword();
 	pstm->ReadString(m_szObjective, sizeof(m_szObjective));
 	m_upgm = pstm->ReadWord();
@@ -675,6 +679,8 @@ void Player::Repair(bool fOn)
 			continue;
 
 		if ((pgobT->GetFlags() & (kfGobStructure | kfGobActive)) != (kfGobStructure | kfGobActive))
+			continue;
+		if (pgobT->GetType() == kgtWall)
 			continue;
 
 		StructGob *pstru = (StructGob *)pgobT;

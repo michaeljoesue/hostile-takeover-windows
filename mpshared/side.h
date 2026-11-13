@@ -52,6 +52,9 @@
 #define kutReplicator 21
 #define kutFox 22
 
-#define kutMax 23
+// Walls: map walls as 1-tile structures (Windows port, see PORTING_NOTES.md)
+#define kutWall 23
+
+#define kutMax 24
 
 #endif

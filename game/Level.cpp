@@ -498,6 +498,10 @@ bool Level::LoadLevelVariables(IniReader *pini)
 #endif
 	}
 
+	// Every wall tile the level doesn't list becomes a neutral wall
+
+	WallGob::CreateMissingWalls();
+
 	// Enumerate all Galaxite positions and add them to the Fog/Galaxite map
 
 	Status("Load Galaxite...");
@@ -528,13 +532,13 @@ bool Level::LoadLevelVariables(IniReader *pini)
 	return true;
 }
 
-#define knVerLevelState 2
+#define knVerLevelState 3	// 3: walls are WallGobs
 bool Level::LoadState(Stream *pstm)
 {
 	// Do version handling
 
 	byte nVer = pstm->ReadByte();
-	if (nVer != knVerLevelState)
+	if (nVer != knVerLevelState && nVer != 2)
 		return false;
 
 	// Get level name
@@ -588,6 +592,14 @@ bool Level::LoadState(Stream *pstm)
 			return false;
 		}
 	}
+
+	// Walls: a game saved before walls were WallGobs gets them now, else
+	// tiles whose wall was destroyed are opened again
+
+	if (nVer < 3)
+		WallGob::CreateMissingWalls();
+	else
+		WallGob::OpenTilesWithoutWalls();
 
 	// Load triggers
 

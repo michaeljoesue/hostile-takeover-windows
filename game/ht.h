@@ -1346,6 +1346,7 @@ public:
 	bool IsBlocked(TCoord tx, TCoord ty, byte bf) secTerrainMap;
 	bool GetFlags(int tx, int ty, byte *pbf) secTerrainMap;
 	int GetTerrainType(TCoord tx, TCoord ty) secTerrainMap;
+	void SetTerrainType(TCoord tx, TCoord ty, int tt) secTerrainMap;
 
 	byte *GetMapPtr() {
 		return (byte *)(m_ptrmaph + 1);
@@ -1831,6 +1832,7 @@ STARTLABEL(GobTypes)
     LABEL(kgtActivator)
     LABEL(kgtFox)
     LABEL(kgtAndyShot)
+    LABEL(kgtWall)
 ENDLABEL(GobTypes)
 
 // Helper macros for sending messages
@@ -4940,6 +4942,9 @@ const UnitMask kumReplicator = 1L << kutReplicator;
 const UnitMask kumMachineGunTower = 1L << kutMachineGunTower;
 const UnitMask kumRocketTower = 1L << kutRocketTower;
 const UnitMask kumTowers = kumMachineGunTower | kumRocketTower;
+// Walls are structures you can shoot (when ordered to) but they are not
+// counted with kumStructures: no build menus, base extent or win/lose counts
+const UnitMask kumWall = 1L << kutWall;
 
 const UnitMask kumStructures = kumHumanResourceCenter | kumReactor | kumProcessor | kumHeadquarters |
 		kumResearchCenter | kumVehicleTransportStation | kumRadar | kumWarehouse | kumMachineGunTower |
@@ -7075,6 +7080,37 @@ public:
 	// StateMachine methods
 
 	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secWarehouse;
+};
+
+// WallGob: one map wall tile. Created at mission start for every wall tile
+// (owner and health from the level's GameObjects, else neutral and full).
+// Drawn with the neighbour-mask frame of walls.anir (strip 0 healthy, 1
+// below half health). Never picked as a target automatically; destroyed,
+// it opens its tile.
+
+class WallGob : public StructGob
+{
+public:
+	WallGob() secStructures;
+	static bool InitClass(IniReader *pini) secStructures;
+	static void ExitClass() secStructures;
+	static void CreateMissingWalls() secStructures;
+	static void OpenTilesWithoutWalls() secStructures;
+	void UpdateShape() secStructures;
+
+	// StructGob overrides
+
+	virtual bool Init(WCoord wx, WCoord wy, Player *pplr, fix fxHealth, dword ff, const char *pszName) secStructures;
+	virtual bool Init(IniReader *pini, FindProp *pfind, const char *pszName) secStructures;
+	virtual void Delete() secStructures;
+	virtual void SetHealth(fix fxHealth) secStructures;
+	virtual bool IsTakeoverable(Player *pplr) secStructures;
+	virtual void PopupMenu() secStructures;
+	virtual bool LoadState(Stream *pstm) secStructures;
+
+	// StateMachine methods
+
+	virtual int ProcessStateMachineMessage(State st, Message *pmsg) secStructures;
 };
 
 // TowerGob

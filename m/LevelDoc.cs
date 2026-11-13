@@ -1292,15 +1292,23 @@ namespace m {
 
 			// [GameObjects]
 			sec = new Ini.Section("GameObjects");
+			Hashtable htWallTiles = new Hashtable();
 			foreach (IMapItem mi in m_alsmi) {
 				if (mi is Galaxite)
 					continue;
 				if (mi is Area)
 					continue;
-				if (mi is Wall)
-					continue;
 				if (mi is Tile)
 					continue;
+
+				// One wall per tile (a map can have stacked wall items)
+
+				if (mi is Wall) {
+					int nKey = (int)mi.ty * 10000 + (int)mi.tx;
+					if (htWallTiles.ContainsKey(nKey))
+						continue;
+					htWallTiles[nKey] = true;
+				}
 
 				Ini.Property prop = mi.GetIniProperty(txOrigin, tyOrigin);
 				if (prop == null)
@@ -1548,6 +1556,26 @@ namespace m {
 				//case 30: // kgtPuff
 				//case 31: // kgtBullet
 				//case 33: // kgtArtilleryShot
+				case 39: // kgtWall: the wall itself came from the terrain map
+					// (OutputTools.ImportWalls); take its owner and health
+					{
+						string[] astr = strValue.Split(',');
+						int tx = int.Parse(astr[2]) + Bounds.Left;
+						int ty = int.Parse(astr[3]) + Bounds.Top;
+						Wall wallFound = null;
+						foreach (IMapItem miT in m_alsmi) {
+							if (miT is Wall && (int)miT.tx == tx && (int)miT.ty == ty) {
+								wallFound = (Wall)miT;
+								break;
+							}
+						}
+						if (wallFound == null)
+							return new Wall(int.Parse(astr[5]), tx, ty, (Side)int.Parse(astr[1]));
+						wallFound.Side = (Side)int.Parse(astr[1]);
+						wallFound.Health = int.Parse(astr[5]);
+					}
+					return null;
+
 				//case 38: // kgtAndyShot
 				default:
 					return null;

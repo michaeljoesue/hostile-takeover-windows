@@ -1729,14 +1729,41 @@ classic Bullpup still drives in between the HD Processor and its door: the
 game draws it after the base, so the base's HD picture gives way there, and
 the door overlay is drawn over it.
 
-## 63. HD walls
+## 63. Walls: owners, health, attack on order (and HD walls)
 
-Walls are terrain: FogMap draws them for every wall tile from walls.anir
-(strip a, frame = neighbour mask: 1 up, 2 right, 4 down, 8 left), in the
-background pass before the gobs. The HD layer is now reset at the start of
-that pass (Simulation::DrawBackground) instead of in Simulation::Draw, so the
-wall pictures recorded there are kept. Walls are always drawn as neutral
-(no owner), so their team-colour parts show the neutral colour.
+Walls used to be terrain only: the FogMap drew `walls.anir` (frame =
+neighbour mask: 1 up, 2 right, 4 down, 8 left) on every wall tile, and
+nothing could hit or destroy them. They are now structures:
+
+- **Type**: `kutWall` 23 (`kutMax` 24, mpshared/side.h), `kgtWall` 39
+  (res.h), `kumWall` (not part of `kumStructures`, so walls never show up
+  in build menus, base extent, win/lose and structure counts). Template
+  `[kgtWall]` in data/GobTemplates.ini.pp (ArmorStrength 150, 1x1,
+  walls.anir); the gobtemplates.ini record of game/htdata832.pdb is rebuilt
+  from it (cpp + inicrunch, stored uncompressed).
+- **WallGob** (game/Wall.cpp, a StructGob): frame = neighbour mask, strip 0
+  healthy, 1 below half health; never animates. Destroyed: a small
+  explosion, then the tile becomes open terrain (`TerrainMap::SetTerrainType`;
+  the terrain map is now a private copy of the level's) and the neighbours
+  change shape. No menu, no repair, can't be taken over.
+- **Owners**: levels list walls in GameObjects like structures
+  (`kgtWall,side,tx,ty,0,health%`). Wall tiles a level doesn't list become
+  neutral walls at full health (`WallGob::CreateMissingWalls`), so every
+  existing mission has neutral walls. A second wall on one tile is ignored.
+  The team colour comes from the owner like any unit.
+- **Attack on order only**: walls never announce themselves to enemies
+  (`NotifyEnemyNearby`) and are never remembered as nearby enemies, the
+  Overmind skips them, hunts use masks without `kumWall`. A right click on
+  an enemy or neutral wall attacks it; Ctrl+right click on your own.
+  Damage is the attacker's StructureDamage.
+- **Saves**: Level state 3 (2 still loads: walls are created as for a new
+  mission), Player state 12 (11 still loads: 23 unit counts). Loading a
+  version-3 save opens wall tiles that have no WallGob any more.
+- **Editor**: a Wall has Side and Health (percent) properties and is drawn
+  in its side's colours; it is written to GameObjects (one per tile).
+  Walls saved by older editors load as neutral, 100%.
+- **Drawing**: the HD layer is reset in `Simulation::DrawBackground`, the
+  first pass of a frame (walls used to be drawn there).
 
 ## File map
 

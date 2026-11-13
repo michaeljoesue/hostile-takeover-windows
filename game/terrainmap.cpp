@@ -70,8 +70,7 @@ TerrainMap::TerrainMap()
 
 TerrainMap::~TerrainMap()
 {
-	if (m_ptrmaph != NULL)
-		gpakr.UnmapFile(&m_fmap);
+	delete[] (byte *)m_ptrmaph;
 	delete[] m_abBuffer;
 	while (m_ppathhList != NULL)
 		RemovePathHead(m_ppathhList);
@@ -86,14 +85,28 @@ bool TerrainMap::Init(char *pszFn)
 {
 	// Load the terrain map
 
-	m_ptrmaph = (TerrainMapHeader *)gpakr.MapFile(pszFn, &m_fmap);
-	if (m_ptrmaph == NULL)
+	// Keep a private copy: walls that get destroyed become open terrain
+	// (SetTerrainType), and the mapped file is shared and read-only
+
+	TerrainMapHeader *ptrmaphFile = (TerrainMapHeader *)gpakr.MapFile(pszFn, &m_fmap);
+	if (ptrmaphFile == NULL)
 		return false;
 
 	// Alloc the path buffer
 
-	m_ctx = BigWord(m_ptrmaph->ctx);
-	m_cty = BigWord(m_ptrmaph->cty);
+	m_ctx = BigWord(ptrmaphFile->ctx);
+	m_cty = BigWord(ptrmaphFile->cty);
+	if (m_ctx > 0 && m_cty > 0 && m_ctx <= ktcMax && m_cty <= ktcMax) {
+		int cbMap = sizeof(TerrainMapHeader) + m_ctx * m_cty;
+		byte *pbCopy = new byte[cbMap];
+		if (pbCopy == NULL) {
+			gpakr.UnmapFile(&m_fmap);
+			return false;
+		}
+		memcpy(pbCopy, ptrmaphFile, cbMap);
+		m_ptrmaph = (TerrainMapHeader *)pbCopy;
+	}
+	gpakr.UnmapFile(&m_fmap);
 
 	// Refuse maps bigger than the engine's coordinate range rather than
 	// corrupting memory
@@ -741,6 +754,13 @@ int TerrainMap::GetTerrainType(TCoord tx, TCoord ty)
 	Assert(tx >= 0 && tx < m_ctx && ty >= 0 && ty < m_cty);
 	word offMap = ty * m_ctx + tx;
 	return ((byte *)(m_ptrmaph + 1))[offMap];
+}
+
+void TerrainMap::SetTerrainType(TCoord tx, TCoord ty, int tt)
+{
+	if (tx < 0 || tx >= m_ctx || ty < 0 || ty >= m_cty || m_ptrmaph == NULL)
+		return;
+	((byte *)(m_ptrmaph + 1))[ty * m_ctx + tx] = (byte)tt;
 }
 
 bool TerrainMap::GetFlags(int tx, int ty, byte *pbf)

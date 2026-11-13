@@ -185,6 +185,7 @@ BeginStateMachine
 #else
 							((pgobTarget->GetFlags() & kfGobStructure) == kfGobStructure)
 #endif
+							&& pgobTarget->GetType() != kgtWall
 							&& pmuntPawn->IsValidTarget(pgobTarget)) {
 						cTargets++;
 					}
@@ -195,7 +196,8 @@ BeginStateMachine
 					for (pgobTarget = ggobm.GetFirstGob(); pgobTarget != NULL; pgobTarget = ggobm.GetNextGob(pgobTarget)) {
 						if (pgobTarget->GetOwner() != m_pplr && 
 								((pgobTarget->GetFlags() & kfGobStructure) == 
-								kfGobStructure) && pmuntPawn->IsValidTarget(pgobTarget)) {
+								kfGobStructure) && pgobTarget->GetType() != kgtWall &&
+								pmuntPawn->IsValidTarget(pgobTarget)) {
 							if (cTargets-- == 0)
 								break;
 						}

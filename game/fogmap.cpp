@@ -503,7 +503,8 @@ void FogMap::DrawGalaxite(DibBitmap *pbm, int xMap, int yMap, UpdateMap *pupd, b
 				// draw from the 'damaged' strip.
 
 //				m_panidWalls->DrawFrame(w <= (kwfWallMask >> 1) ? 1 : 0, ifrm, pbm, xTile, yTile, ksideNeutral);
-				m_panidWalls->DrawFrame(0, ifrm, pbm, xTile, yTile, ksideNeutral);
+				// Walls are WallGobs now (Wall.cpp); they draw themselves
+				(void)ifrm;
 
 			}
 

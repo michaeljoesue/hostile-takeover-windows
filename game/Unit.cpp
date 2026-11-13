@@ -453,7 +453,7 @@ int UnitGob::GetDamageTo(UnitGob *puntTarget)
 		nDamage = m_puntc->GetInfantryDamage();
 	} else if (umTarget & kumVehicles) {
 		nDamage = m_puntc->GetVehicleDamage();
-	} else if (umTarget & kumStructures) {
+	} else if (umTarget & (kumStructures | kumWall)) {
 		nDamage = m_puntc->GetStructureDamage();
 	}
 
@@ -787,6 +787,12 @@ TCoord UnitGob::CalcRange(TCoord tx, TCoord ty, Gob *pgob)
 
 void UnitGob::RememberEnemyNearby(Gid gidEnemy)
 {
+	// Walls are only attacked when ordered (Wall.cpp)
+
+	Gob *pgobEnemy = ggobm.GetGob(gidEnemy);
+	if (pgobEnemy != NULL && pgobEnemy->GetType() == kgtWall)
+		return;
+
 	// If this gob is already in our list, nothing to do
 
 	int n;
@@ -944,6 +950,12 @@ UnitGob *UnitGob::FindEnemyNearby(TCoord tcRange)
 
 void UnitGob::NotifyEnemyNearby()
 {
+	// Walls don't announce themselves: nothing picks them as a target on
+	// its own (Wall.cpp)
+
+	if (m_puntc->ut == kutWall)
+		return;
+
 	// OPT: Could scan leading edges only (when moving), as long as
 	// the edge is 2 tiles thick. Would need to break out cases where the whole
 	// rect needs to be scanned.

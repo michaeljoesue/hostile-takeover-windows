@@ -35,7 +35,7 @@ bool StructGob::InitClass(StructConsts *pstruc, IniReader *pini)
 
 	// Don't include Headquarters in min/max since they aren't player-buildable
 
-	if (pstruc->gt != kgtHeadquarters) {
+	if (pstruc->gt != kgtHeadquarters && pstruc->gt != kgtWall) {
 		gfxStructureArmorStrengthMin = _min(gfxStructureArmorStrengthMin, pstruc->fxArmorStrength);
 		gfxStructureArmorStrengthMax = _max(gfxStructureArmorStrengthMax, pstruc->fxArmorStrength);
 	}

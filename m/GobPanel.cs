@@ -148,7 +148,7 @@ namespace m
 				flowPanel.Controls.Add(CreatePictureBox(new Galaxite(7, 0, 0)));
 				flowPanel.Controls.Add(CreatePictureBox(new Galaxite(8, 0, 0)));
 				flowPanel.Controls.Add(CreatePictureBox(new Area(2, 2)));
-				flowPanel.Controls.Add(CreatePictureBox(new Wall(15)));
+				flowPanel.Controls.Add(CreatePictureBox(new Wall(100)));
 				flowPanel.Controls.Add(CreatePictureBox(new Scenery("RocketArtifact", 0, 0)));
 				flowPanel.Controls.Add(CreatePictureBox(new Scenery("Tree", 0, 0)));
 				flowPanel.Controls.Add(CreatePictureBox(new Scenery("Tree1", 0, 0)));

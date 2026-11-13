@@ -145,6 +145,9 @@ Gob *CreateGob(GobType gt)
 	case kgtWarehouse:
 		return new WarehouseGob();
 
+	case kgtWall:
+		return new WallGob();
+
 	case kgtMachineGunTower:
 		return new GunTowerGob();
 
@@ -2166,7 +2169,7 @@ bool GobMgr::IsStructurePlacementValid(StructConsts *pstruc, TCoord tx, TCoord t
 			if (pgob == NULL)
 				continue;
 			if ((pgob->GetFlags() & (kfGobStructure | kfGobActive)) == (kfGobStructure | kfGobActive)) {
-				if (pgob->GetOwner() != pplr)
+				if (pgob->GetOwner() != pplr || pgob->GetType() == kgtWall)
 					continue;
 
 				// Special hack to keep players from building long chains of towers

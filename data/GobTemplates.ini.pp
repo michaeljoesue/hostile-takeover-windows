@@ -418,6 +418,25 @@ BuildRate=2
 UpgradeCost=400
 Description=You're not supposed to be able to build this!
 
+// Walls: one map wall tile. Not buildable; placed by the level (or made from
+// the map's wall tiles). Attacked only when ordered. See game/Wall.cpp.
+
+[kgtWall]
+Name=Wall
+LongName=Wall
+TimeToBuild=1
+Cost=0
+PowerDemand=0
+ArmorStrength=150
+UIBoundsLeft=0
+UIBoundsTop=0
+UIBoundsRight=16
+UIBoundsBottom=16
+SortOffset=16
+Animation=walls.anir
+TileDimensions=1,1
+Description=A wall. Order units to attack it to break through.
+
 // Towers
 
 [kgtMachineGunTower]
