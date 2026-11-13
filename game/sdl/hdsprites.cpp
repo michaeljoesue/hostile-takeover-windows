@@ -703,7 +703,8 @@ static SDL_Texture *GetShadowTexture(SDL_Renderer *prend, HdPic *ppic) {
     int c = ppic->cx * ppic->cy;
     byte *pb = new byte[c * 4];
     for (int i = 0; i < c; i++) {
-        pb[i * 4] = pb[i * 4 + 1] = pb[i * 4 + 2] = 0;
+        // a slightly cool shadow colour instead of pure black (sits better on the ground)
+        pb[i * 4] = 12; pb[i * 4 + 1] = 16; pb[i * 4 + 2] = 28;
         pb[i * 4 + 3] = (byte)(ppic->pbShadow[i] * 6 / 10);     // 255 = darken by 60%
     }
     SDL_Texture *ptex = SDL_CreateTexture(prend, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STATIC, ppic->cx, ppic->cy);

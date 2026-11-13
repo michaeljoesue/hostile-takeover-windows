@@ -1772,6 +1772,26 @@ nothing could hit or destroy them. They are now structures:
 - **Drawing**: the HD layer is reset in `Simulation::DrawBackground`, the
   first pass of a frame (walls used to be drawn there).
 
+## 64. HD shadows fitted to the rework
+
+The HD ground shadows (`<picture>_shadow.png`) are made by the artist-sheet
+pipeline (scratchpad `soft/classic_shadow.py`), now in a second version:
+
+- One light direction for every building, measured from the paintings (lit
+  from above and a little from the right): shadows fall down and a little
+  left. Each building keeps the shadow length it had before.
+- Height-aware: each part casts as far as it stands above the ground under
+  it (estimated from the picture), so plinths cast short shadows and
+  chimneys, tower heads and dishes full ones. Moving parts get the shadow
+  of each of their own pictures.
+- Dark and sharp at the base, lighter and softer farther out, plus a thin
+  contact shade along the base.
+- Walls keep their own method (section 63).
+- `GetShadowTexture` draws shadows in a slightly cool dark colour
+  (12,16,28) instead of black, at the same strength.
+
+The first version can be regenerated with `SHADOW_V1=1`.
+
 ## File map
 
 | File | Purpose |
