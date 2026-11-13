@@ -611,8 +611,13 @@ bool HdDrawFrame(int ihdAnir, const char *pszStrip, int nFrame, DibBitmap *pbm,
 // side's brightest shade ... 64 = its darkest), so team colours are as bright
 // as the classic ones and similar sides (Red, Crimson) stay easy to tell apart.
 // Pale (unsaturated) painted highlights keep some of their paleness.
+// The gain is set so each shade is used about as often as on the classic
+// structures (brightest shade on ~14% of team pixels), and any clearly
+// coloured pixel takes the side's colour in full (no grey mixed in), so Red
+// reads orange-red and Crimson deep pink-red, as in the original.
 
-static const float kHdTeamGain = 1.35f;
+static const float kHdTeamGain = 1.55f;
+static const float kHdTeamSatFull = 0.35f;
 
 static void TeamRampColor(const float (*aclrRamp)[3], const float *avBlue, float v,
         float *pr, float *pg, float *pb) {
@@ -672,7 +677,7 @@ static SDL_Texture *GetTexture(SDL_Renderer *prend, HdPic *ppic, int side, Uint3
                 float sat = mx > 0 ? (mx - mn) / mx : 0;
                 float v = mx * kHdTeamGain;
                 TeamRampColor(aclrRamp, avBlue, v, &r2, &g2, &b2);
-                float k = sat / 0.6f;
+                float k = sat / kHdTeamSatFull;
                 if (k > 1) k = 1;
                 float grey = v > 255 ? 255 : v;
                 r2 = r2 * k + grey * (1 - k);
