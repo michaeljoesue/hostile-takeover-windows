@@ -1792,6 +1792,14 @@ pipeline (scratchpad `soft/classic_shadow.py`), now in a second version:
 
 The first version can be regenerated with `SHADOW_V1=1`.
 
+Walls get the same soft fade and contact shade, still worked out on the 3x3
+neighbouring tiles and only then cut to the tile, so the joins stay seamless.
+
+Painted height masks: `soft/heights/<building>_<state>.png` (greyscale, the
+size of the HD picture; black = ground, white = tallest) replace the
+estimate for every frame of that state. `HEIGHT_EXPORT=<dir>` writes the
+current estimate as starter masks with guide pictures.
+
 ## File map
 
 | File | Purpose |
