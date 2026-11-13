@@ -320,3 +320,35 @@ rtower.anir	turret 15	0	rtower/rtower_{S}_15_0	-76	-76
 rtower.anir	turret 15	1	rtower/rtower_{S}_15_1	-76	-76
 rtower.anir	turret 15	2	rtower/rtower_{S}_15_2	-76	-76
 spec	rtower.anir	turret 15	1	-4	-9
+walls.anir	a	0	wall/wall_a_00	-48	-48
+walls.anir	a	1	wall/wall_a_01	-48	-48
+walls.anir	a	2	wall/wall_a_02	-48	-48
+walls.anir	a	3	wall/wall_a_03	-48	-48
+walls.anir	a	4	wall/wall_a_04	-48	-48
+walls.anir	a	5	wall/wall_a_05	-48	-48
+walls.anir	a	6	wall/wall_a_06	-48	-48
+walls.anir	a	7	wall/wall_a_07	-48	-48
+walls.anir	a	8	wall/wall_a_08	-48	-48
+walls.anir	a	9	wall/wall_a_09	-48	-48
+walls.anir	a	10	wall/wall_a_10	-48	-48
+walls.anir	a	11	wall/wall_a_11	-48	-48
+walls.anir	a	12	wall/wall_a_12	-48	-48
+walls.anir	a	13	wall/wall_a_13	-48	-48
+walls.anir	a	14	wall/wall_a_14	-48	-48
+walls.anir	a	15	wall/wall_a_15	-48	-48
+walls.anir	b	0	wall/wall_b_00	-48	-48
+walls.anir	b	1	wall/wall_b_01	-48	-48
+walls.anir	b	2	wall/wall_b_02	-48	-48
+walls.anir	b	3	wall/wall_b_03	-48	-48
+walls.anir	b	4	wall/wall_b_04	-48	-48
+walls.anir	b	5	wall/wall_b_05	-48	-48
+walls.anir	b	6	wall/wall_b_06	-48	-48
+walls.anir	b	7	wall/wall_b_07	-48	-48
+walls.anir	b	8	wall/wall_b_08	-48	-48
+walls.anir	b	9	wall/wall_b_09	-48	-48
+walls.anir	b	10	wall/wall_b_10	-48	-48
+walls.anir	b	11	wall/wall_b_11	-48	-48
+walls.anir	b	12	wall/wall_b_12	-48	-48
+walls.anir	b	13	wall/wall_b_13	-48	-48
+walls.anir	b	14	wall/wall_b_14	-48	-48
+walls.anir	b	15	wall/wall_b_15	-48	-48

@@ -1729,6 +1729,15 @@ classic Bullpup still drives in between the HD Processor and its door: the
 game draws it after the base, so the base's HD picture gives way there, and
 the door overlay is drawn over it.
 
+## 63. HD walls
+
+Walls are terrain: FogMap draws them for every wall tile from walls.anir
+(strip a, frame = neighbour mask: 1 up, 2 right, 4 down, 8 left), in the
+background pass before the gobs. The HD layer is now reset at the start of
+that pass (Simulation::DrawBackground) instead of in Simulation::Draw, so the
+wall pictures recorded there are kept. Walls are always drawn as neutral
+(no owner), so their team-colour parts show the neutral colour.
+
 ## File map
 
 | File | Purpose |

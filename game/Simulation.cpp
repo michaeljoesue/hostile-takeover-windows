@@ -684,6 +684,11 @@ void Simulation::FindVisibleGobs(Gob ***pppgobVisible, int *pcgobVisible)
 
 void Simulation::DrawBackground(UpdateMap *pupd, DibBitmap *pbm)
 {
+    // HD sprites get recorded afresh from here: walls draw with the
+    // background, before the gobs
+
+    HdBeginSimFrame();
+
     // Draw tiles where the updatemap is invalid
 
     short xView = PcFromUwc(m_wxView) & 0xfffe;
@@ -727,10 +732,6 @@ void Simulation::Draw(UpdateMap *pupd, DibBitmap *pbm)
     // Find visible Gobs
 
     FindVisibleGobs();
-
-    // HD sprites get recorded afresh as the gobs draw
-
-    HdBeginSimFrame();
 
 #ifdef STATS_DISPLAY
     gcBitmapsDrawn = 0;
