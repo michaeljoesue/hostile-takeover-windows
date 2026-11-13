@@ -762,12 +762,18 @@ void HdComposite(SDL_Renderer *prend, int nScale, byte *pbFront, int cxFront, in
 
         abMask.resize(cx * cy);
         int cMatch = 0;
+
+        // A classic sprite's shadow only darkens what's under it (through
+        // the level's shadow map); a shadow falling on an HD picture (the
+        // classic Bullpup driving into the HD Processor) doesn't cover it
+
+        byte *mpShadow = gsim.GetLevel() != NULL ? gsim.GetLevel()->GetShadowMap() : NULL;
         for (int y = 0; y < cy; y++) {
             byte *pbF = pbFront + (rc.top + y) * cxFront + rc.left;
             byte *pbS = &pcmd->abSnap[y * cx];
             byte *pbM = &abMask[y * cx];
             for (int x = 0; x < cx; x++) {
-                pbM[x] = pbF[x] == pbS[x];
+                pbM[x] = pbF[x] == pbS[x] || (mpShadow != NULL && pbF[x] == mpShadow[pbS[x]]);
                 cMatch += pbM[x];
             }
         }

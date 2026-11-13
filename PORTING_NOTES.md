@@ -1729,6 +1729,13 @@ classic Bullpup still drives in between the HD Processor and its door: the
 game draws it after the base, so the base's HD picture gives way there, and
 the door overlay is drawn over it.
 
+A classic sprite's shadow darkens the 8-bit pixels under it through the
+level's shadow map. The HD layer used to treat any changed pixel as covered,
+so the classic Bullpup's shadow cut holes into the HD Processor (green
+ground in the tunnel). `HdComposite` now keeps an HD picture where a pixel
+only changed into its shadow-map colour; a classic shadow over an HD
+building is dropped instead of showing the ground.
+
 ## 63. Walls: owners, health, attack on order (and HD walls)
 
 Walls used to be terrain only: the FogMap drew `walls.anir` (frame =
