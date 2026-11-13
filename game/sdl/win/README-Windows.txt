@@ -55,17 +55,9 @@ CONTROLS
                         keys; not over the minimap)
   Middle button drag    Grab and move the map with the mouse
   F                     Show / hide the frames-per-second counter
-  F9                    Switch between the HD sprites and the classic
-                        ones (see "HD sprites" below)
   Click the minimap     Jump to that part of the map (bottom right)
   M  or  Escape         Open the in-game menu (save / load / options);
                         Escape also closes menus and dialogs
-
-HD sprites: the Headquarters, Power Generator, Galaxite Processor (with
-its smoke and the unloading Bullpup) and the Bullpup on the map are drawn
-with high-resolution painted pictures (the hd folder) over the classic
-game image. They look best when each game pixel is 2x or more on screen
-(Best fit on a 1920x1080 or bigger monitor). F9 switches them off and on.
 
 Each factory / barracks can queue up to 99 units of any mix of types
 (it was 10 in all).

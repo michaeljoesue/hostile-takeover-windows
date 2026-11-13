@@ -728,10 +728,6 @@ void Simulation::Draw(UpdateMap *pupd, DibBitmap *pbm)
 
     FindVisibleGobs();
 
-    // HD sprites get recorded afresh as the gobs draw
-
-    HdBeginSimFrame();
-
 #ifdef STATS_DISPLAY
     gcBitmapsDrawn = 0;
 #endif

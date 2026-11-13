@@ -843,20 +843,12 @@ void StructGob::SetHealth(fix fxHealth)
 	if (m_ff & kfGobBeingBuilt)
 		return;
 
-	// Switching between the healthy and damaged idle animations: keep them
-	// looping. A one-frame strip (e.g. the damaged R&D Center) drops the loop
-	// bit when started, and passing GetFlags() on would leave the healthy
-	// animation stopped after a repair.
-
-	word wf = m_ani.GetFlags();
-	if (m_ani.GetStrip() <= 1)
-		wf = (wf & ~kfAniDone) | kfAniLoop;
 	if (m_fxHealth * 2 < m_pstruc->GetArmorStrength()) {
 		if (m_ani.GetStrip() != 1)
-			StartAnimation(&m_ani, 1, 0, wf);
+			StartAnimation(&m_ani, 1, 0, m_ani.GetFlags());
 	} else {
 		if (m_ani.GetStrip() != 0)
-			StartAnimation(&m_ani, 0, 0, wf);
+			StartAnimation(&m_ani, 0, 0, m_ani.GetFlags());
 	}
 }
 

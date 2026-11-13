@@ -178,10 +178,9 @@ void SmoothRenderTimer::OnTimer(long tCurrent)
 		m_nyScrollFrac = 0;
 	}
 
-	// Keep drawing while something is part way between updates (moving
-	// gobs, or HD pictures that change between updates)
+	// Keep drawing while something is part way between updates
 
-	if (gfInterpolatedLastPaint || HdWantsRedraw())
+	if (gfInterpolatedLastPaint)
 		gevm.SetRedrawFlags(kfRedrawDirty);
 }
 
@@ -394,12 +393,6 @@ void AddPointToLassoSelection(WPoint wpt)
 
 void SimUIForm::OnUpdateMapInvalidate(UpdateMap *pupd, Rect *prcOpaque)
 {
-	// HD sprites are drawn over the whole finished frame, so every visible
-	// gob has to draw (and be recorded) every frame
-
-	if (HdIsActive())
-		pupd->InvalidateRect();
-
 #ifdef DRAW_LINES
 	if (gfDrawLines)
 		pupd->InvalidateRect();

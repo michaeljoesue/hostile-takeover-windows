@@ -1662,65 +1662,6 @@ resumed the mission with the same unit selected.
     stay off screen). Recorded at 30 fps under Wine, the Options form now
     zips in over about 11 frames.
 
-## 61. HD sprites (32-bit pictures over the 8-bit game image)
-
-The reworked art (Headquarters, Power Generator, Galaxite Processor with its
-door, smoke and unloading Bullpup, the Bullpup on the map and its mining
-bits) is drawn as 32-bit RGBA pictures at window resolution, while the rest
-of the game stays the classic 8-bit image. F9 switches HD on and off.
-
-Data: `data/hd/` (copied to `hd/` next to the exe by build.sh).
-`manifest.txt` maps an animation frame (anir file, strip name, frame) to one
-or more pictures and their top-left offset from the frame's draw point, in HD
-pixels (4 per pixel of the 24-pixel-tile art; at the game's 32-pixel tiles
-that is 3 HD pixels per game pixel, `96 / gcxTile`). Each picture can have a
-`_shadow.png` (255 = darken the ground 60%) and a `_team.png` (team-colour
-mask). Tokens: `{S}` = state of the base strip the same animation drew last
-(Processor door over the healthy or damaged base), `{T36}` = 36-picture loop
-played in game time (generator fan: 33 ms per picture, smooth between game
-updates, stops when paused), `{L<n>x<ms>}` = n-picture loop at a
-steady <ms> per picture in game time at the default speed (40 ms updates):
-Surveillance Center dish `{L12x30}` (the artist's reference video), R&D
-Center dish swing `{L52x40}`. `Animation::Draw` passes the Animation as a
-key; a loop stops while its owner's power is low (as the classic dishes do); each key keeps its own place in the loop and only advances it while the
-game keeps advancing the classic animation (`Animation::GetLastAdvanceMs`,
-set in `Animation::Advance`; needed because the damaged R&D Center has a
-one-frame strip whose frame never changes), so dishes stop with low power
-like the classic ones, and stop when the game is paused. (Following the
-classic frames instead looked uneven: the game does not advance them at a
-steady rate.) `{T36}` uses the real update interval (`gtGameSpeed`,
-`gmsLastSimUpdate`) the same way the moving units do. While any `{T36}` or
-still-running `{L..}` picture is on screen, `HdWantsRedraw` keeps the
-smooth-render timer asking for paints between game updates.
-
-How it works (`game/sdl/hdsprites.cpp`):
-- `AnimationData::Init` looks the animation up (`HdFindAnir`);
-  `AnimationData::DrawFrame` calls `HdDrawFrame` first. For frames in the
-  manifest, drawn onto the playfield's bitmap (`gpfrmmSim->GetDib()`; menus
-  and forms are left alone) and without a source clip rect, nothing is drawn
-  into the 8-bit bitmap: the pictures are recorded with a snapshot of the
-  8-bit pixels under them.
-- `SimUIForm::OnUpdateMapInvalidate` invalidates the whole playfield every
-  frame while HD is on, so every visible gob draws (and is recorded) every
-  frame. `Simulation::Draw` clears the list first (`HdBeginSimFrame`).
-- `Display::RenderGameSurface` scales the 8-bit image up into a window-sized
-  target texture and calls `HdComposite`: for each recorded entry, in draw
-  order, the game pixels that still equal the snapshot are where nothing was
-  drawn on top since (units in front, selection brackets, health bars,
-  dialogs); the shadow and then the picture are drawn only there, in row
-  runs. An entry that is mostly covered (less than 40% visible) is skipped,
-  which also drops stale entries when a full-screen form is up.
-- Team colours: pictures are painted blue (side 1). Other sides get the hue
-  and saturation of their side's colour where the team mask is set, keeping
-  the painted brightness; a hit flash turns the team areas white.
-  Textures are made per picture and side on first use (PNG via stb_image).
-- Being built / placement ghosts use the same pictures (neutral colour while
-  being built).
-
-Not covered: animations without HD pictures stay classic (all other units
-and buildings, the build-menu icons). Without the hd folder the game runs
-exactly as before.
-
 ## File map
 
 | File | Purpose |
@@ -1762,13 +1703,3 @@ exactly as before.
 | `game/Player.cpp` (`IsVisionSharedWithLocal`, `RevealSharedVision`) | Allies share vision |
 | `game/packs.h`, `mpshared/packmanager.*` | Local mission packs only (online code removed) |
 | `data/forms.ini.pp`, `data/help.txt` | Main menu without online buttons; help text |
-
-### Structures keep animating after damage and repair
-
-`StructGob::SetHealth` switches between the healthy and damaged idle strips
-passing the animation's current flags on. A one-frame strip (the damaged R&D
-Center) drops the loop bit when started, so after a repair the healthy
-animation never ran again (the classic R&D dish froze too). Switching between
-strips 0 and 1 now always restarts them looping. The damaged R&D Center's HD
-dish runs whenever its owner's power is not low, since the game never needs
-to advance a one-frame strip.

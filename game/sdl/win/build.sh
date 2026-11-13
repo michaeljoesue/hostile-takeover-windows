@@ -55,10 +55,6 @@ elif ver.encode() + b'\0' not in d:
     sys.exit("htdata832.pdb: version mark not found")
 open(dst, 'wb').write(d)
 EOF
-# HD sprites (32-bit pictures drawn over the classic ones; F9 switches)
-if [ -d "$HTROOT/data/hd" ]; then
-    cp -r "$HTROOT/data/hd" "$DIST/hd"
-fi
 cp "$HERE/README-Windows.txt" "$DIST/README.txt"
 cp "$HTROOT/LICENSE.txt" "$DIST/LICENSE.txt"
 

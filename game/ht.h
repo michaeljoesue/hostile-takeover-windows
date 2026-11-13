@@ -1450,7 +1450,7 @@ public:
 	void GetFrameOrigin(int nStrip, int nFrame, Point *pptOrigin) secAnimation;
 	void GetSpecialPoint(int nStrip, int nFrame, Point *pptSpecial) secAnimation;
 	void GetBounds(int nStrip, int nFrame, Rect *prc) secAnimation;
-	void DrawFrame(int nStrip, int nFrame, DibBitmap *pbm, int x, int y, Side side, Rect *prcSrc = NULL, void *pvKey = NULL) secAnimation;
+	void DrawFrame(int nStrip, int nFrame, DibBitmap *pbm, int x, int y, Side side, Rect *prcSrc = NULL) secAnimation;
 	int GetStripDelay(int nStrip) secAnimation;
 	int GetFrameDelay(int nStrip, int nFrame) secAnimation;
 
@@ -1458,19 +1458,8 @@ private:
 	TBitmap *m_ptbm;
 	FileMap m_fmap;
 	AnimationFileHeader *m_panih;
-	int m_ihdAnir;		// HD sprite set for this animation (-1 = none)
-	int m_nHdState;		// HD: state of the base strip drawn last (e.g. Processor door)
 };
 AnimationData *LoadAnimationData(const char *pszAniName) secAnimation;
-
-// HD sprites (32-bit RGBA pictures drawn over the 8-bit game image, see
-// game/sdl/hdsprites.cpp). Platforms without them use the stubs in Animation.cpp.
-
-int HdFindAnir(const char *pszAniName);
-bool HdDrawFrame(int ihdAnir, const char *pszStrip, int nFrame, DibBitmap *pbm, int x, int y, Side side, int *pnState, void *pvKey);
-void HdBeginSimFrame();
-bool HdIsActive();
-bool HdWantsRedraw();
 
 const word kfAniLoop = 0x0001;
 const word kfAniDone = 0x0002;
@@ -1487,7 +1476,6 @@ public:
 		m_nFrame = 0;
 		m_cDelay = 0;
 		m_wf = kfAniDone;
-		m_msLastAdvance = 0;
 	}
 
 	~Animation() {
@@ -1544,7 +1532,7 @@ public:
 	}
 
 	void Draw(DibBitmap *pbm, int x, int y, Side side = ksideNeutral, Rect *prcSrc = NULL) {
-		m_panid->DrawFrame(m_nStrip, m_nFrame, pbm, x, y, side, prcSrc, this);
+		m_panid->DrawFrame(m_nStrip, m_nFrame, pbm, x, y, side, prcSrc);
 	}
 
 	word GetFlags() {
@@ -1559,12 +1547,6 @@ public:
 		return m_panid;
 	}
 
-	// HD sprites: when the game last advanced this animation (ms), so a
-	// looping HD picture set knows whether the animation is running
-	long GetLastAdvanceMs() {
-		return m_msLastAdvance;
-	}
-
 	bool Advance(int cAdvance) secAnimation;
 	long GetRemainingStripTime() secAnimation;
 
@@ -1574,7 +1556,6 @@ private:
 	int m_nFrame;
 	word m_wf;
 	byte m_cCountdown;
-	long m_msLastAdvance;
 	byte m_cDelay;
 };
 
